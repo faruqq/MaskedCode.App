@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/docs/">
+    <File Path="MaskedCode.md" />
+    <File Path="ProjectState.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="MaskedCode.App/MaskedCode.App.csproj" />
+</Solution>
