@@ -1,24 +1,252 @@
-﻿using System.Text;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Microsoft.Win32;
 
-namespace MaskedCode.App
+namespace MaskedCode.App;
+
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    private string? _selectedFilePath;
+
+    public MainWindow()
     {
-        public MainWindow()
+        InitializeComponent();
+    }
+
+    private async void SelectFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
         {
-            InitializeComponent();
+            Title = "Maskelenecek kaynak dosyayı seçin",
+            Filter = GetOpenFileFilter(),
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
         }
+
+        try
+        {
+            var sourceCode = await File.ReadAllTextAsync(dialog.FileName);
+
+            _selectedFilePath = dialog.FileName;
+            SourceCodeTextBox.Text = sourceCode;
+            SelectedFileTextBlock.Text = dialog.FileName;
+
+            SelectLanguageFromFileExtension(dialog.FileName);
+
+            StatusTextBlock.Text =
+                $"Dosya yüklendi: {Path.GetFileName(dialog.FileName)}";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Dosya okunamadı.{Environment.NewLine}{exception.Message}",
+                "Dosya okuma hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusTextBlock.Text = "Dosya okunurken hata oluştu.";
+        }
+    }
+
+    private void MaskButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
+        {
+            StatusTextBlock.Text = "Maskelenecek kaynak kod bulunamadı.";
+            return;
+        }
+
+        MaskedCodeTextBox.Clear();
+        UpdateOutputButtons();
+
+        StatusTextBlock.Text =
+            "Arayüz hazır. Maskeleme motoru henüz eklenmediği için kaynak kod değiştirilmedi.";
+    }
+
+    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+        {
+            return;
+        }
+
+        Clipboard.SetText(MaskedCodeTextBox.Text);
+        StatusTextBlock.Text = "Maskelenmiş kod panoya kopyalandı.";
+    }
+
+    private async void SaveFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+        {
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Maskelenmiş kaynak dosyayı kaydedin",
+            Filter = GetSaveFileFilter(),
+            FileName = CreateMaskedFileName()
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                dialog.FileName,
+                MaskedCodeTextBox.Text);
+
+            StatusTextBlock.Text =
+                $"Maskelenmiş dosya kaydedildi: {dialog.FileName}";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Dosya kaydedilemedi.{Environment.NewLine}{exception.Message}",
+                "Dosya kaydetme hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusTextBlock.Text = "Dosya kaydedilirken hata oluştu.";
+        }
+    }
+
+    private void SourceCodeTextBox_TextChanged(
+        object sender,
+        TextChangedEventArgs e)
+    {
+        MaskButton.IsEnabled =
+            !string.IsNullOrWhiteSpace(SourceCodeTextBox.Text);
+
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        MaskedCodeTextBox.Clear();
+        UpdateOutputButtons();
+
+        if (_selectedFilePath is not null &&
+            SourceCodeTextBox.IsKeyboardFocusWithin)
+        {
+            _selectedFilePath = null;
+            SelectedFileTextBlock.Text = "Ekrana yapıştırılan kod";
+        }
+    }
+
+    private void LanguageComboBox_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        MaskedCodeTextBox.Clear();
+        UpdateOutputButtons();
+
+        StatusTextBlock.Text =
+            $"Kaynak dil değiştirildi: {GetSelectedLanguageDisplayName()}";
+    }
+
+    private void SelectLanguageFromFileExtension(string filePath)
+    {
+        var extension = Path.GetExtension(filePath);
+
+        LanguageComboBox.SelectedIndex = extension.ToLowerInvariant() switch
+        {
+            ".pli" or ".pl1" => 0,
+            ".egl" => 1,
+            ".cs" => 2,
+            _ => LanguageComboBox.SelectedIndex
+        };
+    }
+
+    private string GetOpenFileFilter()
+    {
+        return GetSelectedLanguage() switch
+        {
+            "PL1" =>
+                "PL/I kaynak dosyaları (*.pli;*.pl1)|*.pli;*.pl1|" +
+                "Tüm dosyalar (*.*)|*.*",
+
+            "EGL" =>
+                "EGL kaynak dosyaları (*.egl)|*.egl|" +
+                "Tüm dosyalar (*.*)|*.*",
+
+            "CSharp" =>
+                "C# kaynak dosyaları (*.cs)|*.cs|" +
+                "Tüm dosyalar (*.*)|*.*",
+
+            _ => "Tüm dosyalar (*.*)|*.*"
+        };
+    }
+
+    private string GetSaveFileFilter()
+    {
+        return GetSelectedLanguage() switch
+        {
+            "PL1" =>
+                "PL/I kaynak dosyaları (*.pli)|*.pli|" +
+                "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+
+            "EGL" => "EGL kaynak dosyaları (*.egl)|*.egl",
+
+            "CSharp" => "C# kaynak dosyaları (*.cs)|*.cs",
+
+            _ => "Metin dosyaları (*.txt)|*.txt"
+        };
+    }
+
+    private string CreateMaskedFileName()
+    {
+        if (!string.IsNullOrWhiteSpace(_selectedFilePath))
+        {
+            var fileName = Path.GetFileNameWithoutExtension(_selectedFilePath);
+            var extension = Path.GetExtension(_selectedFilePath);
+
+            return $"{fileName}.masked{extension}";
+        }
+
+        return GetSelectedLanguage() switch
+        {
+            "PL1" => "masked-code.pli",
+            "EGL" => "masked-code.egl",
+            "CSharp" => "masked-code.cs",
+            _ => "masked-code.txt"
+        };
+    }
+
+    private string GetSelectedLanguage()
+    {
+        return LanguageComboBox.SelectedItem is ComboBoxItem item
+            ? item.Tag?.ToString() ?? string.Empty
+            : string.Empty;
+    }
+
+    private string GetSelectedLanguageDisplayName()
+    {
+        return LanguageComboBox.SelectedItem is ComboBoxItem item
+            ? item.Content?.ToString() ?? string.Empty
+            : string.Empty;
+    }
+
+    private void UpdateOutputButtons()
+    {
+        var hasMaskedCode =
+            !string.IsNullOrEmpty(MaskedCodeTextBox.Text);
+
+        CopyButton.IsEnabled = hasMaskedCode;
+        SaveFileButton.IsEnabled = hasMaskedCode;
     }
 }
