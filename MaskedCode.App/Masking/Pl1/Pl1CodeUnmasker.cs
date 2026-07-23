@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace MaskedCode.App.Masking;
+namespace MaskedCode.App.Masking.Pl1;
 
 public sealed class Pl1CodeUnmasker
 {

@@ -1,4 +1,4 @@
-﻿namespace MaskedCode.App.Masking;
+﻿namespace MaskedCode.App.Masking.Pl1;
 
 internal sealed record Pl1NumericMaskingResult(
     string MaskedCode,

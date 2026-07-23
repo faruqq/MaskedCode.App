@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MaskedCode.App.Masking;
+namespace MaskedCode.App.Masking.Egl;
 
 internal sealed class EglCodeMasker
 {
@@ -17,12 +17,20 @@ internal sealed class EglCodeMasker
     }
 
     public EglMaskingResult Mask(
-        string sourceCode,
-        MaskingMode mode)
+    string sourceCode,
+    MaskingMode mode)
     {
         ArgumentNullException.ThrowIfNull(sourceCode);
 
         ValidateMaskingMode(mode);
+
+        var numericMasker =
+            new EglNumericLiteralMasker();
+
+        sourceCode =
+            numericMasker.Mask(
+                sourceCode,
+                out var numericLiteralMappings);
 
         var identifierMappings =
             new Dictionary<string, string>(
@@ -105,6 +113,16 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
+            if (EglNumericLiteralMasker.TryReadNumericLiteral(
+                    sourceCode,
+                    index,
+                    out var numericLiteral))
+            {
+                maskedCode.Append(numericLiteral);
+                index += numericLiteral.Length;
+                continue;
+            }
+
             RejectUnsupportedContext(
                 sourceCode,
                 index);
@@ -134,6 +152,7 @@ internal sealed class EglCodeMasker
             CreateMappings(
                 identifierMappings,
                 stringLiteralMappings,
+                numericLiteralMappings,
                 commentMappings);
 
         return new EglMaskingResult(
@@ -143,18 +162,21 @@ internal sealed class EglCodeMasker
     }
 
     private static IReadOnlyList<MaskingMapping>
-        CreateMappings(
-            IReadOnlyDictionary<string, string>
-                identifierMappings,
-            IReadOnlyDictionary<string, string>
-                stringLiteralMappings,
-            IReadOnlyDictionary<string, string>
-                commentMappings)
+    CreateMappings(
+        IReadOnlyDictionary<string, string>
+            identifierMappings,
+        IReadOnlyDictionary<string, string>
+            stringLiteralMappings,
+        IReadOnlyDictionary<string, string>
+            numericLiteralMappings,
+        IReadOnlyDictionary<string, string>
+            commentMappings)
     {
         var mappings =
             new List<MaskingMapping>(
                 identifierMappings.Count +
                 stringLiteralMappings.Count +
+                numericLiteralMappings.Count +
                 commentMappings.Count);
 
         foreach (var mapping in identifierMappings)
@@ -171,6 +193,15 @@ internal sealed class EglCodeMasker
             mappings.Add(
                 new MaskingMapping(
                     MaskingValueKind.StringLiteral,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        foreach (var mapping in numericLiteralMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.NumericLiteral,
                     mapping.Key,
                     mapping.Value));
         }
@@ -867,8 +898,8 @@ internal sealed class EglCodeMasker
     }
 
     private static HashSet<string>
-        CollectOriginalIdentifiers(
-            string sourceCode)
+    CollectOriginalIdentifiers(
+        string sourceCode)
     {
         var identifiers =
             new HashSet<string>(
@@ -907,6 +938,15 @@ internal sealed class EglCodeMasker
                     sourceCode,
                     ref index);
 
+                continue;
+            }
+
+            if (EglNumericLiteralMasker.TryReadNumericLiteral(
+                    sourceCode,
+                    index,
+                    out var numericLiteral))
+            {
+                index += numericLiteral.Length;
                 continue;
             }
 
@@ -1043,16 +1083,9 @@ internal sealed class EglCodeMasker
     }
 
     private static void RejectUnsupportedContext(
-        string sourceCode,
-        int index)
+    string sourceCode,
+    int index)
     {
-        if (char.IsDigit(sourceCode[index]))
-        {
-            throw new NotSupportedException(
-                "EGL numeric literal maskelemesi henüz " +
-                "desteklenmiyor.");
-        }
-
         if (char.IsLetter(sourceCode[index]) &&
             !IsAsciiLetter(sourceCode[index]))
         {

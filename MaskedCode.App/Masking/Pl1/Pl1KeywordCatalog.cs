@@ -1,4 +1,4 @@
-﻿namespace MaskedCode.App.Masking;
+﻿namespace MaskedCode.App.Masking.Pl1;
 
 internal static class Pl1KeywordCatalog
 {

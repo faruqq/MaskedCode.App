@@ -1,4 +1,4 @@
-﻿namespace MaskedCode.App.Masking;
+﻿namespace MaskedCode.App.Masking.Egl;
 
 internal static class EglKeywordCatalog
 {
@@ -103,6 +103,7 @@ internal static class EglKeywordCatalog
             "I4GLITEMSNULLABLE",
             "INCLUDEREFERENCEDFUNCTIONS",
             "LOCALSQLSCOPE",
+            "MAXSIZE",
             "SQLVARIABLELEN",
             "TABLENAMES",
             "TEXTLITERALDEFAULTISSTRING",

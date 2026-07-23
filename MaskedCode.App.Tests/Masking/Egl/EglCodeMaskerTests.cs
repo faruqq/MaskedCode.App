@@ -1,11 +1,12 @@
 ﻿using MaskedCode.App.Masking;
+using MaskedCode.App.Masking.Egl;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MaskedCode.App.Tests.Masking
+namespace MaskedCode.App.Tests.Masking.Egl
 {
     public sealed class EglCodeMaskerTests
     {
@@ -492,25 +493,19 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
 
         [Theory]
         [InlineData(
-     """
-    CoreBusinessException(001);
-    """)]
-        [InlineData(
-     """
+    """
     Description = #doc{Program açıklaması};
     """)]
         [InlineData(
-     """
+    """
     get MyTable with #sql{select PARAM1 from MY_TABLE};
     """)]
         [InlineData(
-     """
+    """
     function MüşteriKayıtEkle()
     end
     """)]
-        public void
- Mask_WithNotYetSupportedSensitiveContext_ShouldRejectSource(
-     string sourceCode)
+        public void Mask_WithNotYetSupportedSensitiveContext_ShouldRejectSource(string sourceCode)
         {
             var masker =
                 new EglCodeMasker();
@@ -519,6 +514,153 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
                 () => masker.Mask(
                     sourceCode,
                     MaskingMode.MaximumPrivacy));
+        }
+
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void
+Mask_WithRuntimeAndStructuralNumbers_ShouldMaskOnlyRuntimeValues(
+    MaskingMode mode)
+        {
+            const string sourceCode =
+                """
+        record CustomerRecord type BasicRecord
+            10 CustomerCode char(4);
+        end
+
+        CustomerNo decimal(10);
+        AccountBalance decimal(15,2);
+        CustomerNumbers int[20] { maxSize = 30 };
+
+        CustomerNo = 001;
+        AccountBalance = -15478.35;
+        CalculationRate = 1.25E+03;
+        CustomerNumbers[2] = 9876;
+
+        CoreBusinessException(001);
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    mode);
+
+            var expectedRuntimeLiterals =
+                new[]
+                {
+            "001",
+            "15478.35",
+            "1.25E+03",
+            "2",
+            "9876"
+                };
+
+            foreach (var literal in expectedRuntimeLiterals)
+            {
+                var mapping =
+                    Assert.Single(
+                        result.Mappings.Where(
+                            candidate =>
+                                candidate.Kind ==
+                                    MaskingValueKind.NumericLiteral &&
+                                candidate.OriginalValue ==
+                                    literal));
+
+                Assert.NotEqual(
+                    mapping.OriginalValue,
+                    mapping.MaskedValue);
+
+                Assert.Equal(
+                    mapping.OriginalValue.Length,
+                    mapping.MaskedValue.Length);
+            }
+
+            var structuralLiterals =
+                new[]
+                {
+            "10",
+            "15",
+            "20",
+            "30",
+            "4"
+                };
+
+            foreach (var literal in structuralLiterals)
+            {
+                Assert.DoesNotContain(
+                    result.Mappings,
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            literal);
+            }
+
+            Assert.Contains(
+                "decimal(10)",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                "decimal(15,2)",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                "int[20]",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                "maxSize = 30",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                "char(4)",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            var repeatedLiteralMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.NumericLiteral &&
+                            mapping.OriginalValue ==
+                                "001"));
+
+            var repeatedUsageCount =
+                result.MaskedCode
+                    .Split(
+                        repeatedLiteralMapping.MaskedValue,
+                        StringSplitOptions.None)
+                    .Length - 1;
+
+            Assert.Equal(
+                2,
+                repeatedUsageCount);
+
+            var scientificMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.NumericLiteral &&
+                            mapping.OriginalValue ==
+                                "1.25E+03"));
+
+            Assert.EndsWith(
+                "E+03",
+                scientificMapping.MaskedValue);
+
+            Assert.Equal(
+                5,
+                result.NumericLiteralCount);
         }
 
 

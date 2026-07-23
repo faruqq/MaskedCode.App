@@ -1,6 +1,6 @@
-﻿namespace MaskedCode.App.Masking;
+﻿namespace MaskedCode.App.Masking.Pl1;
 
-public sealed record EglMaskingResult(
+public sealed record Pl1MaskingResult(
     string MaskedCode,
     IReadOnlyList<MaskingMapping> Mappings,
     MaskingMode Mode) : IMaskingResult

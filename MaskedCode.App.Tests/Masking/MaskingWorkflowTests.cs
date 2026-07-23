@@ -4,6 +4,8 @@ using System.Text.Json.Nodes;
 using System.Text;
 using MaskedCode.App.Masking;
 using Xunit;
+using MaskedCode.App.Masking.Pl1;
+using MaskedCode.App.Masking.Egl;
 
 namespace MaskedCode.App.Tests.Masking;
 

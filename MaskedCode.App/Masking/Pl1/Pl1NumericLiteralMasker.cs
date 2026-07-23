@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace MaskedCode.App.Masking;
+namespace MaskedCode.App.Masking.Pl1;
 
 internal sealed class Pl1NumericLiteralMasker
 {

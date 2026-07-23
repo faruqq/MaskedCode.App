@@ -1,11 +1,11 @@
-﻿using MaskedCode.App.Masking;
+﻿using MaskedCode.App.Masking.Egl;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MaskedCode.App.Tests.Masking
+namespace MaskedCode.App.Tests.Masking.Egl
 {
     public sealed class EglKeywordCatalogTests
     {
