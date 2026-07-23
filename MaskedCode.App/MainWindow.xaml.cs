@@ -8,7 +8,12 @@ namespace MaskedCode.App;
 
 public partial class MainWindow : Window
 {
+    private const long MaximumVaultFileSizeInBytes = 64L * 1024L * 1024L;
+
     private string? _selectedFilePath;
+    private string? _selectedMaskedFilePath;
+    private string? _selectedVaultFilePath;
+
     private Pl1MaskingResult? _lastMaskingResult;
 
     public MainWindow()
@@ -486,5 +491,406 @@ public partial class MainWindow : Window
         StatusTextBlock.Text =
             "Maskeleme yöntemi değiştirildiği için " +
             "önceki maskelenmiş sonuç temizlendi.";
+    }
+
+    private async void SelectMaskedFileButton_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Geri açılacak maskelenmiş PL/I dosyasını seçin",
+            Filter =
+                "PL/I kaynak dosyaları (*.pli;*.pl1)|*.pli;*.pl1|" +
+                "Tüm dosyalar (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var maskedCode =
+                await File.ReadAllTextAsync(
+                    dialog.FileName);
+
+            _selectedMaskedFilePath =
+                dialog.FileName;
+
+            MaskedInputTextBox.Text =
+                maskedCode;
+
+            SelectedMaskedFileTextBlock.Text =
+                dialog.FileName;
+
+            ClearUnmaskingOutput();
+            UpdateUnmaskButton();
+
+            StatusTextBlock.Text =
+                $"Maskelenmiş dosya yüklendi: " +
+                $"{Path.GetFileName(dialog.FileName)}";
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Maskelenmiş dosya okunamadı.{Environment.NewLine}" +
+                exception.Message,
+                "Dosya okuma hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusTextBlock.Text =
+                "Maskelenmiş dosya okunurken hata oluştu.";
+        }
+    }
+
+    private void SelectVaultFileButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Şifreli eşleme kasasını seçin",
+            Filter =
+                "MaskedCode şifreli kasa dosyası (*.mcvault)|" +
+                "*.mcvault",
+            DefaultExt = ".mcvault",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _selectedVaultFilePath =
+            dialog.FileName;
+
+        SelectedVaultFileTextBlock.Text =
+            dialog.FileName;
+
+        RestoreVaultPasswordBox.Clear();
+        ClearUnmaskingOutput();
+        UpdateUnmaskButton();
+
+        StatusTextBlock.Text =
+            $"Şifreli kasa seçildi: " +
+            $"{Path.GetFileName(dialog.FileName)}";
+    }
+
+    private void MaskedInputTextBox_TextChanged(
+        object sender,
+        TextChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        ClearUnmaskingOutput();
+
+        if (_selectedMaskedFilePath is not null &&
+            MaskedInputTextBox.IsKeyboardFocusWithin)
+        {
+            _selectedMaskedFilePath = null;
+
+            SelectedMaskedFileTextBlock.Text =
+                "Ekrana yapıştırılan maskelenmiş kod";
+        }
+
+        UpdateUnmaskButton();
+    }
+
+    private void RestoreInput_Changed(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        ClearUnmaskingOutput();
+        UpdateUnmaskButton();
+    }
+
+    private async void UnmaskButton_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(
+                MaskedInputTextBox.Text))
+        {
+            StatusTextBlock.Text =
+                "Geri açılacak maskelenmiş kod bulunamadı.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                _selectedVaultFilePath))
+        {
+            StatusTextBlock.Text =
+                "Şifreli eşleme kasası seçilmedi.";
+
+            return;
+        }
+
+        var password =
+            RestoreVaultPasswordBox.Password;
+
+        if (password.Length < 12)
+        {
+            StatusTextBlock.Text =
+                "Kasa parolası en az 12 karakter olmalıdır.";
+
+            RestoreVaultPasswordBox.Focus();
+            return;
+        }
+
+        var maskedCode =
+            MaskedInputTextBox.Text;
+
+        UnmaskButton.IsEnabled = false;
+        RestoredCodeTextBox.Clear();
+
+        StatusTextBlock.Text =
+            "Kasa doğrulanıyor ve kod geri açılıyor...";
+
+        try
+        {
+            var encryptedVault =
+                await ReadVaultFileSafelyAsync(
+                    _selectedVaultFilePath);
+
+            var restoredCode =
+                await Task.Run(
+                    () =>
+                    {
+                        var vault =
+                            new EncryptedMappingVault();
+
+                        var vaultContent =
+                            vault.Decrypt(
+                                encryptedVault,
+                                password,
+                                maskedCode);
+
+                        var unmasker =
+                            new Pl1CodeUnmasker();
+
+                        return unmasker.Unmask(
+                            maskedCode,
+                            vaultContent);
+                    });
+
+            RestoredCodeTextBox.Text =
+                restoredCode;
+
+            CopyRestoredButton.IsEnabled = true;
+            SaveRestoredFileButton.IsEnabled = true;
+
+            StatusTextBlock.Text =
+                "Kasa doğrulandı ve kod başarıyla geri açıldı.";
+        }
+        catch (InvalidDataException exception)
+        {
+            ClearUnmaskingOutput();
+
+            MessageBox.Show(
+                exception.Message,
+                "Kasa doğrulama hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            StatusTextBlock.Text =
+                "Kod geri açılamadı: " +
+                exception.Message;
+        }
+        catch (Exception exception)
+        {
+            ClearUnmaskingOutput();
+
+            MessageBox.Show(
+                $"Kod geri açılamadı.{Environment.NewLine}" +
+                exception.Message,
+                "Geri açma hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusTextBlock.Text =
+                "Kod geri açılırken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            RestoreVaultPasswordBox.Clear();
+            UpdateUnmaskButton();
+        }
+    }
+
+    private void CopyRestoredButton_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(
+                RestoredCodeTextBox.Text))
+        {
+            return;
+        }
+
+        Clipboard.SetText(
+            RestoredCodeTextBox.Text);
+
+        StatusTextBlock.Text =
+            "Geri açılmış kod panoya kopyalandı.";
+    }
+
+    private async void SaveRestoredFileButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(
+                RestoredCodeTextBox.Text))
+        {
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Geri açılmış PL/I dosyasını kaydedin",
+            Filter =
+                "PL/I kaynak dosyaları (*.pli)|*.pli|" +
+                "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+            FileName = CreateRestoredFileName()
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                dialog.FileName,
+                RestoredCodeTextBox.Text);
+
+            StatusTextBlock.Text =
+                $"Geri açılmış dosya kaydedildi: " +
+                dialog.FileName;
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Dosya kaydedilemedi.{Environment.NewLine}" +
+                exception.Message,
+                "Dosya kaydetme hatası",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusTextBlock.Text =
+                "Geri açılmış dosya kaydedilirken hata oluştu.";
+        }
+    }
+
+    private static async Task<byte[]>
+        ReadVaultFileSafelyAsync(
+            string filePath)
+    {
+        var fileInfo =
+            new FileInfo(filePath);
+
+        if (!fileInfo.Exists)
+        {
+            throw new FileNotFoundException(
+                "Seçilen şifreli kasa dosyası bulunamadı.",
+                filePath);
+        }
+
+        if (fileInfo.Length >
+            MaximumVaultFileSizeInBytes)
+        {
+            throw new InvalidDataException(
+                "Şifreli kasa dosyası izin verilen " +
+                "azami boyutu aşıyor.");
+        }
+
+        await using var stream =
+            new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 81920,
+                options:
+                    FileOptions.Asynchronous |
+                    FileOptions.SequentialScan);
+
+        if (stream.Length >
+            MaximumVaultFileSizeInBytes)
+        {
+            throw new InvalidDataException(
+                "Şifreli kasa dosyası izin verilen " +
+                "azami boyutu aşıyor.");
+        }
+
+        var encryptedVault =
+            new byte[checked((int)stream.Length)];
+
+        await stream.ReadExactlyAsync(
+            encryptedVault);
+
+        return encryptedVault;
+    }
+
+    private string CreateRestoredFileName()
+    {
+        if (string.IsNullOrWhiteSpace(
+                _selectedMaskedFilePath))
+        {
+            return "restored-code.pli";
+        }
+
+        var fileName =
+            Path.GetFileNameWithoutExtension(
+                _selectedMaskedFilePath);
+
+        var extension =
+            Path.GetExtension(
+                _selectedMaskedFilePath);
+
+        if (fileName.EndsWith(
+                ".masked",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            fileName =
+                fileName[..^".masked".Length];
+        }
+
+        return $"{fileName}.restored{extension}";
+    }
+
+    private void ClearUnmaskingOutput()
+    {
+        RestoredCodeTextBox.Clear();
+
+        CopyRestoredButton.IsEnabled = false;
+        SaveRestoredFileButton.IsEnabled = false;
+    }
+
+    private void UpdateUnmaskButton()
+    {
+        UnmaskButton.IsEnabled =
+            !string.IsNullOrWhiteSpace(
+                MaskedInputTextBox.Text) &&
+            !string.IsNullOrWhiteSpace(
+                _selectedVaultFilePath) &&
+            !string.IsNullOrEmpty(
+                RestoreVaultPasswordBox.Password);
     }
 }

@@ -10,260 +10,449 @@
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="12" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="160" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <TabControl Grid.Row="0">
+            <TabItem Header="Kod Maskeleme">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Margin="0,0,8,0"
-                       VerticalAlignment="Center"
-                       Text="Kaynak dil:" />
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-            <ComboBox x:Name="LanguageComboBox"
-                      Grid.Column="1"
-                      Height="32"
-                      VerticalContentAlignment="Center"
-                      SelectionChanged="LanguageComboBox_SelectionChanged"
-                      SelectedIndex="0">
-                <ComboBoxItem Content="PL/I"
-                              Tag="PL1" />
+                        <TextBlock Grid.Column="0"
+                                   Margin="0,0,8,0"
+                                   VerticalAlignment="Center"
+                                   Text="Kaynak dil:" />
 
-                <ComboBoxItem Content="EGL"
-                              Tag="EGL" />
+                        <ComboBox x:Name="LanguageComboBox"
+                                  Grid.Column="1"
+                                  Height="32"
+                                  VerticalContentAlignment="Center"
+                                  SelectionChanged="LanguageComboBox_SelectionChanged"
+                                  SelectedIndex="0">
 
-                <ComboBoxItem Content="C# / .NET"
-                              Tag="CSharp" />
-            </ComboBox>
+                            <ComboBoxItem Content="PL/I"
+                                          Tag="PL1" />
 
-            <Button Grid.Column="3"
-                    MinWidth="110"
-                    Height="32"
-                    Padding="12,0"
-                    Click="SelectFileButton_Click"
-                    Content="Dosya Seç" />
+                            <ComboBoxItem Content="EGL"
+                                          Tag="EGL" />
 
-            <TextBlock x:Name="SelectedFileTextBlock"
-                       Grid.Column="4"
-                       Margin="12,0"
-                       VerticalAlignment="Center"
-                       Text="Dosya seçilmedi"
-                       TextTrimming="CharacterEllipsis"
-                       ToolTip="{Binding Text,
-                                         RelativeSource={RelativeSource Self}}" />
+                            <ComboBoxItem Content="C# / .NET"
+                                          Tag="CSharp" />
+                        </ComboBox>
 
-            <Button x:Name="MaskButton"
-                    Grid.Column="5"
-                    MinWidth="120"
-                    Height="32"
-                    Padding="16,0"
-                    Click="MaskButton_Click"
-                    Content="Maskele"
-                    IsEnabled="False" />
-        </Grid>
+                        <Button Grid.Column="3"
+                                MinWidth="110"
+                                Height="32"
+                                Padding="12,0"
+                                Click="SelectFileButton_Click"
+                                Content="Dosya Seç" />
 
-        <GroupBox Grid.Row="2"
-                  Header="Maskeleme Yöntemi">
-            <Grid Margin="12,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="24" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="SelectedFileTextBlock"
+                                   Grid.Column="4"
+                                   Margin="12,0"
+                                   VerticalAlignment="Center"
+                                   Text="Dosya seçilmedi"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding Text,
+                                                     RelativeSource={RelativeSource Self}}" />
 
-                <StackPanel Grid.Column="0">
-                    <RadioButton x:Name="MaximumPrivacyRadioButton"
-                                 GroupName="MaskingMode"
-                                 Content="Maksimum Gizlilik"
-                                 IsChecked="True"
-                                 Checked="MaskingModeRadioButton_Checked"
-                                 ToolTip="Değerlerin uzunluğunu ve yapısını mümkün olduğunca gizler." />
+                        <Button x:Name="MaskButton"
+                                Grid.Column="5"
+                                MinWidth="120"
+                                Height="32"
+                                Padding="16,0"
+                                Click="MaskButton_Click"
+                                Content="Maskele"
+                                IsEnabled="False" />
+                    </Grid>
 
-                    <TextBlock Margin="22,4,0,0"
-                               Foreground="#FF4B5563"
-                               Text="Identifier ve değerlerin yapısını mümkün olduğunca gizler. Varsayılan ve daha güvenli seçenektir."
-                               TextWrapping="Wrap" />
-                </StackPanel>
+                    <GroupBox Grid.Row="2"
+                              Header="Maskeleme Yöntemi">
+                        <Grid Margin="12,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="2">
-                    <RadioButton x:Name="FormatPreservingRadioButton"
-                                 GroupName="MaskingMode"
-                                 Content="Biçim Korumalı"
-                                 Checked="MaskingModeRadioButton_Checked"
-                                 ToolTip="Karakter uzunluğunu, harf-rakam türünü ve ayraçları korur." />
+                            <StackPanel Grid.Column="0">
+                                <RadioButton x:Name="MaximumPrivacyRadioButton"
+                                             GroupName="MaskingMode"
+                                             Content="Maksimum Gizlilik"
+                                             IsChecked="True"
+                                             Checked="MaskingModeRadioButton_Checked"
+                                             ToolTip="Değerlerin uzunluğunu ve yapısını mümkün olduğunca gizler." />
 
-                    <TextBlock Margin="22,4,0,0"
-                               Foreground="#FF4B5563"
-                               Text="Uzunluğu, büyük-küçük harf düzenini ve ayraç konumlarını korur; sınırlı biçim bilgisi gösterebilir."
-                               TextWrapping="Wrap" />
-                </StackPanel>
-            </Grid>
-        </GroupBox>
+                                <TextBlock Margin="22,4,0,0"
+                                           Foreground="#FF4B5563"
+                                           Text="Identifier ve değerlerin yapısını mümkün olduğunca gizler. Varsayılan ve daha güvenli seçenektir."
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
 
-        <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="2">
+                                <RadioButton x:Name="FormatPreservingRadioButton"
+                                             GroupName="MaskingMode"
+                                             Content="Biçim Korumalı"
+                                             Checked="MaskingModeRadioButton_Checked"
+                                             ToolTip="Karakter uzunluğunu, harf-rakam türünü ve ayraçları korur." />
 
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+                                <TextBlock Margin="22,4,0,0"
+                                           Foreground="#FF4B5563"
+                                           Text="Uzunluğu, büyük-küçük harf düzenini ve ayraç konumlarını korur; sınırlı biçim bilgisi gösterebilir."
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
 
-                <TextBlock FontSize="15"
-                           FontWeight="SemiBold"
-                           Text="Kaynak Kod" />
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                <TextBox x:Name="SourceCodeTextBox"
-                         Grid.Row="2"
-                         Padding="10"
-                         AcceptsReturn="True"
-                         AcceptsTab="True"
-                         FontFamily="Consolas"
-                         FontSize="14"
-                         HorizontalScrollBarVisibility="Auto"
-                         TextChanged="SourceCodeTextBox_TextChanged"
-                         VerticalScrollBarVisibility="Auto"
-                         TextWrapping="NoWrap" />
-            </Grid>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-            <GridSplitter Grid.Column="1"
-                          Width="6"
-                          HorizontalAlignment="Center"
-                          ResizeBehavior="PreviousAndNext"
-                          ResizeDirection="Columns" />
+                            <TextBlock FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Text="Kaynak Kod" />
 
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                            <TextBox x:Name="SourceCodeTextBox"
+                                     Grid.Row="2"
+                                     Padding="10"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     TextChanged="SourceCodeTextBox_TextChanged"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap" />
+                        </Grid>
 
-                <TextBlock FontSize="15"
-                           FontWeight="SemiBold"
-                           Text="Maskelenmiş Kod" />
+                        <GridSplitter Grid.Column="1"
+                                      Width="6"
+                                      HorizontalAlignment="Center"
+                                      ResizeBehavior="PreviousAndNext"
+                                      ResizeDirection="Columns" />
 
-                <TextBox x:Name="MaskedCodeTextBox"
-                         Grid.Row="2"
-                         Padding="10"
-                         AcceptsReturn="True"
-                         AcceptsTab="True"
-                         FontFamily="Consolas"
-                         FontSize="14"
-                         HorizontalScrollBarVisibility="Auto"
-                         IsReadOnly="True"
-                         VerticalScrollBarVisibility="Auto"
-                         TextWrapping="NoWrap" />
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="4"
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal">
-                    <Button x:Name="CopyButton"
-                            MinWidth="100"
-                            Height="32"
-                            Padding="12,0"
-                            Click="CopyButton_Click"
-                            Content="Kopyala"
-                            IsEnabled="False" />
+                            <TextBlock FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Text="Maskelenmiş Kod" />
 
-                    <Button x:Name="SaveFileButton"
-                            MinWidth="130"
-                            Height="32"
-                            Margin="8,0,0,0"
-                            Padding="12,0"
-                            Click="SaveFileButton_Click"
-                            Content="Dosyayı Kaydet"
-                            IsEnabled="False" />
-                </StackPanel>
-            </Grid>
-        </Grid>
+                            <TextBox x:Name="MaskedCodeTextBox"
+                                     Grid.Row="2"
+                                     Padding="10"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     IsReadOnly="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap" />
 
-        <GroupBox Grid.Row="6"
-                  Header="Şifreli Eşleme Kasası">
-            <Grid Margin="12,8">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="6" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="4"
+                                        HorizontalAlignment="Right"
+                                        Orientation="Horizontal">
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="190" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="190" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                                <Button x:Name="CopyButton"
+                                        MinWidth="100"
+                                        Height="32"
+                                        Padding="12,0"
+                                        Click="CopyButton_Click"
+                                        Content="Kopyala"
+                                        IsEnabled="False" />
 
-                <TextBlock Grid.Column="0"
-                           Margin="0,0,8,0"
-                           VerticalAlignment="Center"
-                           Text="Kasa parolası:" />
+                                <Button x:Name="SaveFileButton"
+                                        MinWidth="130"
+                                        Height="32"
+                                        Margin="8,0,0,0"
+                                        Padding="12,0"
+                                        Click="SaveFileButton_Click"
+                                        Content="Dosyayı Kaydet"
+                                        IsEnabled="False" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
 
-                <PasswordBox x:Name="VaultPasswordBox"
-                             Grid.Column="1"
-                             Height="30"
-                             MaxLength="128"
-                             VerticalContentAlignment="Center" />
+                    <GroupBox Grid.Row="6"
+                              Header="Şifreli Eşleme Kasası">
+                        <Grid Margin="12,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="6" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                <TextBlock Grid.Column="3"
-                           Margin="0,0,8,0"
-                           VerticalAlignment="Center"
-                           Text="Parola tekrarı:" />
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                <PasswordBox x:Name="VaultPasswordConfirmationBox"
-                             Grid.Column="4"
-                             Height="30"
-                             MaxLength="128"
-                             VerticalContentAlignment="Center" />
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       Text="Kasa parolası:" />
 
-                <Button x:Name="SaveVaultButton"
-                        Grid.Column="6"
-                        MinWidth="160"
-                        Height="32"
-                        Padding="14,0"
-                        Click="SaveVaultButton_Click"
-                        Content="Şifreli Kasayı Kaydet"
-                        IsEnabled="False" />
+                            <PasswordBox x:Name="VaultPasswordBox"
+                                         Grid.Column="1"
+                                         Height="30"
+                                         MaxLength="128"
+                                         VerticalContentAlignment="Center" />
 
-                <TextBlock Grid.Row="2"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="7"
-                           Foreground="#FF4B5563"
-                           Text="En az 12 karakterlik güçlü bir parola kullanın. Kasa dosyasını maskelenmiş kodla birlikte paylaşmayın."
-                           TextWrapping="Wrap" />
-            </Grid>
-        </GroupBox>
+                            <TextBlock Grid.Column="3"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       Text="Parola tekrarı:" />
 
-        <Border Grid.Row="8"
+                            <PasswordBox x:Name="VaultPasswordConfirmationBox"
+                                         Grid.Column="4"
+                                         Height="30"
+                                         MaxLength="128"
+                                         VerticalContentAlignment="Center" />
+
+                            <Button x:Name="SaveVaultButton"
+                                    Grid.Column="6"
+                                    MinWidth="160"
+                                    Height="32"
+                                    Padding="14,0"
+                                    Click="SaveVaultButton_Click"
+                                    Content="Şifreli Kasayı Kaydet"
+                                    IsEnabled="False" />
+
+                            <TextBlock Grid.Row="2"
+                                       Grid.Column="0"
+                                       Grid.ColumnSpan="7"
+                                       Foreground="#FF4B5563"
+                                       Text="En az 12 karakterlik güçlü bir parola kullanın. Kasa dosyasını maskelenmiş kodla birlikte paylaşmayın."
+                                       TextWrapping="Wrap" />
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Kodu Geri Aç">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <GroupBox Grid.Row="0"
+                              Header="Geri Açma Bilgileri">
+                        <Grid Margin="12,8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Row="0"
+                                    Grid.Column="0"
+                                    MinWidth="190"
+                                    Height="32"
+                                    Padding="12,0"
+                                    Click="SelectMaskedFileButton_Click"
+                                    Content="Maskelenmiş Dosyayı Seç" />
+
+                            <TextBlock x:Name="SelectedMaskedFileTextBlock"
+                                       Grid.Row="0"
+                                       Grid.Column="1"
+                                       Margin="12,0"
+                                       VerticalAlignment="Center"
+                                       Text="Maskelenmiş dosya seçilmedi"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Text,
+                                                         RelativeSource={RelativeSource Self}}" />
+
+                            <Button Grid.Row="2"
+                                    Grid.Column="0"
+                                    MinWidth="190"
+                                    Height="32"
+                                    Padding="12,0"
+                                    Click="SelectVaultFileButton_Click"
+                                    Content="Şifreli Kasayı Seç" />
+
+                            <TextBlock x:Name="SelectedVaultFileTextBlock"
+                                       Grid.Row="2"
+                                       Grid.Column="1"
+                                       Margin="12,0"
+                                       VerticalAlignment="Center"
+                                       Text="Kasa dosyası seçilmedi"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Text,
+                                                         RelativeSource={RelativeSource Self}}" />
+
+                            <TextBlock Grid.Row="4"
+                                       Grid.Column="0"
+                                       Margin="0,0,12,0"
+                                       VerticalAlignment="Center"
+                                       Text="Kasa parolası:" />
+
+                            <PasswordBox x:Name="RestoreVaultPasswordBox"
+                                         Grid.Row="4"
+                                         Grid.Column="1"
+                                         Height="30"
+                                         MaxLength="128"
+                                         PasswordChanged="RestoreInput_Changed"
+                                         VerticalContentAlignment="Center" />
+
+                            <Button x:Name="UnmaskButton"
+                                    Grid.Row="4"
+                                    Grid.Column="3"
+                                    MinWidth="140"
+                                    Height="32"
+                                    Padding="14,0"
+                                    Click="UnmaskButton_Click"
+                                    Content="Kodu Geri Aç"
+                                    IsEnabled="False" />
+                        </Grid>
+                    </GroupBox>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Text="Maskelenmiş Kod" />
+
+                            <TextBox x:Name="MaskedInputTextBox"
+                                     Grid.Row="2"
+                                     Padding="10"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     TextChanged="MaskedInputTextBox_TextChanged"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap" />
+                        </Grid>
+
+                        <GridSplitter Grid.Column="1"
+                                      Width="6"
+                                      HorizontalAlignment="Center"
+                                      ResizeBehavior="PreviousAndNext"
+                                      ResizeDirection="Columns" />
+
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Text="Geri Açılmış Kod" />
+
+                            <TextBox x:Name="RestoredCodeTextBox"
+                                     Grid.Row="2"
+                                     Padding="10"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     IsReadOnly="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap" />
+                        </Grid>
+                    </Grid>
+
+                    <StackPanel Grid.Row="4"
+                                HorizontalAlignment="Right"
+                                Orientation="Horizontal">
+
+                        <Button x:Name="CopyRestoredButton"
+                                MinWidth="130"
+                                Height="32"
+                                Padding="12,0"
+                                Click="CopyRestoredButton_Click"
+                                Content="Sonucu Kopyala"
+                                IsEnabled="False" />
+
+                        <Button x:Name="SaveRestoredFileButton"
+                                MinWidth="150"
+                                Height="32"
+                                Margin="8,0,0,0"
+                                Padding="12,0"
+                                Click="SaveRestoredFileButton_Click"
+                                Content="Sonucu Kaydet"
+                                IsEnabled="False" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2"
                 Padding="10,7"
                 Background="#FFF3F4F6"
                 CornerRadius="4">
+
             <TextBlock x:Name="StatusTextBlock"
                        Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz."
                        TextWrapping="Wrap" />
