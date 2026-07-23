@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using MaskedCode.App.Masking;
 
 namespace MaskedCode.App;
 
@@ -54,19 +55,61 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MaskButton_Click(object sender, RoutedEventArgs e)
+    private void MaskButton_Click(
+    object sender,
+    RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
         {
-            StatusTextBlock.Text = "Maskelenecek kaynak kod bulunamadı.";
+            StatusTextBlock.Text =
+                "Maskelenecek kaynak kod bulunamadı.";
+
             return;
         }
 
-        MaskedCodeTextBox.Clear();
-        UpdateOutputButtons();
+        if (GetSelectedLanguage() != "PL1")
+        {
+            MaskedCodeTextBox.Clear();
+            UpdateOutputButtons();
 
-        StatusTextBlock.Text =
-            "Arayüz hazır. Maskeleme motoru henüz eklenmediği için kaynak kod değiştirilmedi.";
+            StatusTextBlock.Text =
+                "Bu aşamada yalnızca PL/I maskelemesi destekleniyor.";
+
+            return;
+        }
+
+        try
+        {
+            var selectedMode = GetSelectedMaskingMode();
+            var masker = new Pl1CodeMasker();
+
+            var result = masker.Mask(
+                SourceCodeTextBox.Text,
+                selectedMode);
+
+            MaskedCodeTextBox.Text = result.MaskedCode;
+            UpdateOutputButtons();
+
+            var modeDisplayName =
+                GetMaskingModeDisplayName(result.Mode);
+
+            StatusTextBlock.Text =
+                $"{result.IdentifierCount} benzersiz identifier, " +
+                $"{result.StringLiteralCount} benzersiz string değer ve " +
+                $"{result.NumericLiteralCount} benzersiz sayısal değer " +
+                $"{modeDisplayName} moduyla maskelendi. " +
+                "Yorumlar ve şifreli eşleme kasası henüz " +
+                "tamamlanmadığı için bu çıktıyı şirket dışına göndermeyin.";
+        }
+        catch (Exception exception)
+        {
+            MaskedCodeTextBox.Clear();
+            UpdateOutputButtons();
+
+            StatusTextBlock.Text =
+                $"Maskeleme işlemi tamamlanamadı: " +
+                exception.Message;
+        }
     }
 
     private void CopyButton_Click(object sender, RoutedEventArgs e)
@@ -248,5 +291,49 @@ public partial class MainWindow : Window
 
         CopyButton.IsEnabled = hasMaskedCode;
         SaveFileButton.IsEnabled = hasMaskedCode;
+    }
+
+    private MaskingMode GetSelectedMaskingMode()
+    {
+        return FormatPreservingRadioButton.IsChecked == true
+            ? MaskingMode.FormatPreserving
+            : MaskingMode.MaximumPrivacy;
+    }
+
+    private static string GetMaskingModeDisplayName(
+        MaskingMode mode)
+    {
+        return mode switch
+        {
+            MaskingMode.MaximumPrivacy =>
+                "Maksimum Gizlilik",
+
+            MaskingMode.FormatPreserving =>
+                "Biçim Korumalı",
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(mode),
+                mode,
+                "Desteklenmeyen maskeleme modu.")
+        };
+    }
+
+    private void MaskingModeRadioButton_Checked(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (!IsInitialized ||
+            MaskedCodeTextBox is null ||
+            string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+        {
+            return;
+        }
+
+        MaskedCodeTextBox.Clear();
+        UpdateOutputButtons();
+
+        StatusTextBlock.Text =
+            "Maskeleme yöntemi değiştirildiği için " +
+            "önceki maskelenmiş sonuç temizlendi.";
     }
 }
