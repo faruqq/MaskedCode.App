@@ -224,36 +224,293 @@ Mask_WithSystemPath_ShouldPreserveOnlySysVarPath()
                 result.MaskedCode);
         }
 
+        [Fact]
+        public void
+Mask_WithRepeatedEscapedStringLiteral_ShouldReuseStringMapping()
+        {
+            const string sourceCode =
+                """
+        ErrorText = "CUSTOMER \"NOT FOUND\"";
+        AuditText = "CUSTOMER \"NOT FOUND\"";
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    MaskingMode.MaximumPrivacy);
+
+            var stringMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.StringLiteral));
+
+            Assert.Equal(
+                "CUSTOMER \\\"NOT FOUND\\\"",
+                stringMapping.OriginalValue);
+
+            Assert.StartsWith(
+                "EGL_STR_",
+                stringMapping.MaskedValue);
+
+            Assert.DoesNotContain(
+                "CUSTOMER",
+                result.MaskedCode);
+
+            var usageCount =
+                result.MaskedCode
+                    .Split(
+                        $"\"{stringMapping.MaskedValue}\"",
+                        StringSplitOptions.None)
+                    .Length - 1;
+
+            Assert.Equal(
+                2,
+                usageCount);
+
+            Assert.Equal(
+                1,
+                result.StringLiteralCount);
+        }
+
+        [Fact]
+        public void
+Mask_WithFormatPreservingStringLiteral_ShouldPreserveFormatAndEscapes()
+        {
+            const string sourceCode =
+                """
+        ErrorText = "Customer-01 \"Not Found\"";
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    MaskingMode.FormatPreserving);
+
+            var stringMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.StringLiteral));
+
+            Assert.Equal(
+                stringMapping.OriginalValue.Length,
+                stringMapping.MaskedValue.Length);
+
+            Assert.NotEqual(
+                stringMapping.OriginalValue,
+                stringMapping.MaskedValue);
+
+            for (var index = 0;
+                 index < stringMapping.OriginalValue.Length;
+                 index++)
+            {
+                var originalCharacter =
+                    stringMapping.OriginalValue[index];
+
+                var maskedCharacter =
+                    stringMapping.MaskedValue[index];
+
+                if (originalCharacter == '\\' &&
+                    index + 1 <
+                        stringMapping.OriginalValue.Length)
+                {
+                    Assert.Equal(
+                        originalCharacter,
+                        maskedCharacter);
+
+                    Assert.Equal(
+                        stringMapping.OriginalValue[index + 1],
+                        stringMapping.MaskedValue[index + 1]);
+
+                    index++;
+                    continue;
+                }
+
+                Assert.Equal(
+                    char.IsUpper(originalCharacter),
+                    char.IsUpper(maskedCharacter));
+
+                Assert.Equal(
+                    char.IsLower(originalCharacter),
+                    char.IsLower(maskedCharacter));
+
+                Assert.Equal(
+                    char.IsDigit(originalCharacter),
+                    char.IsDigit(maskedCharacter));
+
+                if (!char.IsLetterOrDigit(originalCharacter))
+                {
+                    Assert.Equal(
+                        originalCharacter,
+                        maskedCharacter);
+                }
+            }
+
+            Assert.Contains(
+                "\\\"",
+                stringMapping.MaskedValue);
+
+            Assert.DoesNotContain(
+                "Customer-01",
+                result.MaskedCode);
+        }
+
+        [Fact]
+        public void
+Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
+        {
+            const string sourceCode =
+                """
+        // Müşteri kontrol açıklaması
+        function CustomerCheck()
+            /*
+             * Gerçek müşteri iş kuralı
+             * İkinci açıklama satırı
+             */
+            CustomerRead();
+        end
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    MaskingMode.MaximumPrivacy);
+
+            Assert.Equal(
+                2,
+                result.CommentCount);
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Comment &&
+                    mapping.OriginalValue.Contains(
+                        "Müşteri kontrol açıklaması",
+                        StringComparison.Ordinal));
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Comment &&
+                    mapping.OriginalValue.Contains(
+                        "Gerçek müşteri iş kuralı",
+                        StringComparison.Ordinal));
+
+            Assert.DoesNotContain(
+                "Müşteri kontrol açıklaması",
+                result.MaskedCode);
+
+            Assert.DoesNotContain(
+                "Gerçek müşteri iş kuralı",
+                result.MaskedCode);
+
+            Assert.DoesNotContain(
+                "İkinci açıklama satırı",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "// EGL_CMT_",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "/* EGL_CMT_",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "*/",
+                result.MaskedCode);
+
+            Assert.Equal(
+                sourceCode.Count(
+                    character => character == '\n'),
+                result.MaskedCode.Count(
+                    character => character == '\n'));
+        }
+
+        [Fact]
+        public void Mask_WithCommentMarkersInsideString_ShouldTreatMarkersAsStringContent()
+        {
+            const string sourceCode =
+                """
+        ErrorText =
+            "/* Müşteri sırrı */ // Bu metin string içindedir";
+
+        // Bu ise gerçek EGL yorumudur
+        WriteError(ErrorText);
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    MaskingMode.MaximumPrivacy);
+
+            Assert.Equal(
+                1,
+                result.StringLiteralCount);
+
+            Assert.Equal(
+                1,
+                result.CommentCount);
+
+            Assert.DoesNotContain(
+                "Müşteri sırrı",
+                result.MaskedCode);
+
+            Assert.DoesNotContain(
+                "Bu metin string içindedir",
+                result.MaskedCode);
+
+            Assert.DoesNotContain(
+                "Bu ise gerçek EGL yorumudur",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "\"EGL_STR_",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "// EGL_CMT_",
+                result.MaskedCode);
+        }
+
         [Theory]
         [InlineData(
-            """
-    ErrorText = "CUSTOMER NOT FOUND";
-    """)]
-        [InlineData(
-            """
-    // Müşteri kontrol açıklaması
-    CorePreMain();
-    """)]
-        [InlineData(
-            """
+     """
     CoreBusinessException(001);
     """)]
         [InlineData(
-            """
+     """
     Description = #doc{Program açıklaması};
     """)]
         [InlineData(
-            """
+     """
     get MyTable with #sql{select PARAM1 from MY_TABLE};
     """)]
         [InlineData(
-            """
-    function MusteriKayitEkle()
+     """
+    function MüşteriKayıtEkle()
     end
     """)]
         public void
-        Mask_WithNotYetSupportedSensitiveContext_ShouldRejectSource(
-            string sourceCode)
+ Mask_WithNotYetSupportedSensitiveContext_ShouldRejectSource(
+     string sourceCode)
         {
             var masker =
                 new EglCodeMasker();
@@ -263,5 +520,7 @@ Mask_WithSystemPath_ShouldPreserveOnlySysVarPath()
                     sourceCode,
                     MaskingMode.MaximumPrivacy));
         }
+
+
     }
 }
