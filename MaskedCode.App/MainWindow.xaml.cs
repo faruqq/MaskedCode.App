@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using MaskedCode.App.Masking;
 using MaskedCode.App.Masking.Pl1;
+using MaskedCode.App.Masking.Egl;
 
 namespace MaskedCode.App;
 
@@ -15,7 +16,8 @@ public partial class MainWindow : Window
     private string? _selectedMaskedFilePath;
     private string? _selectedVaultFilePath;
 
-    private Pl1MaskingResult? _lastMaskingResult;
+    private IMaskingResult? _lastMaskingResult;
+    private SourceLanguage? _restoredSourceLanguage;
 
     public MainWindow()
     {
@@ -70,9 +72,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MaskButton_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void MaskButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(
                 SourceCodeTextBox.Text))
@@ -83,46 +83,71 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (GetSelectedLanguage() != "PL1")
-        {
-            ClearMaskingOutput();
-
-            StatusTextBlock.Text =
-                "Bu aşamada yalnızca PL/I " +
-                "maskelemesi destekleniyor.";
-
-            return;
-        }
-
         try
         {
             var selectedMode =
                 GetSelectedMaskingMode();
 
-            var masker =
-                new Pl1CodeMasker();
+            IMaskingResult result =
+                GetSelectedLanguage() switch
+                {
+                    "PL1" =>
+                        new Pl1CodeMasker().Mask(
+                            SourceCodeTextBox.Text,
+                            selectedMode),
 
-            var result = masker.Mask(
-                SourceCodeTextBox.Text,
-                selectedMode);
+                    "EGL" =>
+                        new EglCodeMasker().Mask(
+                            SourceCodeTextBox.Text,
+                            selectedMode),
+
+                    _ => throw new NotSupportedException(
+                        "Seçilen kaynak dili için maskeleme " +
+                        "henüz desteklenmiyor.")
+                };
 
             VaultPasswordBox.Clear();
             VaultPasswordConfirmationBox.Clear();
 
             _lastMaskingResult = result;
-            MaskedCodeTextBox.Text = result.MaskedCode;
+            MaskedCodeTextBox.Text =
+                result.MaskedCode;
 
             UpdateOutputButtons();
+
+            var identifierCount =
+                result.Mappings.Count(
+                    mapping =>
+                        mapping.Kind ==
+                        MaskingValueKind.Identifier);
+
+            var stringLiteralCount =
+                result.Mappings.Count(
+                    mapping =>
+                        mapping.Kind ==
+                        MaskingValueKind.StringLiteral);
+
+            var numericLiteralCount =
+                result.Mappings.Count(
+                    mapping =>
+                        mapping.Kind ==
+                        MaskingValueKind.NumericLiteral);
+
+            var commentCount =
+                result.Mappings.Count(
+                    mapping =>
+                        mapping.Kind ==
+                        MaskingValueKind.Comment);
 
             var modeDisplayName =
                 GetMaskingModeDisplayName(
                     result.Mode);
 
             StatusTextBlock.Text =
-                $"{result.IdentifierCount} benzersiz identifier, " +
-                $"{result.StringLiteralCount} benzersiz string değer, " +
-                $"{result.NumericLiteralCount} benzersiz sayısal değer ve " +
-                $"{result.CommentCount} benzersiz yorum " +
+                $"{identifierCount} benzersiz identifier, " +
+                $"{stringLiteralCount} benzersiz string değer, " +
+                $"{numericLiteralCount} benzersiz sayısal değer ve " +
+                $"{commentCount} benzersiz yorum " +
                 $"{modeDisplayName} moduyla maskelendi. " +
                 "Şifreli eşleme kasası henüz kaydedilmediği için " +
                 "bu çıktıyı şirket dışına göndermeyin.";
@@ -494,15 +519,16 @@ public partial class MainWindow : Window
             "önceki maskelenmiş sonuç temizlendi.";
     }
 
-    private async void SelectMaskedFileButton_Click(
-    object sender,
-    RoutedEventArgs e)
+    private async void SelectMaskedFileButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Geri açılacak maskelenmiş PL/I dosyasını seçin",
+            Title = "Geri açılacak maskelenmiş kaynak dosyayı seçin",
             Filter =
+                "Desteklenen kaynak dosyaları (*.pli;*.pl1;*.egl)|" +
+                "*.pli;*.pl1;*.egl|" +
                 "PL/I kaynak dosyaları (*.pli;*.pl1)|*.pli;*.pl1|" +
+                "EGL kaynak dosyaları (*.egl)|*.egl|" +
                 "Tüm dosyalar (*.*)|*.*",
             CheckFileExists = true,
             Multiselect = false
@@ -620,9 +646,7 @@ public partial class MainWindow : Window
         UpdateUnmaskButton();
     }
 
-    private async void UnmaskButton_Click(
-    object sender,
-    RoutedEventArgs e)
+    private async void UnmaskButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(
                 MaskedInputTextBox.Text))
@@ -669,7 +693,7 @@ public partial class MainWindow : Window
                 await ReadVaultFileSafelyAsync(
                     _selectedVaultFilePath);
 
-            var restoredCode =
+            var unmaskingResult =
                 await Task.Run(
                     () =>
                     {
@@ -682,16 +706,21 @@ public partial class MainWindow : Window
                                 password,
                                 maskedCode);
 
-                        var unmasker =
-                            new Pl1CodeUnmasker();
+                        var restoredCode =
+                            UnmaskCode(
+                                maskedCode,
+                                vaultContent);
 
-                        return unmasker.Unmask(
-                            maskedCode,
-                            vaultContent);
+                        return (
+                            RestoredCode: restoredCode,
+                            vaultContent.SourceLanguage);
                     });
 
             RestoredCodeTextBox.Text =
-                restoredCode;
+                unmaskingResult.RestoredCode;
+
+            _restoredSourceLanguage =
+                unmaskingResult.SourceLanguage;
 
             CopyRestoredButton.IsEnabled = true;
             SaveRestoredFileButton.IsEnabled = true;
@@ -758,9 +787,7 @@ public partial class MainWindow : Window
             "Geri açılmış kod panoya kopyalandı.";
     }
 
-    private async void SaveRestoredFileButton_Click(
-        object sender,
-        RoutedEventArgs e)
+    private async void SaveRestoredFileButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(
                 RestoredCodeTextBox.Text))
@@ -768,12 +795,43 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (_restoredSourceLanguage is null)
+        {
+            StatusTextBlock.Text =
+                "Geri açılan kodun kaynak dili belirlenemedi.";
+
+            return;
+        }
+
         var dialog = new SaveFileDialog
         {
-            Title = "Geri açılmış PL/I dosyasını kaydedin",
+            Title =
+                _restoredSourceLanguage switch
+                {
+                    SourceLanguage.Pl1 =>
+                        "Geri açılmış PL/I dosyasını kaydedin",
+
+                    SourceLanguage.Egl =>
+                        "Geri açılmış EGL dosyasını kaydedin",
+
+                    _ =>
+                        "Geri açılmış kaynak dosyayı kaydedin"
+                },
+
             Filter =
-                "PL/I kaynak dosyaları (*.pli)|*.pli|" +
-                "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+                _restoredSourceLanguage switch
+                {
+                    SourceLanguage.Pl1 =>
+                        "PL/I kaynak dosyaları (*.pli)|*.pli|" +
+                        "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+
+                    SourceLanguage.Egl =>
+                        "EGL kaynak dosyaları (*.egl)|*.egl",
+
+                    _ =>
+                        "Metin dosyaları (*.txt)|*.txt"
+                },
+
             FileName = CreateRestoredFileName()
         };
 
@@ -858,17 +916,34 @@ public partial class MainWindow : Window
 
     private string CreateRestoredFileName()
     {
+        var sourceLanguage =
+            _restoredSourceLanguage ??
+            throw new InvalidOperationException(
+                "Geri açılan kodun kaynak dili belirlenmedi.");
+
+        var defaultExtension =
+            sourceLanguage switch
+            {
+                SourceLanguage.Pl1 => ".pli",
+                SourceLanguage.Egl => ".egl",
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(sourceLanguage),
+                    sourceLanguage,
+                    "Desteklenmeyen kaynak dili.")
+            };
+
         if (string.IsNullOrWhiteSpace(
                 _selectedMaskedFilePath))
         {
-            return "restored-code.pli";
+            return $"restored-code{defaultExtension}";
         }
 
         var fileName =
             Path.GetFileNameWithoutExtension(
                 _selectedMaskedFilePath);
 
-        var extension =
+        var selectedExtension =
             Path.GetExtension(
                 _selectedMaskedFilePath);
 
@@ -880,11 +955,34 @@ public partial class MainWindow : Window
                 fileName[..^".masked".Length];
         }
 
-        return $"{fileName}.restored{extension}";
+        var restoredExtension =
+            sourceLanguage switch
+            {
+                SourceLanguage.Pl1
+                    when selectedExtension.Equals(
+                        ".pli",
+                        StringComparison.OrdinalIgnoreCase) ||
+                         selectedExtension.Equals(
+                             ".pl1",
+                             StringComparison.OrdinalIgnoreCase) =>
+                    selectedExtension,
+
+                SourceLanguage.Egl
+                    when selectedExtension.Equals(
+                        ".egl",
+                        StringComparison.OrdinalIgnoreCase) =>
+                    selectedExtension,
+
+                _ => defaultExtension
+            };
+
+        return $"{fileName}.restored{restoredExtension}";
     }
 
     private void ClearUnmaskingOutput()
     {
+        _restoredSourceLanguage = null;
+
         RestoredCodeTextBox.Clear();
 
         CopyRestoredButton.IsEnabled = false;
@@ -900,5 +998,24 @@ public partial class MainWindow : Window
                 _selectedVaultFilePath) &&
             !string.IsNullOrEmpty(
                 RestoreVaultPasswordBox.Password);
+    }
+
+    private static string UnmaskCode(string maskedCode, MappingVaultContent vaultContent)
+    {
+        return vaultContent.SourceLanguage switch
+        {
+            SourceLanguage.Pl1 =>
+                new Pl1CodeUnmasker().Unmask(
+                    maskedCode,
+                    vaultContent),
+
+            SourceLanguage.Egl =>
+                new EglCodeUnmasker().Unmask(
+                    maskedCode,
+                    vaultContent),
+
+            _ => throw new InvalidDataException(
+                "Kasa içindeki kaynak dili desteklenmiyor.")
+        };
     }
 }
