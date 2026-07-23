@@ -112,51 +112,78 @@ internal static class EglKeywordCatalog
         };
 
     private static readonly HashSet<string> SqlKeywords = new(
+    StringComparer.OrdinalIgnoreCase)
+{
+    "ALL",
+    "AND",
+    "AS",
+    "ASC",
+    "ATOMIC",
+    "BETWEEN",
+    "BY",
+    "CASE",
+    "DEFAULT",
+    "DELETE",
+    "DESC",
+    "DISTINCT",
+    "ELSE",
+    "END",
+    "ESCAPE",
+    "EXISTS",
+    "FETCH",
+    "FIRST",
+    "FOR",
+    "FROM",
+    "FULL",
+    "GROUP",
+    "HAVING",
+    "IGNORE",
+    "IN",
+    "INNER",
+    "INSERT",
+    "INTO",
+    "IS",
+    "JOIN",
+    "LEFT",
+    "LIKE",
+    "MATCHED",
+    "MERGE",
+    "NOT",
+    "NULL",
+    "OF",
+    "ON",
+    "ONLY",
+    "OPTIMIZE",
+    "OR",
+    "ORDER",
+    "OUTER",
+    "READ",
+    "RIGHT",
+    "ROW",
+    "ROWS",
+    "SELECT",
+    "SET",
+    "SIGNAL",
+    "SQLSTATE",
+    "STOP",
+    "TABLE",
+    "THEN",
+    "UNION",
+    "UPDATE",
+    "USING",
+    "VALUES",
+    "WHEN",
+    "WHERE"
+};
+
+    private static readonly HashSet<string> SqlIsolationLevels = new(
         StringComparer.OrdinalIgnoreCase)
-    {
-        "ALL",
-        "AND",
-        "AS",
-        "ASC",
-        "BETWEEN",
-        "BY",
-        "CASE",
-        "DELETE",
-        "DESC",
-        "DISTINCT",
-        "ELSE",
-        "END",
-        "EXISTS",
-        "FOR",
-        "FROM",
-        "FULL",
-        "GROUP",
-        "HAVING",
-        "IN",
-        "INNER",
-        "INSERT",
-        "INTO",
-        "IS",
-        "JOIN",
-        "LEFT",
-        "LIKE",
-        "NOT",
-        "NULL",
-        "OF",
-        "ON",
-        "OR",
-        "ORDER",
-        "OUTER",
-        "RIGHT",
-        "SELECT",
-        "SET",
-        "THEN",
-        "UNION",
-        "UPDATE",
-        "VALUES",
-        "WHEN",
-        "WHERE"
-    };
+{
+    "CS",
+    "RR",
+    "RS",
+    "UR"
+};
 
     private static readonly HashSet<string> SystemRoots = new(
         StringComparer.OrdinalIgnoreCase)
@@ -197,6 +224,11 @@ internal static class EglKeywordCatalog
         return SqlKeywords.Contains(value);
     }
 
+    public static bool IsSqlIsolationLevel(string value)
+    {
+        return SqlIsolationLevels.Contains(value);
+    }
+
     public static bool IsSystemRoot(string value)
     {
         return SystemRoots.Contains(value);
@@ -218,6 +250,7 @@ internal static class EglKeywordCatalog
                IsBuiltInType(value) ||
                IsMetadataProperty(value) ||
                IsSqlKeyword(value) ||
+               IsSqlIsolationLevel(value) ||
                IsSystemRoot(value) ||
                IsDirective(value) ||
                IsEntryPointName(value);

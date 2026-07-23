@@ -89,6 +89,16 @@ IsMetadataProperty_WithKnownProperty_ShouldReturnTrue(
         [InlineData("set")]
         [InlineData("for")]
         [InlineData("of")]
+        [InlineData("fetch")]
+        [InlineData("first")]
+        [InlineData("rows")]
+        [InlineData("only")]
+        [InlineData("optimize")]
+        [InlineData("read")]
+        [InlineData("merge")]
+        [InlineData("using")]
+        [InlineData("matched")]
+        [InlineData("default")]
         public void
 IsSqlKeyword_WithKnownSqlKeyword_ShouldReturnTrue(
     string value)
@@ -125,6 +135,22 @@ IsSqlKeyword_WithKnownSqlKeyword_ShouldReturnTrue(
 
             Assert.False(
                 EglKeywordCatalog.IsSystemRoot(value));
+        }
+
+        [Theory]
+        [InlineData("UR")]
+        [InlineData("cs")]
+        [InlineData("RS")]
+        [InlineData("rr")]
+        public void
+IsSqlIsolationLevel_WithKnownIsolationLevel_ShouldReturnTrue(
+    string value)
+        {
+            Assert.True(
+                EglKeywordCatalog.IsSqlIsolationLevel(value));
+
+            Assert.True(
+                EglKeywordCatalog.IsReservedCandidate(value));
         }
     }
 }

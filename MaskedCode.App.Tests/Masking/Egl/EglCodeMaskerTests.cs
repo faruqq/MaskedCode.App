@@ -1080,6 +1080,152 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
                 exception.Message);
         }
 
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void
+Mask_WithDb2SqlClauses_ShouldPreserveStructureAndMaskSensitiveIdentifiers(
+    MaskingMode mode)
+        {
+            const string sourceCode =
+                """
+        Ur char(2);
+
+        get CustomerRecord with #sql{
+            SELECT CUSTOMER_NO,
+                   CUSTOMER_NAME
+              FROM MY_SCHEMA.CUSTOMER
+             WHERE STATUS = 'ACTIVE'
+             ORDER BY CUSTOMER_NAME
+             FETCH FIRST 25 ROWS ONLY
+             OPTIMIZE FOR 25 ROWS
+             WITH UR
+        };
+
+        execute #sql{
+            MERGE INTO MY_SCHEMA.CUSTOMER AS TARGET
+            USING MY_SCHEMA.CUSTOMER_STAGE AS SOURCE
+               ON TARGET.CUSTOMER_NO = SOURCE.CUSTOMER_NO
+            WHEN MATCHED THEN
+                UPDATE
+                   SET TARGET.STATUS = SOURCE.STATUS
+            WHEN NOT MATCHED THEN
+                INSERT (
+                    CUSTOMER_NO,
+                    STATUS
+                )
+                VALUES (
+                    SOURCE.CUSTOMER_NO,
+                    SOURCE.STATUS
+                )
+        };
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    mode);
+
+            var structuralSqlValues =
+                new[]
+                {
+            "SELECT",
+            "ORDER",
+            "BY",
+            "FETCH",
+            "FIRST",
+            "ROWS",
+            "ONLY",
+            "OPTIMIZE",
+            "FOR",
+            "WITH",
+            "UR",
+            "MERGE",
+            "INTO",
+            "USING",
+            "ON",
+            "WHEN",
+            "MATCHED",
+            "THEN",
+            "UPDATE",
+            "SET",
+            "NOT",
+            "INSERT",
+            "VALUES"
+                };
+
+            foreach (var structuralValue in structuralSqlValues)
+            {
+                Assert.Contains(
+                    structuralValue,
+                    result.MaskedCode,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            var sensitiveIdentifiers =
+                new[]
+                {
+            "MY_SCHEMA",
+            "CUSTOMER",
+            "CUSTOMER_STAGE",
+            "CUSTOMER_NO",
+            "CUSTOMER_NAME",
+            "STATUS",
+            "TARGET",
+            "SOURCE"
+                };
+
+            foreach (var identifier in sensitiveIdentifiers)
+            {
+                Assert.Contains(
+                    result.Mappings,
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue.Equals(
+                            identifier,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+
+            Assert.DoesNotContain(
+                "MY_SCHEMA",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.DoesNotContain(
+                "CUSTOMER_STAGE",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    mapping.OriginalValue ==
+                        "ACTIVE");
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.NumericLiteral &&
+                    mapping.OriginalValue ==
+                        "25");
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue.Equals(
+                        "Ur",
+                        StringComparison.Ordinal));
+        }
+
 
     }
 }

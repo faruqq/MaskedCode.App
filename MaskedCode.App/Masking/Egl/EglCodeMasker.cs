@@ -367,10 +367,19 @@ internal sealed class EglCodeMasker
         maskedCode.Append(maskedIdentifier);
     }
 
-    private static bool ShouldPreserveIdentifier(string sourceCode, string identifier, int startIndex, int endIndex, bool isInsideSqlBlock)
+    private static bool ShouldPreserveIdentifier(
+    string sourceCode,
+    string identifier,
+    int startIndex,
+    int endIndex,
+    bool isInsideSqlBlock)
     {
         if (isInsideSqlBlock &&
-            EglKeywordCatalog.IsSqlKeyword(identifier))
+            (EglKeywordCatalog.IsSqlKeyword(identifier) ||
+             IsSqlIsolationLevelClause(
+                 sourceCode,
+                 identifier,
+                 startIndex)))
         {
             return true;
         }
@@ -401,6 +410,27 @@ internal sealed class EglCodeMasker
         return IsSystemMember(
             sourceCode,
             startIndex);
+    }
+
+    private static bool IsSqlIsolationLevelClause(
+    string sourceCode,
+    string identifier,
+    int identifierStartIndex)
+    {
+        if (!EglKeywordCatalog.IsSqlIsolationLevel(
+                identifier))
+        {
+            return false;
+        }
+
+        var previousIdentifier =
+            ReadPreviousIdentifier(
+                sourceCode,
+                identifierStartIndex);
+
+        return previousIdentifier.Equals(
+            "WITH",
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AppendMaskedStringLiteral(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, ISet<string> usedMaskedValues, ISet<string> originalValues, string sessionId, MaskingMode mode, ref int index)
