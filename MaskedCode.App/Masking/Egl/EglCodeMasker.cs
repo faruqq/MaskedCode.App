@@ -129,6 +129,38 @@ internal sealed class EglCodeMasker
             }
 
             if (isInsideSqlBlock &&
+                IsSqlLineCommentStart(
+                    sourceCode,
+                    index))
+            {
+                AppendMaskedSqlLineComment(
+                    sourceCode,
+                    maskedCode,
+                    commentMappings,
+                    sessionId,
+                    ref index);
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                IsSqlStringDelimiter(
+                    sourceCode[index]))
+            {
+                AppendMaskedSqlStringLiteral(
+                    sourceCode,
+                    maskedCode,
+                    stringLiteralMappings,
+                    usedMaskedStringLiterals,
+                    originalStringLiterals,
+                    sessionId,
+                    mode,
+                    ref index);
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
                 sourceCode[index] == '}')
             {
                 maskedCode.Append('}');
@@ -371,15 +403,7 @@ internal sealed class EglCodeMasker
             startIndex);
     }
 
-    private static void AppendMaskedStringLiteral(
-        string sourceCode,
-        StringBuilder maskedCode,
-        IDictionary<string, string> mappings,
-        ISet<string> usedMaskedValues,
-        ISet<string> originalValues,
-        string sessionId,
-        MaskingMode mode,
-        ref int index)
+    private static void AppendMaskedStringLiteral(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, ISet<string> usedMaskedValues, ISet<string> originalValues, string sessionId, MaskingMode mode, ref int index)
     {
         var value =
             ReadStringLiteral(
@@ -406,6 +430,7 @@ internal sealed class EglCodeMasker
                     mappings.Count + 1,
                     sessionId,
                     mode,
+                    true,
                     usedMaskedValues,
                     originalValues);
 
@@ -422,8 +447,8 @@ internal sealed class EglCodeMasker
     }
 
     private static string ReadStringLiteral(
-        string sourceCode,
-        ref int index)
+    string sourceCode,
+    ref int index)
     {
         index++;
 
@@ -454,6 +479,7 @@ internal sealed class EglCodeMasker
             if (current == '"')
             {
                 index++;
+
                 return value.ToString();
             }
 
@@ -463,6 +489,168 @@ internal sealed class EglCodeMasker
 
         throw new InvalidDataException(
             "Sonlandırılmamış EGL string literal bulundu.");
+    }
+
+    private static void AppendMaskedSqlStringLiteral(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, ISet<string> usedMaskedValues, ISet<string> originalValues, string sessionId, MaskingMode mode, ref int index)
+    {
+        var value =
+            ReadSqlStringLiteral(
+                sourceCode,
+                ref index);
+
+        maskedCode.Append('\'');
+
+        if (!ContainsMaskableCharacter(value))
+        {
+            maskedCode.Append(value);
+            maskedCode.Append('\'');
+
+            return;
+        }
+
+        if (!mappings.TryGetValue(
+                value,
+                out var maskedValue))
+        {
+            maskedValue =
+                CreateUniqueMaskedStringLiteral(
+                    value,
+                    mappings.Count + 1,
+                    sessionId,
+                    mode,
+                    false,
+                    usedMaskedValues,
+                    originalValues);
+
+            mappings.Add(
+                value,
+                maskedValue);
+
+            usedMaskedValues.Add(
+                maskedValue);
+        }
+
+        maskedCode.Append(maskedValue);
+        maskedCode.Append('\'');
+    }
+
+    private static string ReadSqlStringLiteral(string sourceCode, ref int index)
+    {
+        if (!IsSqlStringDelimiter(
+                sourceCode[index]))
+        {
+            throw new InvalidDataException(
+                "Geçersiz EGL #sql string literal başlangıcı bulundu.");
+        }
+
+        index++;
+
+        var value =
+            new StringBuilder();
+
+        while (index < sourceCode.Length)
+        {
+            if (sourceCode[index] != '\'')
+            {
+                value.Append(
+                    sourceCode[index]);
+
+                index++;
+                continue;
+            }
+
+            if (index + 1 < sourceCode.Length &&
+                sourceCode[index + 1] == '\'')
+            {
+                value.Append("''");
+                index += 2;
+
+                continue;
+            }
+
+            index++;
+
+            return value.ToString();
+        }
+
+        throw new InvalidDataException(
+            "Sonlandırılmamış EGL #sql string literal bulundu.");
+    }
+
+    private static string CreateUniqueMaskedStringLiteral(string originalValue, int ordinal, string sessionId, MaskingMode mode, bool preserveBackslashEscapes, ISet<string> usedMaskedValues, ISet<string> originalValues)
+    {
+        for (var attempt = 0;
+             attempt < MaximumCandidateAttemptCount;
+             attempt++)
+        {
+            var candidate = mode switch
+            {
+                MaskingMode.MaximumPrivacy =>
+                    CreateMaximumPrivacyStringLiteral(
+                        sessionId,
+                        ordinal + attempt),
+
+                MaskingMode.FormatPreserving =>
+                    CreateFormatPreservingStringLiteral(
+                        originalValue,
+                        preserveBackslashEscapes),
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(mode),
+                    mode,
+                    "Desteklenmeyen maskeleme modu.")
+            };
+
+            if (string.Equals(
+                    candidate,
+                    originalValue,
+                    StringComparison.Ordinal) ||
+                originalValues.Contains(candidate) ||
+                usedMaskedValues.Contains(candidate))
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        throw new InvalidOperationException(
+            "EGL string literal için benzersiz bir " +
+            "maskeleme değeri üretilemedi.");
+    }
+
+    private static string CreateFormatPreservingStringLiteral(string originalValue, bool preserveBackslashEscapes)
+    {
+        var maskedValue =
+            new StringBuilder(
+                originalValue.Length);
+
+        var index = 0;
+
+        while (index < originalValue.Length)
+        {
+            if (preserveBackslashEscapes &&
+                originalValue[index] == '\\' &&
+                index + 1 < originalValue.Length)
+            {
+                maskedValue.Append(
+                    originalValue[index]);
+
+                maskedValue.Append(
+                    originalValue[index + 1]);
+
+                index += 2;
+                continue;
+            }
+
+            maskedValue.Append(
+                CreateFormatPreservingCharacter(
+                    originalValue[index]));
+
+            index++;
+        }
+
+        return maskedValue.ToString();
     }
 
     private static string
@@ -584,6 +772,28 @@ internal sealed class EglCodeMasker
             sessionId);
     }
 
+    private static void AppendMaskedSqlLineComment(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, string sessionId, ref int index)
+    {
+        maskedCode.Append("--");
+        index += 2;
+
+        var contentStartIndex = index;
+
+        while (index < sourceCode.Length &&
+               sourceCode[index] is not '\r' and not '\n')
+        {
+            index++;
+        }
+
+        var originalValue =
+            sourceCode[contentStartIndex..index];
+
+        AppendMaskedCommentBody(
+            originalValue,
+            maskedCode,
+            mappings,
+            sessionId);
+    }
     private static void AppendMaskedBlockComment(
         string sourceCode,
         StringBuilder maskedCode,
@@ -724,28 +934,24 @@ internal sealed class EglCodeMasker
 
     private static void RejectUnsupportedSqlContext(string sourceCode, int index)
     {
-        if (sourceCode[index] == '\'')
-        {
-            throw new NotSupportedException(
-                "EGL #sql bloğundaki tek tırnaklı SQL değerleri " +
-                "henüz desteklenmiyor.");
-        }
-
-        if (index + 1 < sourceCode.Length &&
-            sourceCode[index] == '-' &&
-            sourceCode[index + 1] == '-')
-        {
-            throw new NotSupportedException(
-                "EGL #sql bloğundaki -- SQL yorumları " +
-                "henüz desteklenmiyor.");
-        }
-
         if (sourceCode[index] == '{')
         {
             throw new NotSupportedException(
                 "EGL #sql bloğundaki iç içe süslü parantezler " +
                 "henüz desteklenmiyor.");
         }
+    }
+
+    private static bool IsSqlLineCommentStart(string sourceCode, int index)
+    {
+        return index + 1 < sourceCode.Length &&
+               sourceCode[index] == '-' &&
+               sourceCode[index + 1] == '-';
+    }
+
+    private static bool IsSqlStringDelimiter(char character)
+    {
+        return character == '\'';
     }
 
     private static void AppendMaskedCommentBody(
@@ -1092,6 +1298,7 @@ internal sealed class EglCodeMasker
                 StringComparer.Ordinal);
 
         var index = 0;
+        var isInsideSqlBlock = false;
 
         while (index < sourceCode.Length)
         {
@@ -1117,13 +1324,57 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (IsDocBlockStart(
+            if (!isInsideSqlBlock &&
+                IsDocBlockStart(
                     sourceCode,
                     index))
             {
                 ReadDocBlockContent(
                     sourceCode,
                     ref index);
+
+                continue;
+            }
+
+            if (!isInsideSqlBlock &&
+                IsSqlBlockStart(
+                    sourceCode,
+                    index))
+            {
+                index += 5;
+                isInsideSqlBlock = true;
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                IsSqlLineCommentStart(
+                    sourceCode,
+                    index))
+            {
+                SkipSqlLineComment(
+                    sourceCode,
+                    ref index);
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                IsSqlStringDelimiter(
+                    sourceCode[index]))
+            {
+                ReadSqlStringLiteral(
+                    sourceCode,
+                    ref index);
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                sourceCode[index] == '}')
+            {
+                index++;
+                isInsideSqlBlock = false;
 
                 continue;
             }
@@ -1171,6 +1422,7 @@ internal sealed class EglCodeMasker
                 StringComparer.Ordinal);
 
         var index = 0;
+        var isInsideSqlBlock = false;
 
         while (index < sourceCode.Length)
         {
@@ -1196,13 +1448,63 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (IsDocBlockStart(
+            if (!isInsideSqlBlock &&
+                IsDocBlockStart(
                     sourceCode,
                     index))
             {
                 ReadDocBlockContent(
                     sourceCode,
                     ref index);
+
+                continue;
+            }
+
+            if (!isInsideSqlBlock &&
+                IsSqlBlockStart(
+                    sourceCode,
+                    index))
+            {
+                index += 5;
+                isInsideSqlBlock = true;
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                IsSqlLineCommentStart(
+                    sourceCode,
+                    index))
+            {
+                SkipSqlLineComment(
+                    sourceCode,
+                    ref index);
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                IsSqlStringDelimiter(
+                    sourceCode[index]))
+            {
+                var sqlValue =
+                    ReadSqlStringLiteral(
+                        sourceCode,
+                        ref index);
+
+                if (ContainsMaskableCharacter(sqlValue))
+                {
+                    literals.Add(sqlValue);
+                }
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                sourceCode[index] == '}')
+            {
+                index++;
+                isInsideSqlBlock = false;
 
                 continue;
             }
@@ -1247,6 +1549,17 @@ internal sealed class EglCodeMasker
     private static void SkipLineComment(
         string sourceCode,
         ref int index)
+    {
+        index += 2;
+
+        while (index < sourceCode.Length &&
+               sourceCode[index] is not '\r' and not '\n')
+        {
+            index++;
+        }
+    }
+
+    private static void SkipSqlLineComment(string sourceCode, ref int index)
     {
         index += 2;
 

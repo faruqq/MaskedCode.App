@@ -842,34 +842,218 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
                         "1453");
         }
 
-        [Theory]
-        [InlineData(
-            """
-    get CustomerRecord with #sql{
-        SELECT CUSTOMER_NO
-        FROM CUSTOMER
-        WHERE STATUS = 'ACTIVE'
-    };
-    """)]
-        [InlineData(
-            """
-    get CustomerRecord with #sql{
-        SELECT CUSTOMER_NO
-        FROM CUSTOMER
-        -- Only active customers
-        WHERE STATUS = STATUS_CODE
-    };
-    """)]
 
-        public void Mask_WithUnsupportedSqlContent_ShouldRejectSource(string sourceCode)
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void Mask_WithSqlStringLiteralsAndLineComment_ShouldMaskSensitiveContent(MaskingMode mode)
         {
+            const string sourceCode =
+                """
+        get CustomerRecord with #sql{
+            SELECT CUSTOMER_NO
+            FROM CUSTOMER
+            WHERE STATUS = 'ACTIVE'
+              AND LAST_NAME = 'O''BRIEN'
+              AND EXTERNAL_CODE = 'A\B'
+              AND DESCRIPTION = 'CLOSING } MARKER'
+            -- Confidential customer filter } 'SECRET'
+              AND BRANCH_NO = 1453
+        };
+        """;
+
             var masker =
                 new EglCodeMasker();
 
-            Assert.Throws<NotSupportedException>(
-                () => masker.Mask(
+            var result =
+                masker.Mask(
                     sourceCode,
-                    MaskingMode.MaximumPrivacy));
+                    mode);
+
+            var originalSqlValues =
+                new[]
+                {
+            "ACTIVE",
+            "O''BRIEN",
+            @"A\B",
+            "CLOSING } MARKER"
+                };
+
+            foreach (var originalValue in originalSqlValues)
+            {
+                var mapping =
+                    Assert.Single(
+                        result.Mappings.Where(
+                            candidate =>
+                                candidate.Kind ==
+                                    MaskingValueKind.StringLiteral &&
+                                candidate.OriginalValue ==
+                                    originalValue));
+
+                Assert.NotEqual(
+                    mapping.OriginalValue,
+                    mapping.MaskedValue);
+
+                Assert.DoesNotContain(
+                    originalValue,
+                    result.MaskedCode,
+                    StringComparison.Ordinal);
+
+                Assert.Contains(
+                    $"'{mapping.MaskedValue}'",
+                    result.MaskedCode,
+                    StringComparison.Ordinal);
+
+                if (mode == MaskingMode.FormatPreserving)
+                {
+                    Assert.Equal(
+                        mapping.OriginalValue.Length,
+                        mapping.MaskedValue.Length);
+                }
+            }
+
+            var escapedQuoteMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.StringLiteral &&
+                            mapping.OriginalValue ==
+                                "O''BRIEN"));
+
+            if (mode == MaskingMode.FormatPreserving)
+            {
+                Assert.Contains(
+                    "''",
+                    escapedQuoteMapping.MaskedValue,
+                    StringComparison.Ordinal);
+            }
+            else
+            {
+                Assert.DoesNotContain(
+                    "O''BRIEN",
+                    escapedQuoteMapping.MaskedValue,
+                    StringComparison.Ordinal);
+            }
+
+            var sqlCommentMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.Comment));
+
+            Assert.Contains(
+                "Confidential customer filter",
+                sqlCommentMapping.OriginalValue,
+                StringComparison.Ordinal);
+
+            Assert.DoesNotContain(
+                "Confidential customer filter",
+                result.MaskedCode,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "-- EGL_CMT_",
+                result.MaskedCode,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.NumericLiteral &&
+                    mapping.OriginalValue ==
+                        "1453");
+
+            Assert.Contains(
+                "AND",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Equal(
+                4,
+                result.StringLiteralCount);
+
+            Assert.Equal(
+                1,
+                result.CommentCount);
+        }
+
+        [Fact]
+        public void Mask_WithRepeatedSqlStringContainingCommentMarker_ShouldReuseMapping()
+        {
+            const string sourceCode =
+                """
+        get CustomerRecord with #sql{
+            SELECT CUSTOMER_NO
+            FROM CUSTOMER
+            WHERE STATUS = 'ACTIVE--VALUE'
+               OR PREVIOUS_STATUS = 'ACTIVE--VALUE'
+        };
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    MaskingMode.MaximumPrivacy);
+
+            var mapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        candidate =>
+                            candidate.Kind ==
+                                MaskingValueKind.StringLiteral &&
+                            candidate.OriginalValue ==
+                                "ACTIVE--VALUE"));
+
+            var repeatedUsageCount =
+                result.MaskedCode
+                    .Split(
+                        $"'{mapping.MaskedValue}'",
+                        StringSplitOptions.None)
+                    .Length - 1;
+
+            Assert.Equal(
+                2,
+                repeatedUsageCount);
+
+            Assert.Equal(
+                1,
+                result.StringLiteralCount);
+
+            Assert.Equal(
+                0,
+                result.CommentCount);
+        }
+
+        [Fact]
+        public void Mask_WithUnterminatedSqlStringLiteral_ShouldRejectSource()
+        {
+            const string sourceCode =
+                """
+        get CustomerRecord with #sql{
+            SELECT CUSTOMER_NO
+            FROM CUSTOMER
+            WHERE STATUS = 'ACTIVE
+        };
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var exception =
+                Assert.Throws<InvalidDataException>(
+                    () => masker.Mask(
+                        sourceCode,
+                        MaskingMode.MaximumPrivacy));
+
+            Assert.Contains(
+                "Sonlandırılmamış EGL #sql string literal",
+                exception.Message);
         }
 
         [Fact]
