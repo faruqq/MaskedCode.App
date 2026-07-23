@@ -4,12 +4,15 @@
 
 ### Unit Test Yaklaşımı
 
-- Bu proje için unit test yazılmayacaktır.
-- Yeni bir test projesi, test sınıfı veya test metodu oluşturulmayacaktır.
-- Kullanıcı açıkça bu kararı değiştirmediği sürece unit test önerilmeyecektir.
-- Test altyapısına ait dosyalar kullanıcıdan istenmeyecektir.
-- Geliştirilen özellikler, kullanıcı tarafından sağlanan gerçekçi PL/I ve EGL örnekleriyle manuel olarak doğrulanacaktır.
-- Manuel doğrulamada tespit edilen hatalar doğrudan mevcut üretim kodunda düzeltilecektir.
+- Kritik üretim kodları için unit test yazılacaktır.
+- Maskeleme, şifreli eşleme kasası ve kodu geri açma davranışları otomatik testlerle doğrulanacaktır.
+- Gerçekçi PL/I ve EGL kodları test girdisi olarak kullanılacaktır.
+- WPF görünümü, dosya seçme pencereleri ve kullanıcı deneyimi unit test kapsamına alınmayacaktır.
+- Arayüz için yalnızca kısa manuel smoke test uygulanacaktır.
+- Test kodunda over-engineering yapılmayacaktır.
+- Somut ihtiyaç oluşmadan mock, interface, test base class, fixture veya özel test altyapısı eklenmeyecektir.
+- Öncelik, güvenlik ve veri kaybı riski taşıyan davranışların test edilmesidir.
+- İlgili testler başarılı olmadan tamamlanan yapı için commit önerilmeyecektir.
 
 ### Geliştirme Yaklaşımı
 

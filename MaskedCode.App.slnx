@@ -4,5 +4,6 @@
     <File Path="ProjectState.md" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="MaskedCode.App.Tests/MaskedCode.App.Tests.csproj" />
   <Project Path="MaskedCode.App/MaskedCode.App.csproj" />
 </Solution>
