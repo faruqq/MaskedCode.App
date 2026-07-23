@@ -96,6 +96,20 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
+            if (IsDocBlockStart(
+                    sourceCode,
+                    index))
+            {
+                AppendMaskedDocBlock(
+                    sourceCode,
+                    maskedCode,
+                    commentMappings,
+                    sessionId,
+                    ref index);
+
+                continue;
+            }
+
             if (IsStringDelimiter(sourceCode[index]))
             {
                 AppendMaskedStringLiteral(
@@ -538,6 +552,91 @@ internal sealed class EglCodeMasker
         index += 2;
     }
 
+    private static void AppendMaskedDocBlock(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, string sessionId, ref int index)
+    {
+        maskedCode.Append(
+            sourceCode,
+            index,
+            5);
+
+        var originalValue =
+            ReadDocBlockContent(
+                sourceCode,
+                ref index);
+
+        AppendMaskedCommentBody(
+            originalValue,
+            maskedCode,
+            mappings,
+            sessionId);
+
+        maskedCode.Append('}');
+    }
+
+    private static string ReadDocBlockContent(string sourceCode, ref int index)
+    {
+        if (!IsDocBlockStart(
+                sourceCode,
+                index))
+        {
+            throw new InvalidDataException(
+                "Geçersiz EGL #doc bloğu başlangıcı bulundu.");
+        }
+
+        index += 5;
+
+        var contentStartIndex = index;
+        var braceDepth = 1;
+
+        while (index < sourceCode.Length)
+        {
+            if (sourceCode[index] == '{')
+            {
+                braceDepth++;
+                index++;
+
+                continue;
+            }
+
+            if (sourceCode[index] != '}')
+            {
+                index++;
+                continue;
+            }
+
+            braceDepth--;
+
+            if (braceDepth == 0)
+            {
+                var content =
+                    sourceCode[contentStartIndex..index];
+
+                index++;
+
+                return content;
+            }
+
+            index++;
+        }
+
+        throw new InvalidDataException(
+            "Sonlandırılmamış EGL #doc bloğu bulundu.");
+    }
+
+    private static bool IsDocBlockStart(string sourceCode, int index)
+    {
+        return index + 4 < sourceCode.Length &&
+               sourceCode[index] == '#' &&
+               sourceCode[index + 4] == '{' &&
+               string.Compare(
+                   sourceCode,
+                   index + 1,
+                   "doc",
+                   0,
+                   3,
+                   StringComparison.OrdinalIgnoreCase) == 0;
+    }
+
     private static void AppendMaskedCommentBody(
         string originalValue,
         StringBuilder maskedCode,
@@ -905,9 +1004,7 @@ internal sealed class EglCodeMasker
         return character;
     }
 
-    private static HashSet<string> CollectOriginalIdentifiers(
-    string sourceCode,
-    out HashSet<string> originalNumericLiterals)
+    private static HashSet<string> CollectOriginalIdentifiers(string sourceCode, out HashSet<string> originalNumericLiterals)
     {
         var identifiers =
             new HashSet<string>(
@@ -937,6 +1034,17 @@ internal sealed class EglCodeMasker
                     index))
             {
                 SkipBlockComment(
+                    sourceCode,
+                    ref index);
+
+                continue;
+            }
+
+            if (IsDocBlockStart(
+                    sourceCode,
+                    index))
+            {
+                ReadDocBlockContent(
                     sourceCode,
                     ref index);
 
@@ -979,9 +1087,7 @@ internal sealed class EglCodeMasker
         return identifiers;
     }
 
-    private static HashSet<string>
-        CollectOriginalStringLiterals(
-            string sourceCode)
+    private static HashSet<string> CollectOriginalStringLiterals(string sourceCode)
     {
         var literals =
             new HashSet<string>(
@@ -1013,8 +1119,18 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (!IsStringDelimiter(
-                    sourceCode[index]))
+            if (IsDocBlockStart(
+                    sourceCode,
+                    index))
+            {
+                ReadDocBlockContent(
+                    sourceCode,
+                    ref index);
+
+                continue;
+            }
+
+            if (!IsStringDelimiter(sourceCode[index]))
             {
                 index++;
                 continue;

@@ -494,10 +494,6 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
         [Theory]
         [InlineData(
     """
-    Description = #doc{Program açıklaması};
-    """)]
-        [InlineData(
-    """
     get MyTable with #sql{select PARAM1 from MY_TABLE};
     """)]
         [InlineData(
@@ -659,6 +655,99 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
             Assert.Equal(
                 5,
                 result.NumericLiteralCount);
+        }
+
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void Mask_WithDocBlock_ShouldMaskContentAndPreserveDirectiveStructure(MaskingMode mode)
+        {
+            const string sourceCode =
+                """
+        program CustomerProgram type BasicProgram
+            Description = #doc{
+                Customer onboarding for branch 1453
+                Owner: Faruk Yazici
+            };
+
+            function main()
+            end
+        end
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    mode);
+
+            var docMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.Comment));
+
+            Assert.Contains(
+                "Customer onboarding for branch 1453",
+                docMapping.OriginalValue);
+
+            Assert.Contains(
+                "Owner: Faruk Yazici",
+                docMapping.OriginalValue);
+
+            Assert.Contains(
+                "EGL_CMT_",
+                docMapping.MaskedValue);
+
+            Assert.DoesNotContain(
+                "Customer onboarding for branch 1453",
+                result.MaskedCode);
+
+            Assert.DoesNotContain(
+                "Faruk Yazici",
+                result.MaskedCode);
+
+            Assert.Contains(
+                "#doc{",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Equal(
+                sourceCode.Count(character => character == '\n'),
+                result.MaskedCode.Count(character => character == '\n'));
+
+            Assert.Equal(
+                1,
+                result.CommentCount);
+
+            Assert.Equal(
+                0,
+                result.NumericLiteralCount);
+        }
+
+        [Fact]
+        public void Mask_WithUnterminatedDocBlock_ShouldRejectSource()
+        {
+            const string sourceCode =
+                """
+        Description = #doc{Customer sensitive description
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var exception =
+                Assert.Throws<InvalidDataException>(
+                    () => masker.Mask(
+                        sourceCode,
+                        MaskingMode.MaximumPrivacy));
+
+            Assert.Contains(
+                "Sonlandırılmamış EGL #doc bloğu",
+                exception.Message);
         }
 
 
