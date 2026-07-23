@@ -39,6 +39,10 @@ public sealed class Pl1CodeMasker
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
 
+        var commentMappings =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
         var usedMaskedIdentifiers =
             new HashSet<string>(
                 StringComparer.OrdinalIgnoreCase);
@@ -66,9 +70,11 @@ public sealed class Pl1CodeMasker
         {
             if (IsCommentStart(workingCode, index))
             {
-                AppendComment(
+                AppendMaskedComment(
                     workingCode,
                     maskedCode,
+                    commentMappings,
+                    sessionId,
                     ref index);
 
                 continue;
@@ -133,7 +139,8 @@ public sealed class Pl1CodeMasker
         var mappings = CreateMappings(
             identifierMappings,
             stringLiteralMappings,
-            numericResult.Mappings);
+            numericResult.Mappings,
+            commentMappings);
 
         return new Pl1MaskingResult(
             maskedCode.ToString(),
@@ -156,18 +163,21 @@ public sealed class Pl1CodeMasker
     }
 
     private static IReadOnlyList<MaskingMapping>
-        CreateMappings(
-            IReadOnlyDictionary<string, string>
-                identifierMappings,
-            IReadOnlyDictionary<string, string>
-                stringLiteralMappings,
-            IReadOnlyDictionary<string, string>
-                numericLiteralMappings)
+     CreateMappings(
+         IReadOnlyDictionary<string, string>
+             identifierMappings,
+         IReadOnlyDictionary<string, string>
+             stringLiteralMappings,
+         IReadOnlyDictionary<string, string>
+             numericLiteralMappings,
+         IReadOnlyDictionary<string, string>
+             commentMappings)
     {
         var mappings = new List<MaskingMapping>(
             identifierMappings.Count +
             stringLiteralMappings.Count +
-            numericLiteralMappings.Count);
+            numericLiteralMappings.Count +
+            commentMappings.Count);
 
         foreach (var mapping in identifierMappings)
         {
@@ -192,6 +202,15 @@ public sealed class Pl1CodeMasker
             mappings.Add(
                 new MaskingMapping(
                     MaskingValueKind.NumericLiteral,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        foreach (var mapping in commentMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.Comment,
                     mapping.Key,
                     mapping.Value));
         }
@@ -635,24 +654,131 @@ public sealed class Pl1CodeMasker
             char.IsLetterOrDigit(character));
     }
 
-    private static void AppendComment(
-        string sourceCode,
-        StringBuilder maskedCode,
-        ref int index)
+    private static void AppendMaskedComment(
+    string sourceCode,
+    StringBuilder maskedCode,
+    IDictionary<string, string> mappings,
+    string sessionId,
+    ref int index)
     {
         maskedCode.Append("/*");
         index += 2;
+
+        var contentStartIndex = index;
 
         while (index < sourceCode.Length)
         {
             if (IsCommentEnd(sourceCode, index))
             {
-                maskedCode.Append("*/");
-                index += 2;
-                return;
+                break;
             }
 
-            maskedCode.Append(sourceCode[index]);
+            index++;
+        }
+
+        var originalValue =
+            sourceCode[contentStartIndex..index];
+
+        if (string.IsNullOrWhiteSpace(originalValue))
+        {
+            maskedCode.Append(originalValue);
+        }
+        else
+        {
+            if (!mappings.TryGetValue(
+                    originalValue,
+                    out var maskedValue))
+            {
+                var placeholder =
+                    CreateMaximumPrivacyComment(
+                        sessionId,
+                        mappings.Count + 1);
+
+                maskedValue = CreateMaskedCommentBody(
+                    originalValue,
+                    placeholder);
+
+                mappings.Add(originalValue, maskedValue);
+            }
+
+            maskedCode.Append(maskedValue);
+        }
+
+        if (index < sourceCode.Length)
+        {
+            maskedCode.Append("*/");
+            index += 2;
+        }
+    }
+
+    private static string CreateMaximumPrivacyComment(
+        string sessionId,
+        int ordinal)
+    {
+        return $"CMT_{sessionId}_{ordinal:D4}";
+    }
+
+    private static string CreateMaskedCommentBody(
+        string originalValue,
+        string placeholder)
+    {
+        var maskedValue = new StringBuilder();
+
+        maskedValue.Append(' ');
+        maskedValue.Append(placeholder);
+
+        var index = 0;
+
+        while (index < originalValue.Length)
+        {
+            if (originalValue[index] == '\r')
+            {
+                maskedValue.Append('\r');
+                index++;
+
+                if (index < originalValue.Length &&
+                    originalValue[index] == '\n')
+                {
+                    maskedValue.Append('\n');
+                    index++;
+                }
+
+                AppendLineIndentation(
+                    originalValue,
+                    maskedValue,
+                    ref index);
+
+                continue;
+            }
+
+            if (originalValue[index] == '\n')
+            {
+                maskedValue.Append('\n');
+                index++;
+
+                AppendLineIndentation(
+                    originalValue,
+                    maskedValue,
+                    ref index);
+
+                continue;
+            }
+
+            index++;
+        }
+
+        return maskedValue.ToString();
+    }
+
+    private static void AppendLineIndentation(
+        string originalValue,
+        StringBuilder maskedValue,
+        ref int index)
+    {
+        while (index < originalValue.Length &&
+               originalValue[index] is ' ' or '\t')
+        {
+            maskedValue.Append(originalValue[index]);
             index++;
         }
     }

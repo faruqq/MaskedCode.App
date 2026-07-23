@@ -9,13 +9,16 @@ namespace MaskedCode.App;
 public partial class MainWindow : Window
 {
     private string? _selectedFilePath;
+    private Pl1MaskingResult? _lastMaskingResult;
 
     public MainWindow()
     {
         InitializeComponent();
     }
 
-    private async void SelectFileButton_Click(object sender, RoutedEventArgs e)
+    private async void SelectFileButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
@@ -32,34 +35,41 @@ public partial class MainWindow : Window
 
         try
         {
-            var sourceCode = await File.ReadAllTextAsync(dialog.FileName);
+            var sourceCode =
+                await File.ReadAllTextAsync(
+                    dialog.FileName);
 
             _selectedFilePath = dialog.FileName;
             SourceCodeTextBox.Text = sourceCode;
             SelectedFileTextBlock.Text = dialog.FileName;
 
-            SelectLanguageFromFileExtension(dialog.FileName);
+            SelectLanguageFromFileExtension(
+                dialog.FileName);
 
             StatusTextBlock.Text =
-                $"Dosya yüklendi: {Path.GetFileName(dialog.FileName)}";
+                $"Dosya yüklendi: " +
+                $"{Path.GetFileName(dialog.FileName)}";
         }
         catch (Exception exception)
         {
             MessageBox.Show(
-                $"Dosya okunamadı.{Environment.NewLine}{exception.Message}",
+                $"Dosya okunamadı.{Environment.NewLine}" +
+                exception.Message,
                 "Dosya okuma hatası",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
 
-            StatusTextBlock.Text = "Dosya okunurken hata oluştu.";
+            StatusTextBlock.Text =
+                "Dosya okunurken hata oluştu.";
         }
     }
 
     private void MaskButton_Click(
-    object sender,
-    RoutedEventArgs e)
+        object sender,
+        RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
+        if (string.IsNullOrWhiteSpace(
+                SourceCodeTextBox.Text))
         {
             StatusTextBlock.Text =
                 "Maskelenecek kaynak kod bulunamadı.";
@@ -69,63 +79,81 @@ public partial class MainWindow : Window
 
         if (GetSelectedLanguage() != "PL1")
         {
-            MaskedCodeTextBox.Clear();
-            UpdateOutputButtons();
+            ClearMaskingOutput();
 
             StatusTextBlock.Text =
-                "Bu aşamada yalnızca PL/I maskelemesi destekleniyor.";
+                "Bu aşamada yalnızca PL/I " +
+                "maskelemesi destekleniyor.";
 
             return;
         }
 
         try
         {
-            var selectedMode = GetSelectedMaskingMode();
-            var masker = new Pl1CodeMasker();
+            var selectedMode =
+                GetSelectedMaskingMode();
+
+            var masker =
+                new Pl1CodeMasker();
 
             var result = masker.Mask(
                 SourceCodeTextBox.Text,
                 selectedMode);
 
+            VaultPasswordBox.Clear();
+            VaultPasswordConfirmationBox.Clear();
+
+            _lastMaskingResult = result;
             MaskedCodeTextBox.Text = result.MaskedCode;
+
             UpdateOutputButtons();
 
             var modeDisplayName =
-                GetMaskingModeDisplayName(result.Mode);
+                GetMaskingModeDisplayName(
+                    result.Mode);
 
             StatusTextBlock.Text =
                 $"{result.IdentifierCount} benzersiz identifier, " +
-                $"{result.StringLiteralCount} benzersiz string değer ve " +
-                $"{result.NumericLiteralCount} benzersiz sayısal değer " +
+                $"{result.StringLiteralCount} benzersiz string değer, " +
+                $"{result.NumericLiteralCount} benzersiz sayısal değer ve " +
+                $"{result.CommentCount} benzersiz yorum " +
                 $"{modeDisplayName} moduyla maskelendi. " +
-                "Yorumlar ve şifreli eşleme kasası henüz " +
-                "tamamlanmadığı için bu çıktıyı şirket dışına göndermeyin.";
+                "Şifreli eşleme kasası henüz kaydedilmediği için " +
+                "bu çıktıyı şirket dışına göndermeyin.";
         }
         catch (Exception exception)
         {
-            MaskedCodeTextBox.Clear();
-            UpdateOutputButtons();
+            ClearMaskingOutput();
 
             StatusTextBlock.Text =
-                $"Maskeleme işlemi tamamlanamadı: " +
+                "Maskeleme işlemi tamamlanamadı: " +
                 exception.Message;
         }
     }
 
-    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    private void CopyButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+        if (string.IsNullOrEmpty(
+                MaskedCodeTextBox.Text))
         {
             return;
         }
 
-        Clipboard.SetText(MaskedCodeTextBox.Text);
-        StatusTextBlock.Text = "Maskelenmiş kod panoya kopyalandı.";
+        Clipboard.SetText(
+            MaskedCodeTextBox.Text);
+
+        StatusTextBlock.Text =
+            "Maskelenmiş kod panoya kopyalandı.";
     }
 
-    private async void SaveFileButton_Click(object sender, RoutedEventArgs e)
+    private async void SaveFileButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+        if (string.IsNullOrEmpty(
+                MaskedCodeTextBox.Text))
         {
             return;
         }
@@ -149,17 +177,106 @@ public partial class MainWindow : Window
                 MaskedCodeTextBox.Text);
 
             StatusTextBlock.Text =
-                $"Maskelenmiş dosya kaydedildi: {dialog.FileName}";
+                $"Maskelenmiş dosya kaydedildi: " +
+                dialog.FileName;
         }
         catch (Exception exception)
         {
             MessageBox.Show(
-                $"Dosya kaydedilemedi.{Environment.NewLine}{exception.Message}",
+                $"Dosya kaydedilemedi.{Environment.NewLine}" +
+                exception.Message,
                 "Dosya kaydetme hatası",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
 
-            StatusTextBlock.Text = "Dosya kaydedilirken hata oluştu.";
+            StatusTextBlock.Text =
+                "Dosya kaydedilirken hata oluştu.";
+        }
+    }
+
+    private async void SaveVaultButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_lastMaskingResult is null ||
+            _lastMaskingResult.Mappings.Count == 0)
+        {
+            StatusTextBlock.Text =
+                "Şifrelenecek maskeleme eşlemesi bulunamadı.";
+
+            return;
+        }
+
+        var password =
+            VaultPasswordBox.Password;
+
+        var passwordConfirmation =
+            VaultPasswordConfirmationBox.Password;
+
+        if (password.Length < 12)
+        {
+            StatusTextBlock.Text =
+                "Kasa parolası en az 12 karakter olmalıdır.";
+
+            VaultPasswordBox.Focus();
+            return;
+        }
+
+        if (!string.Equals(
+                password,
+                passwordConfirmation,
+                StringComparison.Ordinal))
+        {
+            StatusTextBlock.Text =
+                "Kasa parolası ile parola tekrarı aynı değil.";
+
+            VaultPasswordConfirmationBox.Focus();
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Şifreli eşleme kasasını kaydedin",
+            Filter =
+                "MaskedCode şifreli kasa dosyası (*.mcvault)|" +
+                "*.mcvault",
+            DefaultExt = ".mcvault",
+            AddExtension = true,
+            FileName = "masked-code.mcvault"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var vault =
+                new EncryptedMappingVault();
+
+            var encryptedVault =
+                vault.Encrypt(
+                    _lastMaskingResult,
+                    password);
+
+            await File.WriteAllBytesAsync(
+                dialog.FileName,
+                encryptedVault);
+
+            VaultPasswordBox.Clear();
+            VaultPasswordConfirmationBox.Clear();
+
+            StatusTextBlock.Text =
+                "Şifreli eşleme kasası kaydedildi. " +
+                "Kasa dosyasını maskelenmiş koddan ayrı ve " +
+                "güvenli bir konumda saklayın.";
+        }
+        catch (Exception exception)
+        {
+            StatusTextBlock.Text =
+                "Şifreli eşleme kasası kaydedilemedi: " +
+                exception.Message;
         }
     }
 
@@ -168,21 +285,22 @@ public partial class MainWindow : Window
         TextChangedEventArgs e)
     {
         MaskButton.IsEnabled =
-            !string.IsNullOrWhiteSpace(SourceCodeTextBox.Text);
+            !string.IsNullOrWhiteSpace(
+                SourceCodeTextBox.Text);
 
         if (!IsLoaded)
         {
             return;
         }
 
-        MaskedCodeTextBox.Clear();
-        UpdateOutputButtons();
+        ClearMaskingOutput();
 
         if (_selectedFilePath is not null &&
             SourceCodeTextBox.IsKeyboardFocusWithin)
         {
             _selectedFilePath = null;
-            SelectedFileTextBlock.Text = "Ekrana yapıştırılan kod";
+            SelectedFileTextBlock.Text =
+                "Ekrana yapıştırılan kod";
         }
     }
 
@@ -195,24 +313,27 @@ public partial class MainWindow : Window
             return;
         }
 
-        MaskedCodeTextBox.Clear();
-        UpdateOutputButtons();
+        ClearMaskingOutput();
 
         StatusTextBlock.Text =
-            $"Kaynak dil değiştirildi: {GetSelectedLanguageDisplayName()}";
+            $"Kaynak dil değiştirildi: " +
+            GetSelectedLanguageDisplayName();
     }
 
-    private void SelectLanguageFromFileExtension(string filePath)
+    private void SelectLanguageFromFileExtension(
+        string filePath)
     {
-        var extension = Path.GetExtension(filePath);
+        var extension =
+            Path.GetExtension(filePath);
 
-        LanguageComboBox.SelectedIndex = extension.ToLowerInvariant() switch
-        {
-            ".pli" or ".pl1" => 0,
-            ".egl" => 1,
-            ".cs" => 2,
-            _ => LanguageComboBox.SelectedIndex
-        };
+        LanguageComboBox.SelectedIndex =
+            extension.ToLowerInvariant() switch
+            {
+                ".pli" or ".pl1" => 0,
+                ".egl" => 1,
+                ".cs" => 2,
+                _ => LanguageComboBox.SelectedIndex
+            };
     }
 
     private string GetOpenFileFilter()
@@ -243,20 +364,29 @@ public partial class MainWindow : Window
                 "PL/I kaynak dosyaları (*.pli)|*.pli|" +
                 "PL/I kaynak dosyaları (*.pl1)|*.pl1",
 
-            "EGL" => "EGL kaynak dosyaları (*.egl)|*.egl",
+            "EGL" =>
+                "EGL kaynak dosyaları (*.egl)|*.egl",
 
-            "CSharp" => "C# kaynak dosyaları (*.cs)|*.cs",
+            "CSharp" =>
+                "C# kaynak dosyaları (*.cs)|*.cs",
 
-            _ => "Metin dosyaları (*.txt)|*.txt"
+            _ =>
+                "Metin dosyaları (*.txt)|*.txt"
         };
     }
 
     private string CreateMaskedFileName()
     {
-        if (!string.IsNullOrWhiteSpace(_selectedFilePath))
+        if (!string.IsNullOrWhiteSpace(
+                _selectedFilePath))
         {
-            var fileName = Path.GetFileNameWithoutExtension(_selectedFilePath);
-            var extension = Path.GetExtension(_selectedFilePath);
+            var fileName =
+                Path.GetFileNameWithoutExtension(
+                    _selectedFilePath);
+
+            var extension =
+                Path.GetExtension(
+                    _selectedFilePath);
 
             return $"{fileName}.masked{extension}";
         }
@@ -272,25 +402,46 @@ public partial class MainWindow : Window
 
     private string GetSelectedLanguage()
     {
-        return LanguageComboBox.SelectedItem is ComboBoxItem item
-            ? item.Tag?.ToString() ?? string.Empty
-            : string.Empty;
+        return LanguageComboBox.SelectedItem
+            is ComboBoxItem item
+                ? item.Tag?.ToString() ?? string.Empty
+                : string.Empty;
     }
 
     private string GetSelectedLanguageDisplayName()
     {
-        return LanguageComboBox.SelectedItem is ComboBoxItem item
-            ? item.Content?.ToString() ?? string.Empty
-            : string.Empty;
+        return LanguageComboBox.SelectedItem
+            is ComboBoxItem item
+                ? item.Content?.ToString() ?? string.Empty
+                : string.Empty;
+    }
+
+    private void ClearMaskingOutput()
+    {
+        _lastMaskingResult = null;
+
+        MaskedCodeTextBox.Clear();
+        VaultPasswordBox.Clear();
+        VaultPasswordConfirmationBox.Clear();
+
+        UpdateOutputButtons();
     }
 
     private void UpdateOutputButtons()
     {
         var hasMaskedCode =
-            !string.IsNullOrEmpty(MaskedCodeTextBox.Text);
+            !string.IsNullOrEmpty(
+                MaskedCodeTextBox.Text);
 
         CopyButton.IsEnabled = hasMaskedCode;
         SaveFileButton.IsEnabled = hasMaskedCode;
+
+        SaveVaultButton.IsEnabled =
+            hasMaskedCode &&
+            _lastMaskingResult is
+            {
+                Mappings.Count: > 0
+            };
     }
 
     private MaskingMode GetSelectedMaskingMode()
@@ -324,13 +475,13 @@ public partial class MainWindow : Window
     {
         if (!IsInitialized ||
             MaskedCodeTextBox is null ||
-            string.IsNullOrEmpty(MaskedCodeTextBox.Text))
+            string.IsNullOrEmpty(
+                MaskedCodeTextBox.Text))
         {
             return;
         }
 
-        MaskedCodeTextBox.Clear();
-        UpdateOutputButtons();
+        ClearMaskingOutput();
 
         StatusTextBlock.Text =
             "Maskeleme yöntemi değiştirildiği için " +

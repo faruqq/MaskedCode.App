@@ -16,4 +16,8 @@ public sealed record Pl1MaskingResult(
     public int NumericLiteralCount =>
         Mappings.Count(x =>
             x.Kind == MaskingValueKind.NumericLiteral);
+
+    public int CommentCount =>
+        Mappings.Count(x =>
+            x.Kind == MaskingValueKind.Comment);
 }
