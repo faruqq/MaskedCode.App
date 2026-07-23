@@ -8,35 +8,28 @@ internal sealed class EglCodeMasker
 {
     private const int MaximumCandidateAttemptCount = 10_000;
 
-    public EglMaskingResult Mask(
-        string sourceCode)
+    public EglMaskingResult Mask(string sourceCode)
     {
         return Mask(
             sourceCode,
             MaskingMode.MaximumPrivacy);
     }
 
-    public EglMaskingResult Mask(
-    string sourceCode,
-    MaskingMode mode)
+    public EglMaskingResult Mask(string sourceCode, MaskingMode mode)
     {
         ArgumentNullException.ThrowIfNull(sourceCode);
 
         ValidateMaskingMode(mode);
-
-        var numericMasker =
-            new EglNumericLiteralMasker();
-
-        sourceCode =
-            numericMasker.Mask(
-                sourceCode,
-                out var numericLiteralMappings);
 
         var identifierMappings =
             new Dictionary<string, string>(
                 StringComparer.OrdinalIgnoreCase);
 
         var stringLiteralMappings =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
+        var numericLiteralMappings =
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
 
@@ -52,8 +45,14 @@ internal sealed class EglCodeMasker
             new HashSet<string>(
                 StringComparer.Ordinal);
 
+        var usedMaskedNumericLiterals =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
         var originalIdentifiers =
-            CollectOriginalIdentifiers(sourceCode);
+            CollectOriginalIdentifiers(
+                sourceCode,
+                out var originalNumericLiterals);
 
         var originalStringLiterals =
             CollectOriginalStringLiterals(sourceCode);
@@ -97,8 +96,7 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (IsStringDelimiter(
-                    sourceCode[index]))
+            if (IsStringDelimiter(sourceCode[index]))
             {
                 AppendMaskedStringLiteral(
                     sourceCode,
@@ -116,10 +114,22 @@ internal sealed class EglCodeMasker
             if (EglNumericLiteralMasker.TryReadNumericLiteral(
                     sourceCode,
                     index,
-                    out var numericLiteral))
+                    out var numericLiteral,
+                    out var numericLiteralKind))
             {
-                maskedCode.Append(numericLiteral);
+                var maskedNumericLiteral =
+                    EglNumericLiteralMasker.MaskLiteral(
+                        sourceCode,
+                        index,
+                        numericLiteral,
+                        numericLiteralKind,
+                        numericLiteralMappings,
+                        usedMaskedNumericLiterals,
+                        originalNumericLiterals);
+
+                maskedCode.Append(maskedNumericLiteral);
                 index += numericLiteral.Length;
+
                 continue;
             }
 
@@ -127,13 +137,11 @@ internal sealed class EglCodeMasker
                 sourceCode,
                 index);
 
-            if (!IsIdentifierStart(
-                    sourceCode[index]))
+            if (!IsIdentifierStart(sourceCode[index]))
             {
-                maskedCode.Append(
-                    sourceCode[index]);
-
+                maskedCode.Append(sourceCode[index]);
                 index++;
+
                 continue;
             }
 
@@ -897,13 +905,17 @@ internal sealed class EglCodeMasker
         return character;
     }
 
-    private static HashSet<string>
-    CollectOriginalIdentifiers(
-        string sourceCode)
+    private static HashSet<string> CollectOriginalIdentifiers(
+    string sourceCode,
+    out HashSet<string> originalNumericLiterals)
     {
         var identifiers =
             new HashSet<string>(
                 StringComparer.OrdinalIgnoreCase);
+
+        originalNumericLiterals =
+            new HashSet<string>(
+                StringComparer.Ordinal);
 
         var index = 0;
 
@@ -931,8 +943,7 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (IsStringDelimiter(
-                    sourceCode[index]))
+            if (IsStringDelimiter(sourceCode[index]))
             {
                 ReadStringLiteral(
                     sourceCode,
@@ -944,14 +955,16 @@ internal sealed class EglCodeMasker
             if (EglNumericLiteralMasker.TryReadNumericLiteral(
                     sourceCode,
                     index,
-                    out var numericLiteral))
+                    out var numericLiteral,
+                    out _))
             {
+                originalNumericLiterals.Add(numericLiteral);
                 index += numericLiteral.Length;
+
                 continue;
             }
 
-            if (!IsIdentifierStart(
-                    sourceCode[index]))
+            if (!IsIdentifierStart(sourceCode[index]))
             {
                 index++;
                 continue;

@@ -519,9 +519,7 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
         [Theory]
         [InlineData(MaskingMode.MaximumPrivacy)]
         [InlineData(MaskingMode.FormatPreserving)]
-        public void
-Mask_WithRuntimeAndStructuralNumbers_ShouldMaskOnlyRuntimeValues(
-    MaskingMode mode)
+        public void Mask_WithRuntimeAndStructuralNumbers_ShouldMaskOnlyRuntimeValues(MaskingMode mode)
         {
             const string sourceCode =
                 """
