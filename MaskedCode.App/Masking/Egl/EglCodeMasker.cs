@@ -65,6 +65,7 @@ internal sealed class EglCodeMasker
             new StringBuilder(sourceCode.Length);
 
         var index = 0;
+        var isInsideSqlBlock = false;
 
         while (index < sourceCode.Length)
         {
@@ -96,7 +97,8 @@ internal sealed class EglCodeMasker
                 continue;
             }
 
-            if (IsDocBlockStart(
+            if (!isInsideSqlBlock &&
+                IsDocBlockStart(
                     sourceCode,
                     index))
             {
@@ -108,6 +110,39 @@ internal sealed class EglCodeMasker
                     ref index);
 
                 continue;
+            }
+
+            if (!isInsideSqlBlock &&
+                IsSqlBlockStart(
+                    sourceCode,
+                    index))
+            {
+                maskedCode.Append(
+                    sourceCode,
+                    index,
+                    5);
+
+                index += 5;
+                isInsideSqlBlock = true;
+
+                continue;
+            }
+
+            if (isInsideSqlBlock &&
+                sourceCode[index] == '}')
+            {
+                maskedCode.Append('}');
+                index++;
+                isInsideSqlBlock = false;
+
+                continue;
+            }
+
+            if (isInsideSqlBlock)
+            {
+                RejectUnsupportedSqlContext(
+                    sourceCode,
+                    index);
             }
 
             if (IsStringDelimiter(sourceCode[index]))
@@ -167,7 +202,14 @@ internal sealed class EglCodeMasker
                 originalIdentifiers,
                 sessionId,
                 mode,
+                isInsideSqlBlock,
                 ref index);
+        }
+
+        if (isInsideSqlBlock)
+        {
+            throw new InvalidDataException(
+                "Sonlandırılmamış EGL #sql bloğu bulundu.");
         }
 
         var mappings =
@@ -240,15 +282,7 @@ internal sealed class EglCodeMasker
         return mappings;
     }
 
-    private static void AppendIdentifier(
-        string sourceCode,
-        StringBuilder maskedCode,
-        IDictionary<string, string> mappings,
-        ISet<string> usedMaskedIdentifiers,
-        ISet<string> originalIdentifiers,
-        string sessionId,
-        MaskingMode mode,
-        ref int index)
+    private static void AppendIdentifier(string sourceCode, StringBuilder maskedCode, IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, string sessionId, MaskingMode mode, bool isInsideSqlBlock, ref int index)
     {
         var startIndex = index;
 
@@ -270,7 +304,8 @@ internal sealed class EglCodeMasker
                 sourceCode,
                 identifier,
                 startIndex,
-                index))
+                index,
+                isInsideSqlBlock))
         {
             maskedCode.Append(identifier);
             return;
@@ -298,6 +333,42 @@ internal sealed class EglCodeMasker
         }
 
         maskedCode.Append(maskedIdentifier);
+    }
+
+    private static bool ShouldPreserveIdentifier(string sourceCode, string identifier, int startIndex, int endIndex, bool isInsideSqlBlock)
+    {
+        if (isInsideSqlBlock &&
+            EglKeywordCatalog.IsSqlKeyword(identifier))
+        {
+            return true;
+        }
+
+        if (EglKeywordCatalog.IsKeyword(identifier) ||
+            EglKeywordCatalog.IsBuiltInType(identifier) ||
+            EglKeywordCatalog.IsSystemRoot(identifier))
+        {
+            return true;
+        }
+
+        if (EglKeywordCatalog.IsMetadataProperty(identifier) &&
+            IsFollowedByAssignment(
+                sourceCode,
+                endIndex))
+        {
+            return true;
+        }
+
+        if (EglKeywordCatalog.IsEntryPointName(identifier) &&
+            IsFunctionName(
+                sourceCode,
+                startIndex))
+        {
+            return true;
+        }
+
+        return IsSystemMember(
+            sourceCode,
+            startIndex);
     }
 
     private static void AppendMaskedStringLiteral(
@@ -637,6 +708,46 @@ internal sealed class EglCodeMasker
                    StringComparison.OrdinalIgnoreCase) == 0;
     }
 
+    private static bool IsSqlBlockStart(string sourceCode, int index)
+    {
+        return index + 4 < sourceCode.Length &&
+               sourceCode[index] == '#' &&
+               sourceCode[index + 4] == '{' &&
+               string.Compare(
+                   sourceCode,
+                   index + 1,
+                   "sql",
+                   0,
+                   3,
+                   StringComparison.OrdinalIgnoreCase) == 0;
+    }
+
+    private static void RejectUnsupportedSqlContext(string sourceCode, int index)
+    {
+        if (sourceCode[index] == '\'')
+        {
+            throw new NotSupportedException(
+                "EGL #sql bloğundaki tek tırnaklı SQL değerleri " +
+                "henüz desteklenmiyor.");
+        }
+
+        if (index + 1 < sourceCode.Length &&
+            sourceCode[index] == '-' &&
+            sourceCode[index + 1] == '-')
+        {
+            throw new NotSupportedException(
+                "EGL #sql bloğundaki -- SQL yorumları " +
+                "henüz desteklenmiyor.");
+        }
+
+        if (sourceCode[index] == '{')
+        {
+            throw new NotSupportedException(
+                "EGL #sql bloğundaki iç içe süslü parantezler " +
+                "henüz desteklenmiyor.");
+        }
+    }
+
     private static void AppendMaskedCommentBody(
         string originalValue,
         StringBuilder maskedCode,
@@ -745,40 +856,6 @@ internal sealed class EglCodeMasker
 
             index++;
         }
-    }
-
-    private static bool ShouldPreserveIdentifier(
-        string sourceCode,
-        string identifier,
-        int startIndex,
-        int endIndex)
-    {
-        if (EglKeywordCatalog.IsKeyword(identifier) ||
-            EglKeywordCatalog.IsBuiltInType(identifier) ||
-            EglKeywordCatalog.IsSystemRoot(identifier))
-        {
-            return true;
-        }
-
-        if (EglKeywordCatalog.IsMetadataProperty(identifier) &&
-            IsFollowedByAssignment(
-                sourceCode,
-                endIndex))
-        {
-            return true;
-        }
-
-        if (EglKeywordCatalog.IsEntryPointName(identifier) &&
-            IsFunctionName(
-                sourceCode,
-                startIndex))
-        {
-            return true;
-        }
-
-        return IsSystemMember(
-            sourceCode,
-            startIndex);
     }
 
     private static bool IsFunctionName(

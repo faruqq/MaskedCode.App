@@ -494,10 +494,6 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
         [Theory]
         [InlineData(
     """
-    get MyTable with #sql{select PARAM1 from MY_TABLE};
-    """)]
-        [InlineData(
-    """
     function MüşteriKayıtEkle()
     end
     """)]
@@ -747,6 +743,156 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
 
             Assert.Contains(
                 "Sonlandırılmamış EGL #doc bloğu",
+                exception.Message);
+        }
+
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void Mask_WithSqlBlock_ShouldPreserveSqlKeywordsAndMaskSensitiveValues(MaskingMode mode)
+        {
+            const string sourceCode =
+                """
+        get CustomerRecord singleRow with #sql{
+            SELECT MY_SCHEMA.CUSTOMER.CUSTOMER_NO,
+                   MY_SCHEMA.CUSTOMER.CUSTOMER_NAME
+            FROM MY_SCHEMA.CUSTOMER
+            WHERE CUSTOMER_NO = :CustomerInput.CustomerNo
+              AND BRANCH_NO = 1453
+        };
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    mode);
+
+            var preservedSqlKeywords =
+                new[]
+                {
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "AND"
+                };
+
+            foreach (var keyword in preservedSqlKeywords)
+            {
+                Assert.DoesNotContain(
+                    result.Mappings,
+                    mapping =>
+                        mapping.OriginalValue.Equals(
+                            keyword,
+                            StringComparison.OrdinalIgnoreCase));
+
+                Assert.Contains(
+                    keyword,
+                    result.MaskedCode,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            var sensitiveIdentifiers =
+                new[]
+                {
+            "MY_SCHEMA",
+            "CUSTOMER",
+            "CUSTOMER_NO",
+            "CUSTOMER_NAME",
+            "CustomerInput",
+            "CustomerNo",
+            "BRANCH_NO"
+                };
+
+            foreach (var identifier in sensitiveIdentifiers)
+            {
+                Assert.Contains(
+                    result.Mappings,
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue.Equals(
+                            identifier,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+
+            Assert.DoesNotContain(
+                "MY_SCHEMA",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.DoesNotContain(
+                "CUSTOMER_NO",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                "#sql{",
+                result.MaskedCode,
+                StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.NumericLiteral &&
+                    mapping.OriginalValue ==
+                        "1453");
+        }
+
+        [Theory]
+        [InlineData(
+            """
+    get CustomerRecord with #sql{
+        SELECT CUSTOMER_NO
+        FROM CUSTOMER
+        WHERE STATUS = 'ACTIVE'
+    };
+    """)]
+        [InlineData(
+            """
+    get CustomerRecord with #sql{
+        SELECT CUSTOMER_NO
+        FROM CUSTOMER
+        -- Only active customers
+        WHERE STATUS = STATUS_CODE
+    };
+    """)]
+
+        public void Mask_WithUnsupportedSqlContent_ShouldRejectSource(string sourceCode)
+        {
+            var masker =
+                new EglCodeMasker();
+
+            Assert.Throws<NotSupportedException>(
+                () => masker.Mask(
+                    sourceCode,
+                    MaskingMode.MaximumPrivacy));
+        }
+
+        [Fact]
+        public void Mask_WithUnterminatedSqlBlock_ShouldRejectSource()
+        {
+            const string sourceCode =
+                """
+        get CustomerRecord with #sql{
+            SELECT CUSTOMER_NO
+            FROM CUSTOMER
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var exception =
+                Assert.Throws<InvalidDataException>(
+                    () => masker.Mask(
+                        sourceCode,
+                        MaskingMode.MaximumPrivacy));
+
+            Assert.Contains(
+                "Sonlandırılmamış EGL #sql bloğu",
                 exception.Message);
         }
 
