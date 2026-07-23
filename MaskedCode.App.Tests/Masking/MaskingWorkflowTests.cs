@@ -1145,4 +1145,236 @@ MaskAndUnmask_WithEmbeddedSql_ShouldPreserveSqlKeywordsAndRestoreExactCode(
             sourceCode,
             restoredCode);
     }
+
+    [Fact]
+    public void
+EncryptAndDecrypt_WithEglMaskingResult_ShouldPreserveMappingsAndMode()
+    {
+        const string maskedCode =
+            """
+        package PKG_0001;
+
+        program PGM_0001
+        end
+        """;
+
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "com.company.programs",
+                "PKG_0001"),
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "MYPROGRAMNAME",
+                "PGM_0001")
+            };
+
+        var maskingResult =
+            new EglMaskingResult(
+                maskedCode,
+                mappings,
+                MaskingMode.MaximumPrivacy);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                VaultPassword,
+                maskedCode);
+
+        Assert.Equal(
+            MaskingMode.MaximumPrivacy,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            mappings,
+            vaultContent.Mappings);
+    }
+
+    [Fact]
+    public void
+Decrypt_WithEglVaultAndModifiedMaskedCode_ShouldRejectVaultCodePair()
+    {
+        const string maskedCode =
+            """
+        program PGM_0001
+        end
+        """;
+
+        var maskingResult =
+            new EglMaskingResult(
+                maskedCode,
+                new[]
+                {
+                new MaskingMapping(
+                    MaskingValueKind.Identifier,
+                    "MYPROGRAMNAME",
+                    "PGM_0001")
+                },
+                MaskingMode.MaximumPrivacy);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var modifiedMaskedCode =
+            maskedCode.Replace(
+                "PGM_0001",
+                "PGM_0002",
+                StringComparison.Ordinal);
+
+        var exception =
+            Assert.Throws<InvalidDataException>(
+                () => vault.Decrypt(
+                    encryptedVault,
+                    VaultPassword,
+                    modifiedMaskedCode));
+
+        Assert.Contains(
+            "Seçilen şifreli kasa bu maskelenmiş " +
+            "kodla eşleşmiyor.",
+            exception.Message);
+    }
+
+    [Fact]
+    public void
+Encrypt_WithEglMaskingResultWithoutMappings_ShouldRejectResult()
+    {
+        var maskingResult =
+            new EglMaskingResult(
+                "program MYPROGRAMNAME end",
+                Array.Empty<MaskingMapping>(),
+                MaskingMode.FormatPreserving);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var exception =
+            Assert.Throws<InvalidOperationException>(
+                () => vault.Encrypt(
+                    maskingResult,
+                    VaultPassword));
+
+        Assert.Contains(
+            "Şifrelenecek maskeleme eşlemesi bulunamadı.",
+            exception.Message);
+    }
+
+    [Fact]
+    public void
+EglMaskingResult_WithDifferentMappingKinds_ShouldCalculateCounts()
+    {
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "MYPROGRAMNAME",
+                "PGM_0001"),
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "MyProgramNameInput",
+                "REC_0001"),
+            new MaskingMapping(
+                MaskingValueKind.StringLiteral,
+                "Gerçek hata mesajı",
+                "STR_0001"),
+            new MaskingMapping(
+                MaskingValueKind.NumericLiteral,
+                "001",
+                "742"),
+            new MaskingMapping(
+                MaskingValueKind.Comment,
+                "Gerçek iş kuralı açıklaması",
+                "COMMENT_0001")
+            };
+
+        var maskingResult =
+            new EglMaskingResult(
+                "MASKED_EGL_CODE",
+                mappings,
+                MaskingMode.MaximumPrivacy);
+
+        Assert.Equal(
+            2,
+            maskingResult.IdentifierCount);
+
+        Assert.Equal(
+            1,
+            maskingResult.StringLiteralCount);
+
+        Assert.Equal(
+            1,
+            maskingResult.NumericLiteralCount);
+
+        Assert.Equal(
+            1,
+            maskingResult.CommentCount);
+    }
+
+    [Fact]
+    public void
+EncryptAndDecrypt_WithPl1ResultAsCommonContract_ShouldPreserveMappings()
+    {
+        const string maskedCode =
+            """
+         DCL ID_0001 FIXED DECIMAL(10);
+
+         ID_0001 = NUM_0001;
+        """;
+
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "CUSTOMER_NO",
+                "ID_0001"),
+            new MaskingMapping(
+                MaskingValueKind.NumericLiteral,
+                "1234567890",
+                "NUM_0001")
+            };
+
+        IMaskingResult maskingResult =
+            new Pl1MaskingResult(
+                maskedCode,
+                mappings,
+                MaskingMode.MaximumPrivacy);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                VaultPassword,
+                maskedCode);
+
+        Assert.Equal(
+            MaskingMode.MaximumPrivacy,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            mappings,
+            vaultContent.Mappings);
+    }
 }

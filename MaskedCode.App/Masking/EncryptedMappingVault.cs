@@ -33,8 +33,8 @@ public sealed class EncryptedMappingVault
             Cipher);
 
     public byte[] Encrypt(
-        Pl1MaskingResult maskingResult,
-        string password)
+    IMaskingResult maskingResult,
+    string password)
     {
         ArgumentNullException.ThrowIfNull(maskingResult);
         ValidatePassword(password);

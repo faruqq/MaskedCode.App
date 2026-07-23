@@ -2,7 +2,7 @@
 
 ## Son Doğrulanan Commit
 
-`f68dca183ea106e7cd3f0f7a0efbb5ef85fd5143`
+`95982b923f027f9d17531f382114a4e245d37f69`
 
 Bu commit itibarıyla temel PL/I maskeleme, gömülü SQL anahtar
 kelimelerinin korunması, şifreli eşleme kasası, geri açma akışı ve
@@ -211,16 +211,22 @@ EGL ve C# maskeleme desteği bu sürümün kapsamında değildir.
 
 ## Sıradaki Aşama
 
-İlk kullanılabilir PL/I sürümünün geliştirme ve doğrulama kapsamı
-tamamlanmıştır.
+İlk kullanılabilir PL/I sürümü tamamlanmıştır.
 
-Sıradaki işlemler:
+Sıradaki geliştirme aşaması EGL kaynak kodu desteğidir. İlk EGL
+kapsamında:
 
-1. README içeriğinin yalnızca kurulum, kullanım ve güvenlik açısından
-   gerekli bilgilerle son kez gözden geçirilmesi.
-2. Teknik güvenlik uyarılarının son kez kontrol edilmesi.
-3. İlk kullanılabilir PL/I sürümünün tamamlanmış kabul edilmesi.
-4. Sonraki dil desteğinin EGL veya C# olarak belirlenmesi.
+1. Gerçekçi ve şirkete ait olmayan EGL örnekleri incelenecek.
+2. Korunması gereken EGL anahtar kelimeleri ve yapısal değerler
+   belirlenecek.
+3. Maskelenmesi gereken identifier, string, sayı ve yorum yapıları
+   kesinleştirilecek.
+4. En küçük üretim kodu ve güvenlik odaklı test paketi hazırlanacak.
+5. WPF arayüzündeki mevcut EGL seçeneği gerçek maskeleme akışına
+   bağlanacak.
+
+C# desteği, EGL desteği tamamlandıktan sonra ayrı bir geliştirme
+aşaması olarak ele alınacaktır.
 
 ## Çalışma Kuralları
 
