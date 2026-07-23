@@ -2,10 +2,11 @@
 
 ## Son Doğrulanan Commit
 
-`971b7aa2ba3e7541ae3717edabce8c15f8a48a86`
+`f68dca183ea106e7cd3f0f7a0efbb5ef85fd5143`
 
-Bu commit itibarıyla temel PL/I maskeleme, şifreli eşleme kasası,
-geri açma akışı ve bunları doğrulayan unit testler tamamlanmıştır.
+Bu commit itibarıyla temel PL/I maskeleme, gömülü SQL anahtar
+kelimelerinin korunması, şifreli eşleme kasası, geri açma akışı ve
+bunları doğrulayan unit testler tamamlanmıştır.
 
 ## Tamamlanan Özellikler
 
@@ -110,7 +111,7 @@ geri döndürülür.
 
 Mevcut toplam test sonucu:
 
-- Passed: 19
+- Passed: 21
 - Failed: 0
 
 Test kapsamı şunları içerir:
@@ -131,6 +132,8 @@ Test kapsamı şunları içerir:
 - Bilimsel gösterim
 - Format koruyan maskeleme
 - PL/I anahtar kelimeleri
+- Gömülü SQL anahtar kelimeleri
+- SQL şema, tablo, kolon ve host variable kullanımları
 - Fazladan ve çakışan kasa eşlemeleri
 
 Temel maskeleme, şifreli kasa ve geri açma davranışları için unit
@@ -139,26 +142,63 @@ test kapsamı şu aşamada yeterli kabul edilmektedir.
 Yeni bir hata veya somut risk bulunmadan yalnızca test sayısını
 artırmak amacıyla yeni test eklenmeyecektir.
 
+## Manuel Doğrulama Durumu
+
+Şirkete ait olmayan, güvenli biçimde hazırlanmış beş gerçekçi PL/I
+senaryosu manuel olarak doğrulanmıştır.
+
+Her senaryo için aşağıdaki işlemler uygulanmıştır:
+
+1. `MaximumPrivacy` modunda maskeleme
+2. Maskelenmiş çıktının manuel incelenmesi
+3. Şifreli kasayla geri açma
+4. Özgün kodla karakter karakter karşılaştırma
+5. `FormatPreserving` modunda aynı işlemlerin tekrarlanması
+
+Doğrulanan yapılar şunlardır:
+
+- PL/I declaration, procedure ve çağrı yapıları
+- Identifier, string, sayı ve yorum maskelemesi
+- Gömülü SQL
+- SQL anahtar kelimeleri
+- SQL şema, tablo, kolon ve host variable kullanımları
+- İç içe record yapıları
+- Diziler ve level number değerleri
+- Yapısal ve çalışma zamanı sayılarının ayrılması
+- Negatif ve ondalıklı sayılar
+- Aritmetik ve karşılaştırma operatörleri
+- Escaped quote içeren PL/I stringleri
+- Girintiler, boş satırlar, satır sonları ve noktalama işaretleri
+
+Beş senaryonun tamamı iki maskeleme modunda da başarıyla geri
+açılmıştır. Geri açılan kodların özgün kaynakla karakter karakter
+aynı olduğu doğrulanmıştır.
+
+Manuel doğrulama sırasında gömülü SQL anahtar kelimelerinin identifier
+olarak maskelenmesi hatası bulunmuş; `EXEC`, `SQL`, `INTO`, `FROM`,
+`WHERE`, `AND` ve `SET` sözcükleri PL/I anahtar kelime kataloğuna
+eklenerek sorun giderilmiştir.
+
+Düzeltme hem iki maskeleme modunu kapsayan otomatik regresyon testiyle
+hem de gerçek uygulama üzerinden manuel olarak doğrulanmıştır.
+
 ## Sıradaki Aşama
 
-Bir sonraki geliştirme aşaması gerçek şirket kodu paylaşmak değildir.
+Gerçekçi PL/I kodlarıyla manuel maskeleme ve geri açma doğrulaması
+tamamlanmıştır. Aynı kapsamda yeni manuel senaryo eklenmeyecektir.
 
-Şirkete ait olmayan veya güvenli biçimde hazırlanmış gerçekçi PL/I
-örnekleri kullanılarak manuel doğrulama yapılacaktır.
+Sıradaki işlemler:
 
-Sıralama:
+1. WPF arayüzü için kısa manuel smoke test yapılması.
+2. Maskeleme, kasa kaydetme ve geri açma ekranlarının temel kullanıcı
+   akışının doğrulanması.
+3. İlk kullanılabilir sürüm kapsamının kesinleştirilmesi.
+4. İlk sürüm öncesinde README ve güvenlik uyarılarının son kez
+   gözden geçirilmesi.
 
-1. Farklı PL/I program yapılarıyla maskeleme yapılması.
-2. Maskelenmiş çıktıda hassas bilgi kalıp kalmadığının incelenmesi.
-3. Maskelenmiş kodun sözdizimsel yapısının kontrol edilmesi.
-4. Şifreli kasayla kodun geri açılması.
-5. Geri açılan kodun özgün kodla karşılaştırılması.
-6. Bulunan gerçek hata ve eksiklerin düzeltilmesi.
-7. WPF arayüzü için kısa manuel smoke test yapılması.
-8. İlk kullanılabilir sürüm kapsamının kesinleştirilmesi.
-
-EGL ve C# maskeleme desteği, PL/I akışı yeterince doğrulanmadan
-başlatılmayacaktır.
+EGL ve C# maskeleme desteği, PL/I için ilk kullanılabilir sürüm
+kapsamı kapatıldıktan sonra ayrı geliştirme aşamaları olarak ele
+alınacaktır.
 
 ## Çalışma Kuralları
 

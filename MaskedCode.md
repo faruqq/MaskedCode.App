@@ -282,8 +282,25 @@ zorunlu kabul edilmelidir.
 
 ## Doğrulama Durumu
 
-Temel maskeleme, kasa ve geri açma akışı 19 unit test ile
+Temel maskeleme, kasa ve geri açma akışı 21 başarılı unit test ile
 doğrulanmaktadır.
 
-Otomatik testlerden sonraki aşama, şirkete ait olmayan veya güvenli
-biçimde hazırlanmış gerçekçi PL/I örnekleriyle manuel doğrulamadır.
+Gömülü SQL anahtar kelimelerinin korunması, her iki maskeleme modunu
+kapsayan otomatik regresyon testiyle doğrulanmıştır.
+
+Şirkete ait olmayan beş gerçekçi PL/I senaryosu aşağıdaki iki modda
+manuel olarak test edilmiştir:
+
+- `MaximumPrivacy`
+- `FormatPreserving`
+
+Bu senaryolarda PL/I yapıları, gömülü SQL, record ve diziler,
+yapısal ve çalışma zamanı sayıları, escaped quote içeren stringler,
+yorumlar ve operatörler incelenmiştir.
+
+Her maskeleme işleminden sonra kod ilgili şifreli kasayla geri açılmış
+ve özgün kaynakla karakter karakter aynı olduğu doğrulanmıştır.
+
+PL/I için gerçekçi kodlarla manuel maskeleme ve geri açma doğrulaması
+tamamlanmıştır. Sıradaki aşama kısa WPF smoke testi ve ilk
+kullanılabilir sürüm kapsamının kesinleştirilmesidir.
