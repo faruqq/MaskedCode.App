@@ -22,8 +22,8 @@ internal sealed class EglCodeMasker
         ValidateMaskingMode(mode);
 
         var identifierMappings =
-            new Dictionary<string, string>(
-                StringComparer.OrdinalIgnoreCase);
+        new Dictionary<string, string>(
+            StringComparer.Ordinal);
 
         var stringLiteralMappings =
             new Dictionary<string, string>(

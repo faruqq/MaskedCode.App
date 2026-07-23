@@ -1226,6 +1226,62 @@ Mask_WithDb2SqlClauses_ShouldPreserveStructureAndMaskSensitiveIdentifiers(
                         StringComparison.Ordinal));
         }
 
+        [Theory]
+        [InlineData(MaskingMode.MaximumPrivacy)]
+        [InlineData(MaskingMode.FormatPreserving)]
+        public void Mask_WithIdentifiersDifferingOnlyByCase_ShouldCreateSeparateMappings(MaskingMode mode)
+        {
+            const string sourceCode =
+                """
+        package com.company.customer;
+
+        program CUSTOMER type BasicProgram
+        end
+        """;
+
+            var masker =
+                new EglCodeMasker();
+
+            var result =
+                masker.Mask(
+                    sourceCode,
+                    mode);
+
+            var lowerCaseMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.Identifier &&
+                            mapping.OriginalValue ==
+                                "customer"));
+
+            var upperCaseMapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.Identifier &&
+                            mapping.OriginalValue ==
+                                "CUSTOMER"));
+
+            Assert.NotEqual(
+                lowerCaseMapping.MaskedValue,
+                upperCaseMapping.MaskedValue,
+                StringComparer.OrdinalIgnoreCase);
+
+            Assert.DoesNotContain(
+                "customer",
+                result.MaskedCode,
+                StringComparison.Ordinal);
+
+            Assert.DoesNotContain(
+                "CUSTOMER",
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+
 
     }
 }
