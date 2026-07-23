@@ -182,23 +182,47 @@ eklenerek sorun giderilmiştir.
 Düzeltme hem iki maskeleme modunu kapsayan otomatik regresyon testiyle
 hem de gerçek uygulama üzerinden manuel olarak doğrulanmıştır.
 
+## WPF Smoke Testi
+
+WPF arayüzünün temel kullanıcı akışı manuel olarak doğrulanmıştır:
+
+- PL/I kodunun arayüzden maskelenmesi
+- Şifreli kasanın kaydedilmesi
+- Doğru parola ve kasayla kodun geri açılması
+- Geri açılan kodun özgün kaynakla aynı olması
+- Yanlış parolanın uygulama çökmeden reddedilmesi
+
+Smoke testi başarıyla tamamlanmıştır.
+
+## İlk Kullanılabilir Sürüm Kapsamı
+
+İlk kullanılabilir sürüm aşağıdaki kapsamla sınırlandırılmıştır:
+
+- Windows WPF masaüstü uygulaması
+- PL/I kaynak kodu desteği
+- `MaximumPrivacy` ve `FormatPreserving` maskeleme modları
+- Identifier, string, çalışma zamanı sayısı ve yorum maskelemesi
+- Gömülü SQL anahtar kelimelerinin korunması
+- Parolayla şifrelenmiş `.mcvault` kasası
+- Maskelenmiş kodun özgün hâline geri açılması
+- Kasa bütünlüğü ve kasa-kod eşleşmesi kontrolleri
+
+EGL ve C# maskeleme desteği bu sürümün kapsamında değildir.
+
 ## Sıradaki Aşama
 
-Gerçekçi PL/I kodlarıyla manuel maskeleme ve geri açma doğrulaması
-tamamlanmıştır. Aynı kapsamda yeni manuel senaryo eklenmeyecektir.
+İlk kullanılabilir PL/I sürümünün geliştirme ve doğrulama kapsamı
+tamamlanmıştır.
 
 Sıradaki işlemler:
 
-1. WPF arayüzü için kısa manuel smoke test yapılması.
-2. Maskeleme, kasa kaydetme ve geri açma ekranlarının temel kullanıcı
-   akışının doğrulanması.
-3. İlk kullanılabilir sürüm kapsamının kesinleştirilmesi.
-4. İlk sürüm öncesinde README ve güvenlik uyarılarının son kez
-   gözden geçirilmesi.
+1. README içeriğinin yalnızca kurulum, kullanım ve güvenlik açısından
+   gerekli bilgilerle son kez gözden geçirilmesi.
+2. Teknik güvenlik uyarılarının son kez kontrol edilmesi.
+3. İlk kullanılabilir PL/I sürümünün tamamlanmış kabul edilmesi.
+4. Sonraki dil desteğinin EGL veya C# olarak belirlenmesi.
 
-EGL ve C# maskeleme desteği, PL/I için ilk kullanılabilir sürüm
-kapsamı kapatıldıktan sonra ayrı geliştirme aşamaları olarak ele
-alınacaktır.
+## Çalışma Kuralları
 
 ## Çalışma Kuralları
 

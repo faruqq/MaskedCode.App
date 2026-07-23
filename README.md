@@ -109,36 +109,13 @@ Kasa başka bir maskelenmiş koda aitse işlem reddedilir.
 
 ## Şifreli Kasa
 
-Eşleme kasasında aşağıdaki güvenlik mekanizmaları kullanılmaktadır:
+Maskeleme eşlemeleri düz metin olarak saklanmaz; parola ile şifrelenmiş
+`.mcvault` dosyasına yazılır.
 
-- AES-256-GCM
-- PBKDF2-HMAC-SHA256
-- 600.000 PBKDF2 iterasyonu
-- Her kasa için rastgele salt
-- Her kasa için rastgele nonce
-- Kasa bütünlüğü doğrulaması
-- Maskelenmiş kod için SHA-256 eşleşme kontrolü
+Kasanın teknik ve kriptografik tasarımı `MaskedCode.md` dosyasında
+açıklanmaktadır.
 
-## Testler
+## Teknik Dokümantasyon
 
-Unit testler `MaskedCode.App.Tests` projesindedir.
-
-Mevcut durum:
-
-- Passed: 19
-- Failed: 0
-
-Testleri çalıştırmak için:
-
-1. Visual Studio’da **Test > Test Explorer** penceresini aç.
-2. **Run All Tests** düğmesine bas.
-
-## Proje Durumu
-
-Temel PL/I maskeleme, şifreli kasa ve geri açma akışı tamamlanmıştır.
-
-Sıradaki aşama, şirkete ait olmayan veya güvenli biçimde hazırlanmış
-gerçekçi PL/I örnekleriyle manuel doğrulama yapmaktır.
-
-Ayrıntılı güncel durum için `ProjectState.md` dosyasına bak.
-Teknik maskeleme ve güvenlik tasarımı için `MaskedCode.md` dosyasına bak.
+- Güncel geliştirme durumu: `ProjectState.md`
+- Maskeleme ve güvenlik tasarımı: `MaskedCode.md`
