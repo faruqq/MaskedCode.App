@@ -5,6 +5,9 @@ public sealed record EglMaskingResult(
     IReadOnlyList<MaskingMapping> Mappings,
     MaskingMode Mode) : IMaskingResult
 {
+    public SourceLanguage SourceLanguage =>
+        SourceLanguage.Egl;
+
     public int IdentifierCount =>
         Mappings.Count(x =>
             x.Kind == MaskingValueKind.Identifier);

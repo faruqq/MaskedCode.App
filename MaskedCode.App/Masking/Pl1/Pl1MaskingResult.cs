@@ -5,6 +5,9 @@ public sealed record Pl1MaskingResult(
     IReadOnlyList<MaskingMapping> Mappings,
     MaskingMode Mode) : IMaskingResult
 {
+    public SourceLanguage SourceLanguage =>
+        SourceLanguage.Pl1;
+
     public int IdentifierCount =>
         Mappings.Count(x =>
             x.Kind == MaskingValueKind.Identifier);

@@ -32,9 +32,7 @@ public sealed class EncryptedMappingVault
             $"{KeyDerivation}|{Pbkdf2IterationCount}|" +
             Cipher);
 
-    public byte[] Encrypt(
-    IMaskingResult maskingResult,
-    string password)
+    public byte[] Encrypt(IMaskingResult maskingResult, string password)
     {
         ArgumentNullException.ThrowIfNull(maskingResult);
         ValidatePassword(password);
@@ -48,11 +46,13 @@ public sealed class EncryptedMappingVault
         var maskedCodeHash =
             CalculateSha256(maskingResult.MaskedCode);
 
-        var payload = new MappingVaultPayload(
-            DateTimeOffset.UtcNow,
-            maskingResult.Mode,
-            maskedCodeHash,
-            maskingResult.Mappings);
+        var payload =
+            new MappingVaultPayload(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskedCodeHash,
+                maskingResult.Mappings,
+                maskingResult.SourceLanguage);
 
         var plainText =
             JsonSerializer.SerializeToUtf8Bytes(payload);
@@ -92,16 +92,17 @@ public sealed class EncryptedMappingVault
                 authenticationTag,
                 AdditionalAuthenticatedData);
 
-            var envelope = new MappingVaultEnvelope(
-                FileFormat,
-                FileFormatVersion,
-                KeyDerivation,
-                Pbkdf2IterationCount,
-                Cipher,
-                Convert.ToBase64String(salt),
-                Convert.ToBase64String(nonce),
-                Convert.ToBase64String(authenticationTag),
-                Convert.ToBase64String(cipherText));
+            var envelope =
+                new MappingVaultEnvelope(
+                    FileFormat,
+                    FileFormatVersion,
+                    KeyDerivation,
+                    Pbkdf2IterationCount,
+                    Cipher,
+                    Convert.ToBase64String(salt),
+                    Convert.ToBase64String(nonce),
+                    Convert.ToBase64String(authenticationTag),
+                    Convert.ToBase64String(cipherText));
 
             return JsonSerializer.SerializeToUtf8Bytes(
                 envelope);
@@ -119,10 +120,7 @@ public sealed class EncryptedMappingVault
         }
     }
 
-    public MappingVaultContent Decrypt(
-        byte[] encryptedVault,
-        string password,
-        string maskedCode)
+    public MappingVaultContent Decrypt(byte[] encryptedVault, string password, string maskedCode)
     {
         ArgumentNullException.ThrowIfNull(
             encryptedVault);
@@ -239,7 +237,8 @@ public sealed class EncryptedMappingVault
             return new MappingVaultContent(
                 payload.CreatedAtUtc,
                 payload.MaskingMode,
-                payload.Mappings.ToArray());
+                payload.Mappings.ToArray(),
+                payload.SourceLanguage);
         }
         finally
         {
@@ -423,8 +422,7 @@ public sealed class EncryptedMappingVault
         }
     }
 
-    private static void ValidatePayload(
-        MappingVaultPayload payload)
+    private static void ValidatePayload(MappingVaultPayload payload)
     {
         if (!Enum.IsDefined(
                 typeof(MaskingMode),
@@ -432,6 +430,14 @@ public sealed class EncryptedMappingVault
         {
             throw new InvalidDataException(
                 "Kasa içindeki maskeleme modu geçerli değil.");
+        }
+
+        if (!Enum.IsDefined(
+                typeof(SourceLanguage),
+                payload.SourceLanguage))
+        {
+            throw new InvalidDataException(
+                "Kasa içindeki kaynak dili geçerli değil.");
         }
 
         ValidateSha256(
@@ -516,10 +522,11 @@ public sealed class EncryptedMappingVault
     }
 
     private sealed record MappingVaultPayload(
-        DateTimeOffset CreatedAtUtc,
-        MaskingMode MaskingMode,
-        string MaskedCodeSha256,
-        IReadOnlyList<MaskingMapping> Mappings);
+    DateTimeOffset CreatedAtUtc,
+    MaskingMode MaskingMode,
+    string MaskedCodeSha256,
+    IReadOnlyList<MaskingMapping> Mappings,
+    SourceLanguage SourceLanguage = SourceLanguage.Pl1);
 
     private sealed record MappingVaultEnvelope(
         string Format,

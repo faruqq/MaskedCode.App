@@ -3,4 +3,5 @@
 public sealed record MappingVaultContent(
     DateTimeOffset CreatedAtUtc,
     MaskingMode MaskingMode,
-    IReadOnlyList<MaskingMapping> Mappings);
+    IReadOnlyList<MaskingMapping> Mappings,
+    SourceLanguage SourceLanguage = SourceLanguage.Pl1);

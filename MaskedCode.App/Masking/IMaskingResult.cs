@@ -7,4 +7,6 @@ public interface IMaskingResult
     IReadOnlyList<MaskingMapping> Mappings { get; }
 
     MaskingMode Mode { get; }
+
+    SourceLanguage SourceLanguage { get; }
 }
