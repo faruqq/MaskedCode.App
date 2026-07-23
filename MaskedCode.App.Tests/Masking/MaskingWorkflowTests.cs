@@ -1,11 +1,12 @@
-﻿using System.IO;
+﻿using MaskedCode.App.Masking;
+using MaskedCode.App.Masking.Egl;
+using MaskedCode.App.Masking.Pl1;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text;
-using MaskedCode.App.Masking;
 using Xunit;
-using MaskedCode.App.Masking.Pl1;
-using MaskedCode.App.Masking.Egl;
 
 namespace MaskedCode.App.Tests.Masking;
 
@@ -1379,4 +1380,311 @@ EncryptAndDecrypt_WithPl1ResultAsCommonContract_ShouldPreserveMappings()
             mappings,
             vaultContent.Mappings);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void EncryptAndDecrypt_WithPl1MaskingResult_ShouldPreserveSourceLanguage(MaskingMode maskingMode)
+    {
+        const string sourceCode =
+            """
+         DCL CUSTOMER_NO FIXED DECIMAL(10);
+
+         CUSTOMER_NO = 1234567890;
+        """;
+
+        var masker =
+            new Pl1CodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                maskingMode);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                VaultPassword,
+                maskingResult.MaskedCode);
+
+        Assert.Equal(
+            SourceLanguage.Pl1,
+            maskingResult.SourceLanguage);
+
+        Assert.Equal(
+            SourceLanguage.Pl1,
+            vaultContent.SourceLanguage);
+
+        Assert.Equal(
+            maskingMode,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            maskingResult.Mappings,
+            vaultContent.Mappings);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void EncryptAndDecrypt_WithEglMaskingResult_ShouldPreserveSourceLanguage(MaskingMode maskingMode)
+    {
+        const string sourceCode =
+            """
+        package com.company.customer;
+
+        program CUSTOMERPROGRAM type BasicProgram
+
+            function main()
+                CustomerName = "PRIVATE CUSTOMER";
+            end
+
+        end
+        """;
+
+        var masker =
+            new EglCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                maskingMode);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                VaultPassword,
+                maskingResult.MaskedCode);
+
+        Assert.Equal(
+            SourceLanguage.Egl,
+            maskingResult.SourceLanguage);
+
+        Assert.Equal(
+            SourceLanguage.Egl,
+            vaultContent.SourceLanguage);
+
+        Assert.Equal(
+            maskingMode,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            maskingResult.Mappings,
+            vaultContent.Mappings);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Decrypt_WithLegacyVaultWithoutSourceLanguage_ShouldTreatVaultAsPl1(MaskingMode maskingMode)
+    {
+        const string sourceCode =
+            """
+         DCL CUSTOMER_NO FIXED DECIMAL(10);
+
+         CUSTOMER_NO = 1234567890;
+         CALL WRITE_CUSTOMER;
+        """;
+
+        var masker =
+            new Pl1CodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                maskingMode);
+
+        var legacyEncryptedVault =
+            CreateLegacyEncryptedVault(
+                maskingResult.MaskedCode,
+                maskingResult.Mappings,
+                maskingResult.Mode);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var vaultContent =
+            vault.Decrypt(
+                legacyEncryptedVault,
+                VaultPassword,
+                maskingResult.MaskedCode);
+
+        Assert.Equal(
+            SourceLanguage.Pl1,
+            vaultContent.SourceLanguage);
+
+        Assert.Equal(
+            maskingMode,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            maskingResult.Mappings,
+            vaultContent.Mappings);
+
+        var unmasker =
+            new Pl1CodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
+
+    private static byte[] CreateLegacyEncryptedVault(string maskedCode, IReadOnlyList<MaskingMapping> mappings, MaskingMode maskingMode)
+    {
+        const string fileFormat =
+            "MaskedCode.MappingVault";
+
+        const string keyDerivation =
+            "PBKDF2-HMAC-SHA256";
+
+        const string cipher =
+            "AES-256-GCM";
+
+        const int fileFormatVersion = 1;
+        const int pbkdf2IterationCount = 600_000;
+        const int saltSizeInBytes = 16;
+        const int nonceSizeInBytes = 12;
+        const int tagSizeInBytes = 16;
+        const int keySizeInBytes = 32;
+
+        var maskedCodeBytes =
+            Encoding.UTF8.GetBytes(maskedCode);
+
+        string maskedCodeHash;
+
+        try
+        {
+            maskedCodeHash =
+                Convert.ToHexString(
+                    SHA256.HashData(maskedCodeBytes));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(
+                maskedCodeBytes);
+        }
+
+        var payload =
+            new LegacyMappingVaultPayload(
+                DateTimeOffset.UtcNow,
+                maskingMode,
+                maskedCodeHash,
+                mappings);
+
+        var plainText =
+            JsonSerializer.SerializeToUtf8Bytes(
+                payload);
+
+        var salt =
+            RandomNumberGenerator.GetBytes(
+                saltSizeInBytes);
+
+        var nonce =
+            RandomNumberGenerator.GetBytes(
+                nonceSizeInBytes);
+
+        var cipherText =
+            new byte[plainText.Length];
+
+        var authenticationTag =
+            new byte[tagSizeInBytes];
+
+        var additionalAuthenticatedData =
+            Encoding.UTF8.GetBytes(
+                $"{fileFormat}|{fileFormatVersion}|" +
+                $"{keyDerivation}|{pbkdf2IterationCount}|" +
+                cipher);
+
+        byte[] encryptionKey = [];
+
+        try
+        {
+            encryptionKey =
+                Rfc2898DeriveBytes.Pbkdf2(
+                    VaultPassword,
+                    salt,
+                    pbkdf2IterationCount,
+                    HashAlgorithmName.SHA256,
+                    keySizeInBytes);
+
+            using var aesGcm =
+                new AesGcm(
+                    encryptionKey,
+                    tagSizeInBytes);
+
+            aesGcm.Encrypt(
+                nonce,
+                plainText,
+                cipherText,
+                authenticationTag,
+                additionalAuthenticatedData);
+
+            var envelope =
+                new LegacyMappingVaultEnvelope(
+                    fileFormat,
+                    fileFormatVersion,
+                    keyDerivation,
+                    pbkdf2IterationCount,
+                    cipher,
+                    Convert.ToBase64String(salt),
+                    Convert.ToBase64String(nonce),
+                    Convert.ToBase64String(authenticationTag),
+                    Convert.ToBase64String(cipherText));
+
+            return JsonSerializer.SerializeToUtf8Bytes(
+                envelope);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(
+                plainText);
+
+            CryptographicOperations.ZeroMemory(
+                additionalAuthenticatedData);
+
+            if (encryptionKey.Length > 0)
+            {
+                CryptographicOperations.ZeroMemory(
+                    encryptionKey);
+            }
+        }
+    }
+
+    private sealed record LegacyMappingVaultPayload(
+        DateTimeOffset CreatedAtUtc,
+        MaskingMode MaskingMode,
+        string MaskedCodeSha256,
+        IReadOnlyList<MaskingMapping> Mappings);
+
+    private sealed record LegacyMappingVaultEnvelope(
+        string Format,
+        int Version,
+        string KeyDerivation,
+        int Iterations,
+        string Cipher,
+        string Salt,
+        string Nonce,
+        string AuthenticationTag,
+        string CipherText);
 }
