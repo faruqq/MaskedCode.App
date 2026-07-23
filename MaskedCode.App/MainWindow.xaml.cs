@@ -728,7 +728,14 @@ public partial class MainWindow : Window
         }
         finally
         {
+            RestoreVaultPasswordBox.PasswordChanged -=
+                RestoreInput_Changed;
+
             RestoreVaultPasswordBox.Clear();
+
+            RestoreVaultPasswordBox.PasswordChanged +=
+                RestoreInput_Changed;
+
             UpdateUnmaskButton();
         }
     }

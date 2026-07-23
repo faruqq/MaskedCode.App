@@ -1006,4 +1006,143 @@ public sealed class MaskingWorkflowTests
             "sahip birden fazla eşleme bulundu.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void
+MaskAndUnmask_WithEmbeddedSql_ShouldPreserveSqlKeywordsAndRestoreExactCode(
+    MaskingMode maskingMode)
+    {
+        const string sourceCode =
+            """
+         DCL CUSTOMER_NO FIXED DECIMAL(10)
+             INIT(1234567890);
+         DCL ACCOUNT_STATUS CHAR(2)
+             INIT('AC');
+         DCL CURRENT_BALANCE FIXED DECIMAL(15,2)
+             INIT(0);
+         DCL SQLCODE FIXED DECIMAL(10)
+             INIT(0);
+
+         READ_ACCOUNT: PROCEDURE;
+             EXEC SQL
+                 SELECT ACCOUNT_STATUS, CURRENT_BALANCE
+                   INTO :ACCOUNT_STATUS, :CURRENT_BALANCE
+                   FROM COREBANK.CUSTOMER_ACCOUNT
+                  WHERE CUSTOMER_NO = :CUSTOMER_NO
+                    AND BRANCH_CODE = 'TR01';
+
+             IF SQLCODE < 0 THEN
+                 ACCOUNT_STATUS = 'ER';
+
+             EXEC SQL
+                 UPDATE COREBANK.CUSTOMER_ACCOUNT
+                    SET ACCOUNT_STATUS = 'BL'
+                  WHERE CUSTOMER_NO = :CUSTOMER_NO;
+         END READ_ACCOUNT;
+
+         CALL READ_ACCOUNT;
+        """;
+
+        var masker =
+            new Pl1CodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                maskingMode);
+
+        var sqlKeywords =
+            new[]
+            {
+            "EXEC",
+            "SQL",
+            "SELECT",
+            "INTO",
+            "FROM",
+            "WHERE",
+            "AND",
+            "UPDATE",
+            "SET"
+            };
+
+        foreach (var sqlKeyword in sqlKeywords)
+        {
+            Assert.DoesNotContain(
+                maskingResult.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue.Equals(
+                        sqlKeyword,
+                        StringComparison.OrdinalIgnoreCase));
+
+            Assert.Contains(
+                sqlKeyword,
+                maskingResult.MaskedCode);
+        }
+
+        var schemaMapping =
+            Assert.Single(
+                maskingResult.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "COREBANK"));
+
+        var tableMapping =
+            Assert.Single(
+                maskingResult.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "CUSTOMER_ACCOUNT"));
+
+        var accountStatusMapping =
+            Assert.Single(
+                maskingResult.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "ACCOUNT_STATUS"));
+
+        Assert.DoesNotContain(
+            "COREBANK",
+            maskingResult.MaskedCode);
+
+        Assert.DoesNotContain(
+            "CUSTOMER_ACCOUNT",
+            maskingResult.MaskedCode);
+
+        Assert.Contains(
+            $"{schemaMapping.MaskedValue}." +
+            tableMapping.MaskedValue,
+            maskingResult.MaskedCode);
+
+        Assert.Contains(
+            $":{accountStatusMapping.MaskedValue}",
+            maskingResult.MaskedCode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings);
+
+        var unmasker =
+            new Pl1CodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
 }

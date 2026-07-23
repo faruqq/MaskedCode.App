@@ -5,25 +5,26 @@ internal static class Pl1KeywordCatalog
     private static readonly HashSet<string> Keywords = new(
         StringComparer.OrdinalIgnoreCase)
     {
-        "ABNORMAL", "ALLOCATE", "AREA", "AUTOMATIC",
+        "ABNORMAL", "ALLOCATE", "AND", "AREA", "AUTOMATIC",
         "BASED", "BEGIN", "BINARY", "BIT", "BUILTIN",
         "BY", "CALL", "CHAR", "CHARACTER", "CLOSE",
         "CONDITION", "CONTROLLED",
         "DCL", "DEC", "DECIMAL", "DECLARE", "DEFINED",
         "DIMENSION", "DO", "EDIT", "ELSE", "END",
-        "ENTRY", "ENVIRONMENT", "EVENT", "EXTERNAL",
+        "ENTRY", "ENVIRONMENT", "EVENT", "EXEC", "EXTERNAL",
         "FILE", "FINISH", "FIXED", "FLOAT", "FORMAT",
-        "FREE", "GET", "GO", "GOTO", "IF", "IN",
+        "FREE", "FROM", "GET", "GO", "GOTO", "IF", "IN",
         "INCLUDE", "INDEXED", "INIT", "INITIAL", "INPUT",
-        "INTERNAL", "KEY", "KEYED", "KEYFROM", "KEYTO",
-        "LABEL", "LIKE", "LINE", "LIST", "MAIN",
+        "INTERNAL", "INTO", "KEY", "KEYED", "KEYFROM",
+        "KEYTO", "LABEL", "LIKE", "LINE", "LIST", "MAIN",
         "NONVARYING", "ON", "OPEN", "OPTIONS", "OTHERWISE",
         "OUTPUT", "PACKAGE", "PIC", "PICTURE", "POINTER",
         "PRINT", "PROC", "PROCEDURE", "PUT", "READ",
         "RECORD", "REFER", "RETURN", "RETURNS", "REVERT",
-        "SELECT", "SIGNAL", "STATIC", "STOP", "STREAM",
-        "STRUCTURE", "THEN", "TO", "UNION", "UNTIL",
-        "UPDATE", "VARYING", "WHEN", "WHILE", "WRITE"
+        "SELECT", "SET", "SIGNAL", "SQL", "STATIC", "STOP",
+        "STREAM", "STRUCTURE", "THEN", "TO", "UNION",
+        "UNTIL", "UPDATE", "VARYING", "WHEN", "WHERE",
+        "WHILE", "WRITE"
     };
 
     public static bool Contains(string value)
