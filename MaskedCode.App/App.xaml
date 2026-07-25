@@ -189,6 +189,21 @@
             <Setter Property="FontSize" Value="15" />
         </Style>
 
+        <Style x:Key="OutputActionIconButtonStyle"
+       BasedOn="{StaticResource IconButtonStyle}"
+       TargetType="Button">
+            <Setter Property="ToolTipService.InitialShowDelay" Value="120" />
+            <Setter Property="ToolTipService.ShowDuration" Value="30000" />
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.32" />
+                    <Setter Property="Cursor" Value="Arrow" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="SettingsButtonStyle"
        BasedOn="{StaticResource IconButtonStyle}"
        TargetType="Button">

@@ -415,47 +415,58 @@
                                                                FontWeight="SemiBold"
                                                                Text="Maskelenmiş Kod" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <StackPanel Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
                                                     <Button x:Name="CopyButton"
                                                             Margin="0,0,8,0"
                                                             Click="CopyButton_Click"
-                                                            IsEnabled="False">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Margin="0,0,8,0"
-                                                                       FontFamily="Segoe MDL2 Assets"
-                                                                       Text="&#xE8C8;" />
-                                                            <TextBlock Text="Kopyala" />
-                                                        </StackPanel>
+                                                            Content="&#xE8C8;"
+                                                            IsEnabled="False"
+                                                            Style="{StaticResource OutputActionIconButtonStyle}">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Kopyala" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
                                                     </Button>
+
                                                     <Button x:Name="SaveFileButton"
                                                             Margin="0,0,8,0"
                                                             Click="SaveFileButton_Click"
+                                                            Content="&#xE74E;"
                                                             IsEnabled="False"
-                                                            ToolTip="Maskelenmiş kodu kaynak dosya olarak kaydet">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Margin="0,0,8,0"
-                                                                       FontFamily="Segoe MDL2 Assets"
-                                                                       Text="&#xE74E;" />
-                                                            <TextBlock Text="Kodu Kaydet" />
-                                                        </StackPanel>
+                                                            Style="{StaticResource OutputActionIconButtonStyle}">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Kodu Kaydet" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
                                                     </Button>
+
                                                     <Button x:Name="SaveVaultButton"
                                                             Margin="0,0,8,0"
                                                             Click="SaveVaultButton_Click"
+                                                            Content="&#xE72E;"
                                                             IsEnabled="False"
-                                                            ToolTip="Geri açma eşlemelerini şifreli .mcvault dosyasına kaydet">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Margin="0,0,8,0"
-                                                                       FontFamily="Segoe MDL2 Assets"
-                                                                       Text="&#xE72E;" />
-                                                            <TextBlock Text="Kasa Dosyasını Kaydet" />
-                                                        </StackPanel>
+                                                            Style="{StaticResource OutputActionIconButtonStyle}">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Kasa Dosyasını Kaydet" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
                                                     </Button>
+
                                                     <Button Click="ExpandEditorButton_Click"
                                                             Content="&#xE740;"
                                                             Style="{StaticResource IconButtonStyle}"
-                                                            Tag="MaskRight"
-                                                            ToolTip="Maskelenmiş kod editörünü genişlet" />
+                                                            Tag="MaskRight">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Maskelenmiş kod editörünü genişlet" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
+                                                    </Button>
                                                 </StackPanel>
                                             </Grid>
 
@@ -1143,33 +1154,44 @@
                                                                FontWeight="SemiBold"
                                                                Text="Geri Açılmış Kod" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <StackPanel Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
                                                     <Button x:Name="CopyRestoredButton"
                                                             Margin="0,0,8,0"
                                                             Click="CopyRestoredButton_Click"
-                                                            IsEnabled="False">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Margin="0,0,8,0"
-                                                                       FontFamily="Segoe MDL2 Assets"
-                                                                       Text="&#xE8C8;" />
-                                                            <TextBlock Text="Sonucu Kopyala" />
-                                                        </StackPanel>
+                                                            Content="&#xE8C8;"
+                                                            IsEnabled="False"
+                                                            Style="{StaticResource OutputActionIconButtonStyle}">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Sonucu Kopyala" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
                                                     </Button>
-                                                    <Button Margin="0,0,8,0"
-                                                            Style="{StaticResource IconButtonStyle}"
-                                                            Click="ExpandEditorButton_Click"
-                                                            Tag="RestoreRight"
-                                                            Content="&#xE740;"
-                                                            ToolTip="Geri açılmış kod editörünü genişlet" />
+
                                                     <Button x:Name="SaveRestoredFileButton"
+                                                            Margin="0,0,8,0"
                                                             Click="SaveRestoredFileButton_Click"
-                                                            IsEnabled="False">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Margin="0,0,8,0"
-                                                                       FontFamily="Segoe MDL2 Assets"
-                                                                       Text="&#xE74E;" />
-                                                            <TextBlock Text="Sonucu Kaydet" />
-                                                        </StackPanel>
+                                                            Content="&#xE74E;"
+                                                            IsEnabled="False"
+                                                            Style="{StaticResource OutputActionIconButtonStyle}">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Sonucu Kaydet" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
+                                                    </Button>
+
+                                                    <Button Click="ExpandEditorButton_Click"
+                                                            Content="&#xE740;"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Tag="RestoreRight">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                                <TextBlock Text="Geri açılmış kod editörünü genişlet" />
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
                                                     </Button>
                                                 </StackPanel>
                                             </Grid>

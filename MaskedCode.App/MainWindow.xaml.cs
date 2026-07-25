@@ -720,7 +720,24 @@ public partial class MainWindow : Window
         {
             UpdateLineNumbers(RestoredCodeTextBox, RestoredLineNumbersTextBlock);
             UpdateSyntaxHighlighting(RestoredCodeTextBox.Text, RestoredSyntaxRichTextBox);
+            UpdateRestoredOutputButtons();
         }
+    }
+
+    private void UpdateRestoredOutputButtons()
+    {
+        if (CopyRestoredButton is null ||
+            SaveRestoredFileButton is null ||
+            RestoredCodeTextBox is null)
+        {
+            return;
+        }
+
+        var hasRestoredCode =
+            !string.IsNullOrWhiteSpace(RestoredCodeTextBox.Text);
+
+        CopyRestoredButton.IsEnabled = hasRestoredCode;
+        SaveRestoredFileButton.IsEnabled = hasRestoredCode;
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1160,31 +1177,47 @@ public partial class MainWindow : Window
 
         try
         {
-            var encryptedVault = await ReadVaultFileSafelyAsync(_selectedVaultFilePath);
+            var encryptedVault =
+                await ReadVaultFileSafelyAsync(_selectedVaultFilePath);
 
             var unmaskingResult = await Task.Run(
                 () =>
                 {
                     var vault = new EncryptedMappingVault();
-                    var vaultContent = vault.Decrypt(encryptedVault, password, maskedCode);
-                    var restoredCode = UnmaskCode(maskedCode, vaultContent);
+                    var vaultContent =
+                        vault.Decrypt(encryptedVault, password, maskedCode);
+
+                    var restoredCode =
+                        UnmaskCode(maskedCode, vaultContent);
 
                     return (
                         RestoredCode: restoredCode,
                         vaultContent.SourceLanguage);
                 });
 
-            RestoredCodeTextBox.Text = unmaskingResult.RestoredCode;
-            _restoredSourceLanguage = unmaskingResult.SourceLanguage;
+            _restoredSourceLanguage =
+                unmaskingResult.SourceLanguage;
 
-            CopyRestoredButton.IsEnabled = true;
-            SaveRestoredFileButton.IsEnabled = true;
+            RestoredCodeTextBox.Text =
+                unmaskingResult.RestoredCode;
+
+            UpdateRestoredOutputButtons();
+
             RestorePasswordSummaryIcon.Text = "✓";
-            RestorePasswordSummaryIcon.Foreground = FindBrush("SuccessBrush");
-            RestorePasswordSummaryTextBlock.Text = "Parola doğrulandı";
-            RestorePasswordSummaryTextBlock.Foreground = FindBrush("TextPrimaryBrush");
-            RestorePasswordValidationTextBlock.Text = "Parola doğrulandı ve kasa açıldı.";
-            RestorePasswordValidationTextBlock.Foreground = FindBrush("SuccessBrush");
+            RestorePasswordSummaryIcon.Foreground =
+                FindBrush("SuccessBrush");
+
+            RestorePasswordSummaryTextBlock.Text =
+                "Parola doğrulandı";
+
+            RestorePasswordSummaryTextBlock.Foreground =
+                FindBrush("TextPrimaryBrush");
+
+            RestorePasswordValidationTextBlock.Text =
+                "Parola doğrulandı ve kasa açıldı.";
+
+            RestorePasswordValidationTextBlock.Foreground =
+                FindBrush("SuccessBrush");
 
             CloseSettingsDrawer();
 
@@ -1207,7 +1240,8 @@ public partial class MainWindow : Window
             ClearUnmaskingOutput();
 
             SetStatus(
-                "Kod geri açılırken beklenmeyen bir hata oluştu: " + exception.Message,
+                "Kod geri açılırken beklenmeyen bir hata oluştu: " +
+                exception.Message,
                 StatusTone.Error,
                 isRestore: true);
         }
