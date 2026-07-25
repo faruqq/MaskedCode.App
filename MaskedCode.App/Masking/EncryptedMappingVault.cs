@@ -253,15 +253,14 @@ public sealed class EncryptedMappingVault
         }
     }
 
-    private static void ValidatePassword(
-        string password)
+    private static void ValidatePassword(string password)
     {
         ArgumentNullException.ThrowIfNull(password);
 
-        if (password.Length < 12)
+        if (password.Length == 0)
         {
             throw new ArgumentException(
-                "Kasa parolası en az 12 karakter olmalıdır.",
+                "Kasa parolası boş olamaz.",
                 nameof(password));
         }
     }

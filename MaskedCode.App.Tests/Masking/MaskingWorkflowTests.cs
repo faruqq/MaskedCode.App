@@ -1671,6 +1671,58 @@ EncryptAndDecrypt_WithPl1ResultAsCommonContract_ShouldPreserveMappings()
         }
     }
 
+    [Fact]
+    public void EncryptAndDecrypt_WithOneCharacterPassword_ShouldRestoreVault()
+    {
+        const string password = "1";
+
+        var maskingResult =
+            new Pl1CodeMasker().Mask(
+                SecurityTestSourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                password);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                password,
+                maskingResult.MaskedCode);
+
+        Assert.Equal(
+            maskingResult.Mappings,
+            vaultContent.Mappings);
+    }
+
+    [Fact]
+    public void Encrypt_WithEmptyPassword_ShouldRejectPassword()
+    {
+        var maskingResult =
+            new Pl1CodeMasker().Mask(
+                SecurityTestSourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var exception =
+            Assert.Throws<ArgumentException>(
+                () => vault.Encrypt(
+                    maskingResult,
+                    string.Empty));
+
+        Assert.Contains(
+            "Kasa parolası boş olamaz.",
+            exception.Message);
+    }
+
+
     private sealed record LegacyMappingVaultPayload(
         DateTimeOffset CreatedAtUtc,
         MaskingMode MaskingMode,
