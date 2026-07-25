@@ -89,46 +89,53 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <Border Width="58"
-                            Height="58"
-                            Margin="0,0,16,0"
-                            Background="{StaticResource PrimarySoftBrush}"
-                            BorderBrush="{StaticResource PrimaryBrush}"
-                            BorderThickness="2"
-                            CornerRadius="16">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontFamily="Consolas"
-                                   FontSize="21"
-                                   FontWeight="Bold"
-                                   Text="&lt;/&gt;" />
+                    <Border Width="76"
+                Height="76"
+                Margin="0,0,14,0"
+                Background="{StaticResource WindowBrush}"
+                ClipToBounds="True"
+                CornerRadius="16">
+                        <MediaElement x:Name="HeaderAnimationMediaElement"
+              Width="76"
+              Height="76"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              IsMuted="True"
+              Loaded="HeaderAnimationMediaElement_Loaded"
+              LoadedBehavior="Manual"
+              MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+              MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+              ScrubbingEnabled="True"
+              Stretch="Uniform"
+              UnloadedBehavior="Stop" />
                     </Border>
+
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock FontSize="28"
-                                   FontWeight="SemiBold"
-                                   Text="MaskedCode" />
+                       FontWeight="SemiBold"
+                       Text="MaskedCode" />
                         <TextBlock Margin="0,4,0,0"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   FontSize="14"
-                                   Text="Kaynak kodunuzu güvenli biçimde maskeleyin ve geri açın." />
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="14"
+                       Text="Kaynak kodunuzu güvenli biçimde maskeleyin ve geri açın." />
                     </StackPanel>
                 </StackPanel>
 
                 <Border Grid.Column="1"
-                        Padding="15,8"
-                        VerticalAlignment="Center"
-                        Background="#112D27"
-                        BorderBrush="#205044"
-                        BorderThickness="1"
-                        CornerRadius="18">
+            Padding="15,8"
+            VerticalAlignment="Center"
+            Background="#112D27"
+            BorderBrush="#205044"
+            BorderThickness="1"
+            CornerRadius="18">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Margin="0,0,8,0"
-                                   Foreground="{StaticResource SuccessBrush}"
-                                   FontSize="16"
-                                   Text="✓" />
+                       Foreground="{StaticResource SuccessBrush}"
+                       FontSize="16"
+                       Text="✓" />
                         <TextBlock Foreground="#CFEDE5"
-                                   FontSize="14"
-                                   Text="PL/I ve EGL hazır" />
+                       FontSize="14"
+                       Text="PL/I ve EGL hazır" />
                     </StackPanel>
                 </Border>
             </Grid>

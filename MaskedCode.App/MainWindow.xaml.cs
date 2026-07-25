@@ -138,6 +138,14 @@ public partial class MainWindow : Window
         }
 
         CloseSettingsDrawer();
+
+        if (MainTabControl.SelectedIndex == 1)
+        {
+            PlayHeaderAnimation(HeaderAnimation.UnlockRestore);
+            return;
+        }
+
+        PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
     }
 
     private void MaskSettingsToggleButton_Click(object sender, RoutedEventArgs e)
@@ -440,7 +448,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MaskButton_Click(object sender, RoutedEventArgs e)
+    private async void MaskButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
         {
@@ -460,11 +468,17 @@ public partial class MainWindow : Window
             return;
         }
 
+        PlayHeaderAnimation(HeaderAnimation.VaultSeal);
+
         MaskButton.IsEnabled = false;
+
         SetStatus(
             "Kod güvenli biçimde maskeleniyor...",
             StatusTone.Loading,
             isRestore: false);
+
+        await System.Windows.Threading.Dispatcher.Yield(
+            System.Windows.Threading.DispatcherPriority.Render);
 
         try
         {
@@ -472,15 +486,22 @@ public partial class MainWindow : Window
 
             IMaskingResult result = GetSelectedLanguage() switch
             {
-                "PL1" => new Pl1CodeMasker().Mask(SourceCodeTextBox.Text, selectedMode),
-                "EGL" => new EglCodeMasker().Mask(SourceCodeTextBox.Text, selectedMode),
+                "PL1" => new Pl1CodeMasker().Mask(
+                    SourceCodeTextBox.Text,
+                    selectedMode),
+
+                "EGL" => new EglCodeMasker().Mask(
+                    SourceCodeTextBox.Text,
+                    selectedMode),
+
                 _ => throw new NotSupportedException(
                     "Seçilen kaynak dili için maskeleme henüz desteklenmiyor.")
             };
 
             _lastMaskingResult = result;
             MaskedCodeTextBox.Text = result.MaskedCode;
-            MaskModeSummaryTextBlock.Text = GetMaskingModeDisplayName(result.Mode);
+            MaskModeSummaryTextBlock.Text =
+                GetMaskingModeDisplayName(result.Mode);
 
             UpdateOutputButtons();
             CloseSettingsDrawer();
@@ -494,8 +515,12 @@ public partial class MainWindow : Window
         {
             ClearMaskingOutput(clearPassword: false);
 
+            PlayHeaderAnimation(
+                HeaderAnimation.EncryptedScan);
+
             SetStatus(
-                "Maskeleme işlemi tamamlanamadı: " + exception.Message,
+                "Maskeleme işlemi tamamlanamadı: " +
+                exception.Message,
                 StatusTone.Error,
                 isRestore: false);
         }
@@ -1154,12 +1179,14 @@ public partial class MainWindow : Window
 
         try
         {
-            password = await ResolvePasswordAsync(isRestorePassword: true);
+            password = await ResolvePasswordAsync(
+                isRestorePassword: true);
         }
         catch (Exception exception)
         {
             SetStatus(
-                "Kasa parolası alınamadı: " + exception.Message,
+                "Kasa parolası alınamadı: " +
+                exception.Message,
                 StatusTone.Error,
                 isRestore: true);
             return;
@@ -1178,30 +1205,37 @@ public partial class MainWindow : Window
         try
         {
             var encryptedVault =
-                await ReadVaultFileSafelyAsync(_selectedVaultFilePath);
+                await ReadVaultFileSafelyAsync(
+                    _selectedVaultFilePath);
 
             var unmaskingResult = await Task.Run(
                 () =>
                 {
-                    var vault = new EncryptedMappingVault();
-                    var vaultContent =
-                        vault.Decrypt(encryptedVault, password, maskedCode);
+                    var vault =
+                        new EncryptedMappingVault();
 
-                    var restoredCode =
-                        UnmaskCode(maskedCode, vaultContent);
+                    var vaultContent = vault.Decrypt(
+                        encryptedVault,
+                        password,
+                        maskedCode);
+
+                    var restoredCode = UnmaskCode(
+                        maskedCode,
+                        vaultContent);
 
                     return (
                         RestoredCode: restoredCode,
                         vaultContent.SourceLanguage);
                 });
 
-            _restoredSourceLanguage =
-                unmaskingResult.SourceLanguage;
-
             RestoredCodeTextBox.Text =
                 unmaskingResult.RestoredCode;
 
-            UpdateRestoredOutputButtons();
+            _restoredSourceLanguage =
+                unmaskingResult.SourceLanguage;
+
+            CopyRestoredButton.IsEnabled = true;
+            SaveRestoredFileButton.IsEnabled = true;
 
             RestorePasswordSummaryIcon.Text = "✓";
             RestorePasswordSummaryIcon.Foreground =
@@ -1225,13 +1259,18 @@ public partial class MainWindow : Window
                 "Kasa doğrulandı ve kod başarıyla geri açıldı.",
                 StatusTone.Success,
                 isRestore: true);
+
+            PlayHeaderAnimation(
+                HeaderAnimation.UnlockRestore,
+                returnToDefaultAfterCurrentCycle: true);
         }
         catch (InvalidDataException exception)
         {
             ClearUnmaskingOutput();
 
             SetStatus(
-                "Kod geri açılamadı: " + exception.Message,
+                "Kod geri açılamadı: " +
+                exception.Message,
                 StatusTone.Error,
                 isRestore: true);
         }
@@ -2047,5 +2086,84 @@ public partial class MainWindow : Window
         Success,
         Error,
         Loading
+    }
+
+    private enum HeaderAnimation
+    {
+        EncryptedScan,
+        VaultSeal,
+        UnlockRestore
+    }
+
+    private HeaderAnimation _currentHeaderAnimation;
+    private bool _returnToDefaultAfterCurrentCycle;
+
+    private void HeaderAnimationMediaElement_Loaded(object sender, RoutedEventArgs e)
+    {
+        PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
+    }
+
+    private void HeaderAnimationMediaElement_MediaOpened(object sender, RoutedEventArgs e)
+    {
+        HeaderAnimationMediaElement.Position = TimeSpan.Zero;
+        HeaderAnimationMediaElement.Play();
+    }
+
+    private void HeaderAnimationMediaElement_MediaEnded(object sender, RoutedEventArgs e)
+    {
+        if (_returnToDefaultAfterCurrentCycle)
+        {
+            _returnToDefaultAfterCurrentCycle = false;
+            PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
+            return;
+        }
+
+        HeaderAnimationMediaElement.Position = TimeSpan.Zero;
+        HeaderAnimationMediaElement.Play();
+    }
+
+    private void PlayHeaderAnimation(
+    HeaderAnimation animation,
+    bool returnToDefaultAfterCurrentCycle = false)
+    {
+        var animationFileName = animation switch
+        {
+            HeaderAnimation.EncryptedScan => "encrypted-scan.mp4",
+            HeaderAnimation.VaultSeal => "vault-seal.mp4",
+            HeaderAnimation.UnlockRestore => "unlock-restore.mp4",
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(animation),
+                animation,
+                "Desteklenmeyen başlık animasyonu.")
+        };
+
+        var absoluteAnimationPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Assets",
+            "Animations",
+            animationFileName);
+
+        if (!File.Exists(absoluteAnimationPath))
+        {
+            SetStatus(
+                $"Animasyon dosyası bulunamadı: {animationFileName}",
+                StatusTone.Error,
+                isRestore: MainTabControl.SelectedIndex == 1);
+
+            return;
+        }
+
+        _currentHeaderAnimation = animation;
+        _returnToDefaultAfterCurrentCycle =
+            returnToDefaultAfterCurrentCycle;
+
+        HeaderAnimationMediaElement.Stop();
+        HeaderAnimationMediaElement.Close();
+        HeaderAnimationMediaElement.Source = null;
+
+        HeaderAnimationMediaElement.Source = new Uri(
+            absoluteAnimationPath,
+            UriKind.Absolute);
     }
 }
