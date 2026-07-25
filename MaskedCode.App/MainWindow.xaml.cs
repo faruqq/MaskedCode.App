@@ -50,6 +50,19 @@ public partial class MainWindow : Window
     private bool _isVaultPasswordVisible;
     private bool _isRestorePasswordVisible;
 
+    private static readonly Duration HeaderAnimationTransitionDuration =
+    new(TimeSpan.FromMilliseconds(160));
+
+    private MediaElement? _activeHeaderAnimationMediaElement;
+    private MediaElement? _loadingHeaderAnimationMediaElement;
+
+    private HeaderAnimation _currentHeaderAnimation;
+    private HeaderAnimation _loadingHeaderAnimation;
+
+    private bool _currentAnimationReturnsToDefault;
+    private bool _loadingAnimationReturnsToDefault;
+    private bool _isHeaderAnimationTransitionRunning;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -2095,31 +2108,54 @@ public partial class MainWindow : Window
         UnlockRestore
     }
 
-    private HeaderAnimation _currentHeaderAnimation;
-    private bool _returnToDefaultAfterCurrentCycle;
-
     private void HeaderAnimationMediaElement_Loaded(object sender, RoutedEventArgs e)
     {
         PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
     }
 
-    private void HeaderAnimationMediaElement_MediaOpened(object sender, RoutedEventArgs e)
+    private void HeaderAnimationMediaElement_MediaEnded(
+    object sender,
+    RoutedEventArgs e)
     {
-        HeaderAnimationMediaElement.Position = TimeSpan.Zero;
-        HeaderAnimationMediaElement.Play();
-    }
-
-    private void HeaderAnimationMediaElement_MediaEnded(object sender, RoutedEventArgs e)
-    {
-        if (_returnToDefaultAfterCurrentCycle)
+        if (sender is not MediaElement endedMediaElement ||
+            endedMediaElement != _activeHeaderAnimationMediaElement)
         {
-            _returnToDefaultAfterCurrentCycle = false;
-            PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
             return;
         }
 
-        HeaderAnimationMediaElement.Position = TimeSpan.Zero;
-        HeaderAnimationMediaElement.Play();
+        if (_currentAnimationReturnsToDefault)
+        {
+            _currentAnimationReturnsToDefault = false;
+
+            PlayHeaderAnimation(
+                HeaderAnimation.EncryptedScan);
+
+            return;
+        }
+
+        endedMediaElement.Position = TimeSpan.Zero;
+        endedMediaElement.Play();
+    }
+
+    private void HeaderAnimationMediaElement_MediaFailed(
+        object sender,
+        ExceptionRoutedEventArgs e)
+    {
+        if (sender is MediaElement failedMediaElement)
+        {
+            failedMediaElement.Stop();
+            failedMediaElement.Close();
+            failedMediaElement.Opacity = 0;
+        }
+
+        _loadingHeaderAnimationMediaElement = null;
+        _isHeaderAnimationTransitionRunning = false;
+
+        SetStatus(
+            "Başlık animasyonu açılamadı: " +
+            e.ErrorException.Message,
+            StatusTone.Error,
+            isRestore: MainTabControl.SelectedIndex == 1);
     }
 
     private void PlayHeaderAnimation(
@@ -2154,16 +2190,149 @@ public partial class MainWindow : Window
             return;
         }
 
-        _currentHeaderAnimation = animation;
-        _returnToDefaultAfterCurrentCycle =
+        if (_isHeaderAnimationTransitionRunning)
+        {
+            return;
+        }
+
+        var targetMediaElement =
+            _activeHeaderAnimationMediaElement ==
+            HeaderAnimationPrimaryMediaElement
+                ? HeaderAnimationSecondaryMediaElement
+                : HeaderAnimationPrimaryMediaElement;
+
+        // Uygulama açılışındaki ilk yüklemede birincil katman kullanılır.
+        if (_activeHeaderAnimationMediaElement is null)
+        {
+            targetMediaElement =
+                HeaderAnimationPrimaryMediaElement;
+        }
+
+        _loadingHeaderAnimationMediaElement = targetMediaElement;
+        _loadingHeaderAnimation = animation;
+        _loadingAnimationReturnsToDefault =
             returnToDefaultAfterCurrentCycle;
 
-        HeaderAnimationMediaElement.Stop();
-        HeaderAnimationMediaElement.Close();
-        HeaderAnimationMediaElement.Source = null;
+        targetMediaElement.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
 
-        HeaderAnimationMediaElement.Source = new Uri(
+        targetMediaElement.Opacity = 0;
+        targetMediaElement.Stop();
+        targetMediaElement.Close();
+
+        targetMediaElement.Source = new Uri(
             absoluteAnimationPath,
             UriKind.Absolute);
+
+        targetMediaElement.Position = TimeSpan.Zero;
+
+        // Manual modda Play çağrısı dosyanın açılmasını ve ilk karenin
+        // hazırlanmasını başlatır. Opacity sıfır olduğu için görünmez.
+        targetMediaElement.Play();
+    }
+
+    private void HeaderAnimationMediaElement_MediaOpened(object sender,RoutedEventArgs e)
+    {
+        if (sender is not MediaElement openedMediaElement ||
+            openedMediaElement != _loadingHeaderAnimationMediaElement)
+        {
+            return;
+        }
+
+        // İlk açılışta geçiş yapılacak eski bir video bulunmaz.
+        if (_activeHeaderAnimationMediaElement is null)
+        {
+            openedMediaElement.Opacity = 1;
+
+            _activeHeaderAnimationMediaElement =
+                openedMediaElement;
+
+            _currentHeaderAnimation =
+                _loadingHeaderAnimation;
+
+            _currentAnimationReturnsToDefault =
+                _loadingAnimationReturnsToDefault;
+
+            _loadingHeaderAnimationMediaElement = null;
+            return;
+        }
+
+        StartHeaderAnimationCrossfade(
+            _activeHeaderAnimationMediaElement,
+            openedMediaElement);
+    }
+
+    private void StartHeaderAnimationCrossfade(MediaElement outgoingMediaElement,MediaElement incomingMediaElement)
+    {
+        _isHeaderAnimationTransitionRunning = true;
+
+        var fadeOutAnimation = new DoubleAnimation
+        {
+            From = 1,
+            To = 0,
+            Duration = HeaderAnimationTransitionDuration,
+            EasingFunction = new SineEase
+            {
+                EasingMode = EasingMode.EaseInOut
+            }
+        };
+
+        var fadeInAnimation = new DoubleAnimation
+        {
+            From = 0,
+            To = 1,
+            Duration = HeaderAnimationTransitionDuration,
+            EasingFunction = new SineEase
+            {
+                EasingMode = EasingMode.EaseInOut
+            }
+        };
+
+        fadeInAnimation.Completed += (_, _) =>
+        {
+            CompleteHeaderAnimationTransition(
+                outgoingMediaElement,
+                incomingMediaElement);
+        };
+
+        outgoingMediaElement.BeginAnimation(
+            UIElement.OpacityProperty,
+            fadeOutAnimation);
+
+        incomingMediaElement.BeginAnimation(
+            UIElement.OpacityProperty,
+            fadeInAnimation);
+    }
+
+    private void CompleteHeaderAnimationTransition(MediaElement outgoingMediaElement,MediaElement incomingMediaElement)
+    {
+        outgoingMediaElement.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
+
+        incomingMediaElement.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
+
+        outgoingMediaElement.Opacity = 0;
+        incomingMediaElement.Opacity = 1;
+
+        // Eski video ancak yeni video görünür olduktan sonra kapatılır.
+        outgoingMediaElement.Stop();
+        outgoingMediaElement.Close();
+        outgoingMediaElement.Source = null;
+
+        _activeHeaderAnimationMediaElement =
+            incomingMediaElement;
+
+        _currentHeaderAnimation =
+            _loadingHeaderAnimation;
+
+        _currentAnimationReturnsToDefault =
+            _loadingAnimationReturnsToDefault;
+
+        _loadingHeaderAnimationMediaElement = null;
+        _isHeaderAnimationTransitionRunning = false;
     }
 }
