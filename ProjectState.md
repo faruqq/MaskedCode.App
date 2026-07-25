@@ -310,19 +310,23 @@ yapılandırılmayacaktır.
 
 ## Çalışma Kuralları
 
-### Geliştirme Yaklaşımı
+### Kod Paylaşım Standardı
 
-- Öncelik güvenlik, doğruluk, sadelik ve ürünün tamamlanmasıdır.
-- Over-engineering yapılmayacaktır.
-- Yalnızca mevcut ihtiyacı karşılayan en küçük çözüm geliştirilecektir.
-- Somut ihtiyaç olmadan interface, abstraction, katman, fixture,
-  helper veya genişletme noktası eklenmeyecektir.
-- Çalışan kod, somut bir gereksinim veya hata olmadan yeniden
-  yapılandırılmayacaktır.
-- Bir özellik yeterli seviyeye ulaştığında kapsam büyütülmeden
-  sıradaki zorunlu aşamaya geçilecektir.
-- Kullanıcı açıkça istemedikçe repository üzerinde doğrudan
-  değişiklik yapılmayacaktır.
+- Değiştirilecek metodun tamamı verilmelidir.
+- Bir metodun adı ve bütün parametreleri aynı satırda yazılmalıdır.
+- Metot imzasındaki parametreler hiçbir zaman alt satırlara bölünmemelidir.
+- Bir dosyanın tamamı verilmiyorsa ve aynı dosyada bulunan birden fazla mevcut metot düzenleniyorsa, bu metotlar tek kod snippet’i içinde birleştirilmemelidir.
+- Düzenlenen her mevcut metot, dosya adı belirtilerek ayrı bir kod snippet’i içinde verilmelidir.
+- Yeni ve aynı konuma birlikte eklenecek metotlar olmadığı sürece, farklı konumlarda bulunabilecek metotlar aynı snippet içinde sunulmamalıdır.
+- Aynı dosyanın çok büyük bir bölümü değişiyorsa parçalı metotlar yerine dosyanın tamamı verilmelidir.
+- Eksik veya parçalı metot gövdesi verilmemelidir.
+- Her değişiklik için dosya adı ve uygulanacağı yer belirtilmelidir.
+- Her paket en fazla 4–5 kod veya doküman snippet’i içermelidir.
+- Tamamlanan mantıksal paket sonunda commit adı verilmelidir.
+- Kullanıcı yeni commit hash’ini paylaşmadan sonraki pakete geçilmemelidir.
+- Henüz commitlenmemiş değişiklikler eski commitlerde aranmamalıdır.
+- Kullanıcı “devam edelim” dediğinde son işlemin sorunsuz tamamlandığı kabul edilmelidir.
+- İşlemler Visual Studio üzerinden anlatılmalıdır; PowerShell komutu verilmemelidir.
 
 ### Kod Paylaşım Standardı
 

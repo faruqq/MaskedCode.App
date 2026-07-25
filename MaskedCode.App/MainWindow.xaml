@@ -1,461 +1,1538 @@
 ﻿<Window x:Class="MaskedCode.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="MaskedCode"
-        Width="1200"
-        Height="900"
-        MinWidth="900"
-        MinHeight="720"
-        WindowStartupLocation="CenterScreen">
+        Width="1536"
+        Height="1024"
+        MinWidth="1180"
+        MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        Loaded="MainWindow_Loaded"
+        PreviewKeyDown="MainWindow_PreviewKeyDown">
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="43"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="6"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
 
-        <TabControl Grid.Row="0">
-            <TabItem Header="Kod Maskeleme">
-                <Grid Margin="12">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+    <Border Background="{StaticResource WindowBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="43" />
+                <RowDefinition Height="96" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="160" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+            <!-- Windows başlık çubuğu -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource HeaderBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0"
-                                   Margin="0,0,8,0"
-                                   VerticalAlignment="Center"
-                                   Text="Kaynak dil:" />
-
-                        <ComboBox x:Name="LanguageComboBox"
-                                  Grid.Column="1"
-                                  Height="32"
-                                  VerticalContentAlignment="Center"
-                                  SelectionChanged="LanguageComboBox_SelectionChanged"
-                                  SelectedIndex="0">
-
-                            <ComboBoxItem Content="PL/I"
-                                          Tag="PL1" />
-
-                            <ComboBoxItem Content="EGL"
-                                          Tag="EGL" />
-
-                            <ComboBoxItem Content="C# / .NET"
-                                          Tag="CSharp" />
-                        </ComboBox>
-
-                        <Button Grid.Column="3"
-                                MinWidth="110"
-                                Height="32"
-                                Padding="12,0"
-                                Click="SelectFileButton_Click"
-                                Content="Dosya Seç" />
-
-                        <TextBlock x:Name="SelectedFileTextBlock"
-                                   Grid.Column="4"
-                                   Margin="12,0"
-                                   VerticalAlignment="Center"
-                                   Text="Dosya seçilmedi"
-                                   TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding Text,
-                                                     RelativeSource={RelativeSource Self}}" />
-
-                        <Button x:Name="MaskButton"
-                                Grid.Column="5"
-                                MinWidth="120"
-                                Height="32"
-                                Padding="16,0"
-                                Click="MaskButton_Click"
-                                Content="Maskele"
-                                IsEnabled="False" />
-                    </Grid>
-
-                    <GroupBox Grid.Row="2"
-                              Header="Maskeleme Yöntemi">
-                        <Grid Margin="12,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="24" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0">
-                                <RadioButton x:Name="MaximumPrivacyRadioButton"
-                                             GroupName="MaskingMode"
-                                             Content="Maksimum Gizlilik"
-                                             IsChecked="True"
-                                             Checked="MaskingModeRadioButton_Checked"
-                                             ToolTip="Değerlerin uzunluğunu ve yapısını mümkün olduğunca gizler." />
-
-                                <TextBlock Margin="22,4,0,0"
-                                           Foreground="#FF4B5563"
-                                           Text="Identifier ve değerlerin yapısını mümkün olduğunca gizler. Varsayılan ve daha güvenli seçenektir."
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2">
-                                <RadioButton x:Name="FormatPreservingRadioButton"
-                                             GroupName="MaskingMode"
-                                             Content="Biçim Korumalı"
-                                             Checked="MaskingModeRadioButton_Checked"
-                                             ToolTip="Karakter uzunluğunu, harf-rakam türünü ve ayraçları korur." />
-
-                                <TextBlock Margin="22,4,0,0"
-                                           Foreground="#FF4B5563"
-                                           Text="Uzunluğu, büyük-küçük harf düzenini ve ayraç konumlarını korur; sınırlı biçim bilgisi gösterebilir."
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Grid>
-                    </GroupBox>
-
-                    <Grid Grid.Row="4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Grid Grid.Column="0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Text="Kaynak Kod" />
-
-                            <TextBox x:Name="SourceCodeTextBox"
-                                     Grid.Row="2"
-                                     Padding="10"
-                                     AcceptsReturn="True"
-                                     AcceptsTab="True"
-                                     FontFamily="Consolas"
-                                     FontSize="14"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     TextChanged="SourceCodeTextBox_TextChanged"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextWrapping="NoWrap" />
-                        </Grid>
-
-                        <GridSplitter Grid.Column="1"
-                                      Width="6"
-                                      HorizontalAlignment="Center"
-                                      ResizeBehavior="PreviousAndNext"
-                                      ResizeDirection="Columns" />
-
-                        <Grid Grid.Column="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Text="Maskelenmiş Kod" />
-
-                            <TextBox x:Name="MaskedCodeTextBox"
-                                     Grid.Row="2"
-                                     Padding="10"
-                                     AcceptsReturn="True"
-                                     AcceptsTab="True"
-                                     FontFamily="Consolas"
-                                     FontSize="14"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextWrapping="NoWrap" />
-
-                            <StackPanel Grid.Row="4"
-                                        HorizontalAlignment="Right"
-                                        Orientation="Horizontal">
-
-                                <Button x:Name="CopyButton"
-                                        MinWidth="100"
-                                        Height="32"
-                                        Padding="12,0"
-                                        Click="CopyButton_Click"
-                                        Content="Kopyala"
-                                        IsEnabled="False" />
-
-                                <Button x:Name="SaveFileButton"
-                                        MinWidth="130"
-                                        Height="32"
-                                        Margin="8,0,0,0"
-                                        Padding="12,0"
-                                        Click="SaveFileButton_Click"
-                                        Content="Dosyayı Kaydet"
-                                        IsEnabled="False" />
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-
-                    <GroupBox Grid.Row="6"
-                              Header="Şifreli Eşleme Kasası">
-                        <Grid Margin="12,8">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="6" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="190" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="190" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Margin="0,0,8,0"
-                                       VerticalAlignment="Center"
-                                       Text="Kasa parolası:" />
-
-                            <PasswordBox x:Name="VaultPasswordBox"
-                                         Grid.Column="1"
-                                         Height="30"
-                                         MaxLength="128"
-                                         VerticalContentAlignment="Center" />
-
-                            <TextBlock Grid.Column="3"
-                                       Margin="0,0,8,0"
-                                       VerticalAlignment="Center"
-                                       Text="Parola tekrarı:" />
-
-                            <PasswordBox x:Name="VaultPasswordConfirmationBox"
-                                         Grid.Column="4"
-                                         Height="30"
-                                         MaxLength="128"
-                                         VerticalContentAlignment="Center" />
-
-                            <Button x:Name="SaveVaultButton"
-                                    Grid.Column="6"
-                                    MinWidth="160"
-                                    Height="32"
-                                    Padding="14,0"
-                                    Click="SaveVaultButton_Click"
-                                    Content="Şifreli Kasayı Kaydet"
-                                    IsEnabled="False" />
-
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Grid.ColumnSpan="7"
-                                       Foreground="#FF4B5563"
-                                       Text="En az 12 karakterlik güçlü bir parola kullanın. Kasa dosyasını maskelenmiş kodla birlikte paylaşmayın."
-                                       TextWrapping="Wrap" />
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="Kodu Geri Aç">
-                <Grid Margin="12">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <GroupBox Grid.Row="0"
-                              Header="Geri Açma Bilgileri">
-                        <Grid Margin="12,8">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Button Grid.Row="0"
-                                    Grid.Column="0"
-                                    MinWidth="190"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Click="SelectMaskedFileButton_Click"
-                                    Content="Maskelenmiş Dosyayı Seç" />
-
-                            <TextBlock x:Name="SelectedMaskedFileTextBlock"
-                                       Grid.Row="0"
-                                       Grid.Column="1"
-                                       Margin="12,0"
-                                       VerticalAlignment="Center"
-                                       Text="Maskelenmiş dosya seçilmedi"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip="{Binding Text,
-                                                         RelativeSource={RelativeSource Self}}" />
-
-                            <Button Grid.Row="2"
-                                    Grid.Column="0"
-                                    MinWidth="190"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Click="SelectVaultFileButton_Click"
-                                    Content="Şifreli Kasayı Seç" />
-
-                            <TextBlock x:Name="SelectedVaultFileTextBlock"
-                                       Grid.Row="2"
-                                       Grid.Column="1"
-                                       Margin="12,0"
-                                       VerticalAlignment="Center"
-                                       Text="Kasa dosyası seçilmedi"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip="{Binding Text,
-                                                         RelativeSource={RelativeSource Self}}" />
-
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,0"
-                                       VerticalAlignment="Center"
-                                       Text="Kasa parolası:" />
-
-                            <PasswordBox x:Name="RestoreVaultPasswordBox"
-                                         Grid.Row="4"
-                                         Grid.Column="1"
-                                         Height="30"
-                                         MaxLength="128"
-                                         PasswordChanged="RestoreInput_Changed"
-                                         VerticalContentAlignment="Center" />
-
-                            <Button x:Name="UnmaskButton"
-                                    Grid.Row="4"
-                                    Grid.Column="3"
-                                    MinWidth="140"
-                                    Height="32"
-                                    Padding="14,0"
-                                    Click="UnmaskButton_Click"
-                                    Content="Kodu Geri Aç"
-                                    IsEnabled="False" />
-                        </Grid>
-                    </GroupBox>
-
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Grid Grid.Column="0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Text="Maskelenmiş Kod" />
-
-                            <TextBox x:Name="MaskedInputTextBox"
-                                     Grid.Row="2"
-                                     Padding="10"
-                                     AcceptsReturn="True"
-                                     AcceptsTab="True"
-                                     FontFamily="Consolas"
-                                     FontSize="14"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     TextChanged="MaskedInputTextBox_TextChanged"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextWrapping="NoWrap" />
-                        </Grid>
-
-                        <GridSplitter Grid.Column="1"
-                                      Width="6"
-                                      HorizontalAlignment="Center"
-                                      ResizeBehavior="PreviousAndNext"
-                                      ResizeDirection="Columns" />
-
-                        <Grid Grid.Column="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Text="Geri Açılmış Kod" />
-
-                            <TextBox x:Name="RestoredCodeTextBox"
-                                     Grid.Row="2"
-                                     Padding="10"
-                                     AcceptsReturn="True"
-                                     AcceptsTab="True"
-                                     FontFamily="Consolas"
-                                     FontSize="14"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextWrapping="NoWrap" />
-                        </Grid>
-                    </Grid>
-
-                    <StackPanel Grid.Row="4"
-                                HorizontalAlignment="Right"
+                    <StackPanel Margin="18,0,0,0"
+                                VerticalAlignment="Center"
                                 Orientation="Horizontal">
+                        <Border Width="20"
+                                Height="20"
+                                Margin="0,0,10,0"
+                                Background="{StaticResource PrimaryBrush}"
+                                CornerRadius="6">
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Consolas"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Text="&lt;/&gt;" />
+                        </Border>
+                        <TextBlock VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Text="MaskedCode" />
+                    </StackPanel>
 
-                        <Button x:Name="CopyRestoredButton"
-                                MinWidth="130"
-                                Height="32"
-                                Padding="12,0"
-                                Click="CopyRestoredButton_Click"
-                                Content="Sonucu Kopyala"
-                                IsEnabled="False" />
-
-                        <Button x:Name="SaveRestoredFileButton"
-                                MinWidth="150"
-                                Height="32"
-                                Margin="8,0,0,0"
-                                Padding="12,0"
-                                Click="SaveRestoredFileButton_Click"
-                                Content="Sonucu Kaydet"
-                                IsEnabled="False" />
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Button Style="{StaticResource TitleBarButtonStyle}"
+                                Click="MinimizeButton_Click"
+                                Content="&#xE921;"
+                                ToolTip="Simge durumuna küçült" />
+                        <Button Style="{StaticResource TitleBarButtonStyle}"
+                                Click="MaximizeRestoreButton_Click"
+                                Content="&#xE922;"
+                                ToolTip="Büyüt veya geri yükle" />
+                        <Button Style="{StaticResource CloseTitleBarButtonStyle}"
+                                Click="CloseButton_Click"
+                                Content="&#xE8BB;"
+                                ToolTip="Kapat" />
                     </StackPanel>
                 </Grid>
-            </TabItem>
-        </TabControl>
+            </Border>
 
-        <Border Grid.Row="2"
-                Padding="10,7"
-                Background="#FFF3F4F6"
-                CornerRadius="4">
+            <!-- Ürün başlığı -->
+            <Grid Grid.Row="1" Margin="40,0,30,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <Border Width="58"
+                            Height="58"
+                            Margin="0,0,16,0"
+                            Background="{StaticResource PrimarySoftBrush}"
+                            BorderBrush="{StaticResource PrimaryBrush}"
+                            BorderThickness="2"
+                            CornerRadius="16">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontFamily="Consolas"
+                                   FontSize="21"
+                                   FontWeight="Bold"
+                                   Text="&lt;/&gt;" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="28"
+                                   FontWeight="SemiBold"
+                                   Text="MaskedCode" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="14"
+                                   Text="Kaynak kodunuzu güvenli biçimde maskeleyin ve geri açın." />
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        Padding="15,8"
+                        VerticalAlignment="Center"
+                        Background="#112D27"
+                        BorderBrush="#205044"
+                        BorderThickness="1"
+                        CornerRadius="18">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Margin="0,0,8,0"
+                                   Foreground="{StaticResource SuccessBrush}"
+                                   FontSize="16"
+                                   Text="✓" />
+                        <TextBlock Foreground="#CFEDE5"
+                                   FontSize="14"
+                                   Text="PL/I ve EGL hazır" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2"
+                    Margin="20,4,20,20"
+                    Background="{StaticResource HeaderBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                <TabControl x:Name="MainTabControl"
+                            SelectionChanged="MainTabControl_SelectionChanged">
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Margin="0,0,10,0"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="17"
+                                           Text="&#xE72E;" />
+                                <TextBlock Text="Kod Maskeleme" />
+                            </StackPanel>
+                        </TabItem.Header>
+
+                        <Grid x:Name="MaskWorkspace">
+                            <Grid x:Name="MaskFocusContent">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="56" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="58" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Maskeleme özet şeridi -->
+                                <Border Grid.Row="0"
+                                        Margin="16,8,16,6"
+                                        Background="{StaticResource EditorBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                    <Grid Margin="12,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,8,0"
+                                                       Foreground="{StaticResource SuccessBrush}"
+                                                       Text="✓" />
+                                            <TextBlock x:Name="MaskLanguageSummaryTextBlock" Text="PL/I" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Margin="26,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal">
+                                            <TextBlock x:Name="MaskSourceSummaryIcon"
+                                                       Margin="0,0,8,0"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="○" />
+                                            <TextBlock x:Name="SelectedFileSummaryTextBlock"
+                                                       MaxWidth="170"
+                                                       Text="Kod yapıştırılabilir"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2"
+                                                    Margin="26,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,8,0"
+                                                       Foreground="{StaticResource SuccessBrush}"
+                                                       Text="✓" />
+                                            <TextBlock x:Name="MaskModeSummaryTextBlock" Text="Maksimum Gizlilik" />
+                                        </StackPanel>
+
+                                        <Button x:Name="MaskSettingsButton"
+                                                Grid.Column="4"
+                                                Margin="16,0,0,0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Click="MaskSettingsToggleButton_Click"
+                                                Content="&#xE713;"
+                                                Style="{StaticResource SettingsButtonStyle}"
+                                                ToolTip="Maskeleme ayarlarını aç" />
+
+                                    </Grid>
+                                </Border>
+
+                                <!-- Maskeleme editörleri -->
+                                <Grid x:Name="MaskEditorGrid" Grid.Row="1" Margin="16,8,16,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition x:Name="MaskLeftColumn" Width="*" MinWidth="300" />
+                                        <ColumnDefinition x:Name="MaskSplitterColumn" Width="14" />
+                                        <ColumnDefinition x:Name="MaskRightColumn" Width="*" MinWidth="300" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="MaskLeftEditorCard"
+                                            Grid.Column="0"
+                                            ClipToBounds="True"
+                                            Style="{StaticResource EditorCardStyle}">
+                                        <Grid ClipToBounds="True">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="44" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Margin="2,0,10,0"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="17"
+                                                               Text="&#xE943;" />
+                                                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontSize="16"
+                                                               FontWeight="SemiBold"
+                                                               Text="Kaynak Kod" />
+                                                </StackPanel>
+                                                <Button Grid.Column="1"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Click="ExpandEditorButton_Click"
+                                                        Tag="MaskLeft"
+                                                        Content="&#xE740;"
+                                                        ToolTip="Kaynak kod editörünü genişlet" />
+                                            </Grid>
+
+                                            <Border Grid.Row="1"
+                                                    ClipToBounds="True"
+                                                    Background="{StaticResource EditorBrush}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8">
+                                                <Grid ClipToBounds="True">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border ClipToBounds="True"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0">
+                                                        <TextBlock x:Name="SourceLineNumbersTextBlock"
+                                                                   Padding="0,12,14,12"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                                   FontFamily="Cascadia Mono, Consolas"
+                                                                   FontSize="14"
+                                                                   LineHeight="22"
+                                                                   Text="1" />
+                                                    </Border>
+                                                    <RichTextBox x:Name="SourceSyntaxRichTextBox"
+                                                                 Grid.Column="1"
+                                                                 Padding="14,12"
+                                                                 Background="Transparent"
+                                                                 BorderThickness="0"
+                                                                 ClipToBounds="True"
+                                                                 Focusable="False"
+                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                                 FontSize="14"
+                                                                 IsHitTestVisible="False"
+                                                                 IsReadOnly="True"
+                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                                                    <TextBox x:Name="SourceCodeTextBox"
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="Transparent"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             TextBlock.LineHeight="22"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="SourceCodeTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <GridSplitter x:Name="MaskGridSplitter"
+                                                  Grid.Column="1"
+                                                  Width="14"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Stretch"
+                                                  Background="Transparent"
+                                                  Cursor="SizeWE"
+                                                  DragDelta="EditorGridSplitter_DragDelta"
+                                                  MouseDoubleClick="EditorGridSplitter_MouseDoubleClick"
+                                                  ResizeBehavior="PreviousAndNext"
+                                                  ResizeDirection="Columns"
+                                                  ShowsPreview="False"
+                                                  ToolTip="Editörlerin genişliğini değiştirmek için sürükleyin. Sıfırlamak için çift tıklayın.">
+                                        <GridSplitter.Template>
+                                            <ControlTemplate TargetType="GridSplitter">
+                                                <Border x:Name="SplitterHitArea"
+                                                        Width="14"
+                                                        Background="Transparent">
+                                                    <Border x:Name="SplitterHandle"
+                                                            Width="6"
+                                                            Height="54"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="{StaticResource BorderStrongBrush}"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="3">
+                                                        <StackPanel HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center">
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="SplitterHitArea"
+                                                                Property="Background"
+                                                                Value="#101B2E" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="Background"
+                                                                Value="{StaticResource PrimarySoftBrush}" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="BorderBrush"
+                                                                Value="{StaticResource PrimaryBrush}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="SplitterHitArea"
+                                                                Property="Background"
+                                                                Value="#17243A" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="Background"
+                                                                Value="{StaticResource PrimaryBrush}" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="BorderBrush"
+                                                                Value="{StaticResource PrimaryHoverBrush}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </GridSplitter.Template>
+                                    </GridSplitter>
+
+                                    <Border x:Name="MaskRightEditorCard"
+                                            Grid.Column="2"
+                                            Style="{StaticResource EditorCardStyle}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="44" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Margin="2,0,10,0"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="17"
+                                                               Text="&#xE72E;" />
+                                                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontSize="16"
+                                                               FontWeight="SemiBold"
+                                                               Text="Maskelenmiş Kod" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <Button x:Name="CopyButton"
+                                                            Margin="0,0,8,0"
+                                                            Click="CopyButton_Click"
+                                                            IsEnabled="False">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Margin="0,0,8,0"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       Text="&#xE8C8;" />
+                                                            <TextBlock Text="Kopyala" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button x:Name="SaveFileButton"
+                                                            Margin="0,0,8,0"
+                                                            Click="SaveFileButton_Click"
+                                                            IsEnabled="False"
+                                                            ToolTip="Maskelenmiş kodu kaynak dosya olarak kaydet">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Margin="0,0,8,0"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       Text="&#xE74E;" />
+                                                            <TextBlock Text="Kodu Kaydet" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button x:Name="SaveVaultButton"
+                                                            Margin="0,0,8,0"
+                                                            Click="SaveVaultButton_Click"
+                                                            IsEnabled="False"
+                                                            ToolTip="Geri açma eşlemelerini şifreli .mcvault dosyasına kaydet">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Margin="0,0,8,0"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       Text="&#xE72E;" />
+                                                            <TextBlock Text="Kasa Dosyasını Kaydet" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Click="ExpandEditorButton_Click"
+                                                            Content="&#xE740;"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Tag="MaskRight"
+                                                            ToolTip="Maskelenmiş kod editörünü genişlet" />
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <Border Grid.Row="1"
+                                                    Background="{StaticResource EditorBrush}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0">
+                                                        <TextBlock x:Name="MaskedLineNumbersTextBlock"
+                                                                   Padding="0,12,14,12"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                                   FontFamily="Cascadia Mono, Consolas"
+                                                                   FontSize="14"
+                                                                   LineHeight="22"
+                                                                   Text="1" />
+                                                    </Border>
+                                                    <RichTextBox x:Name="MaskedSyntaxRichTextBox"
+                                                                 Grid.Column="1"
+                                                                 Padding="14,12"
+                                                                 Background="Transparent"
+                                                                 BorderThickness="0"
+                                                                 Focusable="False"
+                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                                 FontSize="14"
+                                                                 IsHitTestVisible="False"
+                                                                 IsReadOnly="True"
+                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                                                    <TextBox x:Name="MaskedCodeTextBox"
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="Transparent"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             IsReadOnly="True"
+                                                             TextBlock.LineHeight="22"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="CodeOutputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <Border x:Name="MaskStatusBorder"
+                                        Grid.Row="2"
+                                        Margin="16,6,16,12"
+                                        Padding="16,0"
+                                        Background="{StaticResource SuccessSurfaceBrush}"
+                                        BorderBrush="#205044"
+                                        BorderThickness="1"
+                                        CornerRadius="9">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="MaskStatusIconBorder"
+                                                Width="26"
+                                                Height="26"
+                                                VerticalAlignment="Center"
+                                                BorderBrush="{StaticResource SuccessBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="13">
+                                            <TextBlock x:Name="MaskStatusIconText"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{StaticResource SuccessBrush}"
+                                                       Text="✓" />
+                                        </Border>
+                                        <TextBlock x:Name="MaskStatusTextBlock"
+                                                   Grid.Column="1"
+                                                   Margin="14,0"
+                                                   VerticalAlignment="Center"
+                                                   Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz."
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="2"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                Click="DismissStatusButton_Click"
+                                                Content="&#xE8BB;"
+                                                ToolTip="Bildirimi kapat" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- Maskeleme ayar çekmecesi -->
+                            <Grid x:Name="MaskDrawerLayer"
+                                  Panel.ZIndex="20"
+                                  Visibility="Collapsed">
+                                <Button Background="{StaticResource ScrimBrush}"
+                                        BorderThickness="0"
+                                        Click="DrawerScrim_Click"
+                                        Focusable="False">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" />
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <Border x:Name="MaskSettingsDrawer"
+                                        Width="500"
+                                        HorizontalAlignment="Right"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderStrongBrush}"
+                                        BorderThickness="1,0,0,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="24"
+                                                          Direction="180"
+                                                          Opacity="0.35"
+                                                          ShadowDepth="8"
+                                                          Color="#000000" />
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Margin="24,18,18,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock FontSize="21"
+                                                           FontWeight="SemiBold"
+                                                           Text="Maskeleme Ayarları" />
+                                                <TextBlock Margin="0,5,0,0"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           Text="Kod maskeleme seçeneklerini düzenleyin" />
+                                            </StackPanel>
+                                            <Button x:Name="MaskDrawerCloseButton"
+                                                    Grid.Column="1"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Click="CloseSettingsDrawerButton_Click"
+                                                    Content="&#xE8BB;"
+                                                    ToolTip="Ayarları kapat" />
+                                        </Grid>
+
+                                        <StackPanel Grid.Row="1" Margin="24,0,24,8">
+                                            <TextBlock Margin="0,0,0,8"
+                                                           FontWeight="SemiBold"
+                                                           Text="Kaynak dil" />
+                                            <ComboBox x:Name="LanguageComboBox"
+                                                          SelectionChanged="LanguageComboBox_SelectionChanged"
+                                                          SelectedIndex="0">
+                                                <ComboBoxItem Content="PL/I" Tag="PL1" />
+                                                <ComboBoxItem Content="EGL" Tag="EGL" />
+                                            </ComboBox>
+
+                                            <Border Margin="0,18,0,0"
+                                                        Padding="14"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock x:Name="MaskSelectedFileDrawerIcon"
+                                                                           Margin="0,0,8,0"
+                                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                                           Text="○" />
+                                                            <TextBlock x:Name="SelectedFileTextBlock"
+                                                                           MaxWidth="210"
+                                                                           FontWeight="SemiBold"
+                                                                           Text="Henüz dosya seçilmedi"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                                        </StackPanel>
+                                                        <TextBlock x:Name="SelectedFileMetaTextBlock"
+                                                                       Margin="22,5,0,0"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       FontSize="12"
+                                                                       Text="Kod doğrudan editöre yapıştırılabilir" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1"
+                                                                Click="SelectFileButton_Click"
+                                                                Content="Dosyayı Değiştir" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Height="1"
+                                                        Margin="0,18"
+                                                        Background="{StaticResource BorderBrush}" />
+
+                                            <StackPanel Margin="0,0,0,8"
+                                                            Orientation="Horizontal">
+                                                <TextBlock VerticalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               Text="Gizlilik Modu" />
+                                                <Button Width="24"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            Padding="0"
+                                                            Content="&#xE946;"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            ToolTipService.InitialShowDelay="120"
+                                                            ToolTipService.ShowDuration="30000">
+                                                    <Button.ToolTip>
+                                                        <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                            <StackPanel>
+                                                                <TextBlock FontWeight="SemiBold"
+                                                                               Text="Gizlilik modları" />
+                                                                <TextBlock Margin="0,6,0,0"
+                                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                                               Text="Maksimum Gizlilik, özgün değerlerin uzunluğunu ve yapısını mümkün olduğunca gizler. Önerilen seçenektir."
+                                                                               TextWrapping="Wrap" />
+                                                                <TextBlock Margin="0,8,0,0"
+                                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                                               Text="Biçim Korumalı mod, uzunluk ve karakter biçimini koruduğu için kaynak kod hakkında sınırlı biçim bilgisi gösterebilir."
+                                                                               TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                        </ToolTip>
+                                                    </Button.ToolTip>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <RadioButton x:Name="MaximumPrivacyRadioButton"
+                                                             GroupName="MaskingMode"
+                                                             IsChecked="True"
+                                                             Checked="MaskingModeRadioButton_Checked"
+                                                             Style="{StaticResource ChoiceCardStyle}">
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" Text="Maksimum Gizlilik" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   FontSize="12"
+                                                                   Text="Özgün değerlerin uzunluğunu ve yapısını mümkün olduğunca gizler."
+                                                                   TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <RadioButton x:Name="FormatPreservingRadioButton"
+                                                             Margin="0,10,0,0"
+                                                             GroupName="MaskingMode"
+                                                             Checked="MaskingModeRadioButton_Checked"
+                                                             Style="{StaticResource ChoiceCardStyle}">
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" Text="Biçim Korumalı" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   FontSize="12"
+                                                                   Text="Uzunluk ve karakter biçimini korur."
+                                                                   TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </RadioButton>
+
+                                            <Border Height="1"
+                                                        Margin="0,18"
+                                                        Background="{StaticResource BorderBrush}" />
+
+                                            <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
+                                                <TextBlock FontWeight="SemiBold" Text="Şifreli Eşleme Kasası" />
+                                                <Button Width="24"
+                                                            Height="24"
+                                                            Margin="6,0,0,0"
+                                                            Padding="0"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Content="&#xE946;"
+                                                            ToolTipService.InitialShowDelay="120"
+                                                            ToolTipService.ShowDuration="30000">
+                                                    <Button.ToolTip>
+                                                        <ToolTip Style="{StaticResource InfoBubbleToolTipStyle}">
+                                                            <StackPanel>
+                                                                <TextBlock FontWeight="SemiBold"
+                                                                               Text="Kasa parolası güvenliği" />
+                                                                <TextBlock Margin="0,6,0,0"
+                                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                                               Text="Kasa parolası en az 12 karakter olmalıdır. Dosyadan Kullan seçeneğinde yalnızca parolayı içeren güvenli bir metin dosyası seçin."
+                                                                               TextWrapping="Wrap" />
+                                                                <TextBlock Margin="0,6,0,0"
+                                                                               Foreground="{StaticResource WarningBrush}"
+                                                                               Text="Parola dosyasını, kasa dosyasını ve maskelenmiş kodu aynı konumda saklamayın."
+                                                                               TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                        </ToolTip>
+                                                    </Button.ToolTip>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <Border Padding="3"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <RadioButton x:Name="ManualVaultPasswordRadioButton"
+                                                                     GroupName="VaultPasswordSource"
+                                                                     Content="Elle Gir"
+                                                                     IsChecked="True"
+                                                                     Checked="VaultPasswordSource_Changed"
+                                                                     Style="{StaticResource SegmentToggleStyle}" />
+                                                    <RadioButton x:Name="FileVaultPasswordRadioButton"
+                                                                     Grid.Column="1"
+                                                                     GroupName="VaultPasswordSource"
+                                                                     Content="Dosyadan Kullan"
+                                                                     Checked="VaultPasswordSource_Changed"
+                                                                     Style="{StaticResource SegmentToggleStyle}" />
+                                                </Grid>
+                                            </Border>
+
+                                            <StackPanel x:Name="ManualVaultPasswordPanel" Margin="0,10,0,0">
+                                                <Border Style="{StaticResource PasswordInputStyle}">
+                                                    <Grid>
+                                                        <TextBlock x:Name="VaultPasswordPlaceholderTextBlock"
+                                                                       Margin="14,0,48,0"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       IsHitTestVisible="False"
+                                                                       Text="Kasa parolasını girin" />
+                                                        <PasswordBox x:Name="VaultPasswordBox"
+                                                                         Margin="12,0,48,0"
+                                                                         MaxLength="128"
+                                                                         PasswordChanged="VaultPasswordInput_Changed" />
+                                                        <TextBox x:Name="VaultPasswordTextBox"
+                                                                     Margin="12,0,48,0"
+                                                                     MaxLength="128"
+                                                                     TextChanged="VaultPasswordInput_Changed"
+                                                                     Visibility="Collapsed" />
+                                                        <Button x:Name="VaultPasswordVisibilityButton"
+                                                                    Width="42"
+                                                                    Height="42"
+                                                                    HorizontalAlignment="Right"
+                                                                    Style="{StaticResource IconButtonStyle}"
+                                                                    Click="VaultPasswordVisibilityButton_Click"
+                                                                    Content="&#xE890;"
+                                                                    ToolTip="Parolayı göster veya gizle" />
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock x:Name="VaultPasswordValidationTextBlock"
+                                                               Margin="2,8,0,0"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               FontSize="12"
+                                                               Text="En az 12 karakterlik güçlü bir parola kullanın." />
+                                            </StackPanel>
+
+                                            <Border x:Name="VaultPasswordFilePanel"
+                                                        Margin="0,10,0,0"
+                                                        Padding="12"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="8"
+                                                        Visibility="Collapsed">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="VaultPasswordFileTextBlock"
+                                                                   Margin="0,0,12,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   Text="Parola dosyası seçilmedi"
+                                                                   TextWrapping="Wrap" />
+                                                    <Button Grid.Column="1"
+                                                                MinWidth="92"
+                                                                Click="SelectVaultPasswordFileButton_Click"
+                                                                Content="Dosya Seç" />
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="2" Margin="24,12,24,22">
+                                            <Button x:Name="MaskButton"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Click="MaskButton_Click"
+                                                    Content="⛨  Ayarları Uygula ve Maskele"
+                                                    IsEnabled="False" />
+                                            <Button Margin="0,8,0,0"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Click="CloseSettingsDrawerButton_Click"
+                                                    Content="İptal" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem>
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Margin="0,0,10,0"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="17"
+                                           Text="&#xE7A7;" />
+                                <TextBlock Text="Kodu Geri Aç" />
+                            </StackPanel>
+                        </TabItem.Header>
+
+                        <Grid x:Name="RestoreWorkspace">
+                            <Grid x:Name="RestoreFocusContent">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="56" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="58" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Geri açma özet şeridi -->
+                                <Border Grid.Row="0"
+                                        Margin="16,8,16,6"
+                                        Background="{StaticResource EditorBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                    <Grid Margin="12,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                            <TextBlock x:Name="RestoreMaskedFileSummaryIcon"
+                                                       Margin="0,0,8,0"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="○" />
+                                            <TextBlock x:Name="SelectedMaskedFileSummaryTextBlock"
+                                                       MaxWidth="200"
+                                                       Text="Maskelenmiş dosya seçilmedi"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Margin="28,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal">
+                                            <TextBlock x:Name="RestoreVaultFileSummaryIcon"
+                                                       Margin="0,0,8,0"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="○" />
+                                            <TextBlock x:Name="SelectedVaultFileSummaryTextBlock"
+                                                       MaxWidth="190"
+                                                       Text="Kasa seçilmedi"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2"
+                                                    Margin="28,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal">
+                                            <TextBlock x:Name="RestorePasswordSummaryIcon"
+                                                       Margin="0,0,8,0"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="○" />
+                                            <TextBlock x:Name="RestorePasswordSummaryTextBlock"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Text="Parola bekleniyor" />
+                                        </StackPanel>
+
+                                        <Button x:Name="RestoreSettingsButton"
+                                                Grid.Column="3"
+                                                Margin="24,0,0,0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Click="RestoreSettingsToggleButton_Click"
+                                                Content="&#xE713;"
+                                                Style="{StaticResource SettingsButtonStyle}"
+                                                ToolTip="Geri açma ayarlarını aç" />
+
+                                    </Grid>
+                                </Border>
+
+                                <!-- Geri açma editörleri -->
+                                <Grid x:Name="RestoreEditorGrid" Grid.Row="1" Margin="16,8,16,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition x:Name="RestoreLeftColumn" Width="*" MinWidth="300" />
+                                        <ColumnDefinition x:Name="RestoreSplitterColumn" Width="14" />
+                                        <ColumnDefinition x:Name="RestoreRightColumn" Width="*" MinWidth="300" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="RestoreLeftEditorCard"
+                                            Grid.Column="0"
+                                            ClipToBounds="True"
+                                            Style="{StaticResource EditorCardStyle}">
+                                        <Grid ClipToBounds="True">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="44" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Margin="2,0,10,0"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="17"
+                                                               Text="&#xE72E;" />
+                                                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontSize="16"
+                                                               FontWeight="SemiBold"
+                                                               Text="Maskelenmiş Kod" />
+                                                </StackPanel>
+                                                <Button Grid.Column="1"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Click="ExpandEditorButton_Click"
+                                                        Tag="RestoreLeft"
+                                                        Content="&#xE740;"
+                                                        ToolTip="Maskelenmiş kod editörünü genişlet" />
+                                            </Grid>
+                                            <Border Grid.Row="1"
+                                                    ClipToBounds="True"
+                                                    Background="{StaticResource EditorBrush}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8">
+                                                <Grid ClipToBounds="True">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border ClipToBounds="True"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0">
+                                                        <TextBlock x:Name="MaskedInputLineNumbersTextBlock"
+                                                                   Padding="0,12,14,12"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                                   FontFamily="Cascadia Mono, Consolas"
+                                                                   FontSize="14"
+                                                                   LineHeight="22"
+                                                                   Text="1" />
+                                                    </Border>
+                                                    <RichTextBox x:Name="MaskedInputSyntaxRichTextBox"
+                                                                 Grid.Column="1"
+                                                                 Padding="14,12"
+                                                                 Background="Transparent"
+                                                                 BorderThickness="0"
+                                                                 ClipToBounds="True"
+                                                                 Focusable="False"
+                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                                 FontSize="14"
+                                                                 IsHitTestVisible="False"
+                                                                 IsReadOnly="True"
+                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                                                    <TextBox x:Name="MaskedInputTextBox"
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="Transparent"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             TextBlock.LineHeight="22"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="MaskedInputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <GridSplitter x:Name="RestoreGridSplitter"
+                                                  Grid.Column="1"
+                                                  Width="14"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Stretch"
+                                                  Background="Transparent"
+                                                  Cursor="SizeWE"
+                                                  DragDelta="EditorGridSplitter_DragDelta"
+                                                  MouseDoubleClick="EditorGridSplitter_MouseDoubleClick"
+                                                  ResizeBehavior="PreviousAndNext"
+                                                  ResizeDirection="Columns"
+                                                  ShowsPreview="False"
+                                                  ToolTip="Editörlerin genişliğini değiştirmek için sürükleyin. Sıfırlamak için çift tıklayın.">
+                                        <GridSplitter.Template>
+                                            <ControlTemplate TargetType="GridSplitter">
+                                                <Border x:Name="SplitterHitArea"
+                                                        Width="14"
+                                                        Background="Transparent">
+                                                    <Border x:Name="SplitterHandle"
+                                                            Width="6"
+                                                            Height="54"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Background="{StaticResource BorderStrongBrush}"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="3">
+                                                        <StackPanel HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center">
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                            <Ellipse Width="2.5"
+                                                                     Height="2.5"
+                                                                     Margin="0,1.5"
+                                                                     Fill="{StaticResource TextSecondaryBrush}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="SplitterHitArea"
+                                                                Property="Background"
+                                                                Value="#101B2E" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="Background"
+                                                                Value="{StaticResource PrimarySoftBrush}" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="BorderBrush"
+                                                                Value="{StaticResource PrimaryBrush}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="SplitterHitArea"
+                                                                Property="Background"
+                                                                Value="#17243A" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="Background"
+                                                                Value="{StaticResource PrimaryBrush}" />
+                                                        <Setter TargetName="SplitterHandle"
+                                                                Property="BorderBrush"
+                                                                Value="{StaticResource PrimaryHoverBrush}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </GridSplitter.Template>
+                                    </GridSplitter>
+
+                                    <Border x:Name="RestoreRightEditorCard"
+                                            Grid.Column="2"
+                                            ClipToBounds="True"
+                                            Style="{StaticResource EditorCardStyle}">
+                                        <Grid ClipToBounds="True">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="44" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                                    <TextBlock Margin="2,0,10,0"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="17"
+                                                               Text="&#xE8D7;" />
+                                                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                                               FontSize="16"
+                                                               FontWeight="SemiBold"
+                                                               Text="Geri Açılmış Kod" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <Button x:Name="CopyRestoredButton"
+                                                            Margin="0,0,8,0"
+                                                            Click="CopyRestoredButton_Click"
+                                                            IsEnabled="False">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Margin="0,0,8,0"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       Text="&#xE8C8;" />
+                                                            <TextBlock Text="Sonucu Kopyala" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Margin="0,0,8,0"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Click="ExpandEditorButton_Click"
+                                                            Tag="RestoreRight"
+                                                            Content="&#xE740;"
+                                                            ToolTip="Geri açılmış kod editörünü genişlet" />
+                                                    <Button x:Name="SaveRestoredFileButton"
+                                                            Click="SaveRestoredFileButton_Click"
+                                                            IsEnabled="False">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Margin="0,0,8,0"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       Text="&#xE74E;" />
+                                                            <TextBlock Text="Sonucu Kaydet" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                            <Border Grid.Row="1"
+                                                    ClipToBounds="True"
+                                                    Background="{StaticResource EditorBrush}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8">
+                                                <Grid ClipToBounds="True">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border ClipToBounds="True"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0">
+                                                        <TextBlock x:Name="RestoredLineNumbersTextBlock"
+                                                                   Padding="0,12,14,12"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                                   FontFamily="Cascadia Mono, Consolas"
+                                                                   FontSize="14"
+                                                                   LineHeight="22"
+                                                                   Text="1" />
+                                                    </Border>
+                                                    <RichTextBox x:Name="RestoredSyntaxRichTextBox"
+                                                                 Grid.Column="1"
+                                                                 Padding="14,12"
+                                                                 Background="Transparent"
+                                                                 BorderThickness="0"
+                                                                 ClipToBounds="True"
+                                                                 Focusable="False"
+                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                                 FontSize="14"
+                                                                 IsHitTestVisible="False"
+                                                                 IsReadOnly="True"
+                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                                                    <TextBox x:Name="RestoredCodeTextBox"
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="Transparent"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             IsReadOnly="True"
+                                                             TextBlock.LineHeight="22"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="CodeOutputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <Border x:Name="RestoreStatusBorder"
+                                        Grid.Row="2"
+                                        Margin="16,6,16,12"
+                                        Padding="16,0"
+                                        Background="{StaticResource SuccessSurfaceBrush}"
+                                        BorderBrush="#205044"
+                                        BorderThickness="1"
+                                        CornerRadius="9">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="RestoreStatusIconBorder"
+                                                Width="26"
+                                                Height="26"
+                                                VerticalAlignment="Center"
+                                                BorderBrush="{StaticResource SuccessBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="13">
+                                            <TextBlock x:Name="RestoreStatusIconText"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{StaticResource SuccessBrush}"
+                                                       Text="✓" />
+                                        </Border>
+                                        <TextBlock x:Name="RestoreStatusTextBlock"
+                                                   Grid.Column="1"
+                                                   Margin="14,0"
+                                                   VerticalAlignment="Center"
+                                                   Text="Maskelenmiş dosya, kasa ve parola seçerek kodu geri açabilirsiniz."
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Button Grid.Column="2"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                Click="DismissStatusButton_Click"
+                                                Content="&#xE8BB;"
+                                                ToolTip="Bildirimi kapat" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- Geri açma ayar çekmecesi -->
+                            <Grid x:Name="RestoreDrawerLayer"
+                                  Panel.ZIndex="20"
+                                  Visibility="Collapsed">
+                                <Button Background="{StaticResource ScrimBrush}"
+                                        BorderThickness="0"
+                                        Click="DrawerScrim_Click"
+                                        Focusable="False">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" />
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <Border x:Name="RestoreSettingsDrawer"
+                                        Width="450"
+                                        HorizontalAlignment="Right"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderStrongBrush}"
+                                        BorderThickness="1,0,0,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="24"
+                                                          Direction="180"
+                                                          Opacity="0.35"
+                                                          ShadowDepth="8"
+                                                          Color="#000000" />
+                                    </Border.Effect>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Margin="24,18,18,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock FontSize="21"
+                                                           FontWeight="SemiBold"
+                                                           Text="Geri Açma Ayarları" />
+                                                <TextBlock Margin="0,5,0,0"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           Text="Dosya ve kasa doğrulama seçeneklerini düzenleyin" />
+                                            </StackPanel>
+                                            <Button x:Name="RestoreDrawerCloseButton"
+                                                    Grid.Column="1"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Click="CloseSettingsDrawerButton_Click"
+                                                    Content="&#xE8BB;"
+                                                    ToolTip="Ayarları kapat" />
+                                        </Grid>
+
+                                        <StackPanel Grid.Row="1" Margin="24,0,24,8">
+                                            <TextBlock Margin="0,0,0,8"
+                                                           FontWeight="SemiBold"
+                                                           Text="Maskelenmiş Dosya" />
+                                            <Border Padding="14"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock x:Name="RestoreMaskedFileDrawerIcon"
+                                                                           Margin="0,0,8,0"
+                                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                                           Text="○" />
+                                                            <TextBlock x:Name="SelectedMaskedFileTextBlock"
+                                                                           MaxWidth="210"
+                                                                           FontWeight="SemiBold"
+                                                                           Text="Dosya seçilmedi"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                                        </StackPanel>
+                                                        <TextBlock x:Name="SelectedMaskedFileMetaTextBlock"
+                                                                       Margin="22,5,0,0"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       FontSize="12"
+                                                                       Text="Desteklenen: .pli, .pl1, .egl" />
+                                                    </StackPanel>
+                                                    <Button x:Name="SelectMaskedFileButton"
+                                                                Grid.Column="1"
+                                                                Margin="12,0,0,0"
+                                                                VerticalAlignment="Center"
+                                                                Click="SelectMaskedFileButton_Click"
+                                                                Content="Dosya Seç" />
+                                                </Grid>
+                                            </Border>
+
+                                            <TextBlock Margin="0,20,0,8"
+                                                           FontWeight="SemiBold"
+                                                           Text="Şifreli Eşleme Kasası" />
+                                            <Border Padding="14"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock x:Name="RestoreVaultFileDrawerIcon"
+                                                                           Margin="0,0,8,0"
+                                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                                           Text="○" />
+                                                            <TextBlock x:Name="SelectedVaultFileTextBlock"
+                                                                           MaxWidth="210"
+                                                                           FontWeight="SemiBold"
+                                                                           Text="Kasa seçilmedi"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                                                        </StackPanel>
+                                                        <TextBlock x:Name="SelectedVaultFileMetaTextBlock"
+                                                                       Margin="22,5,0,0"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       FontSize="12"
+                                                                       Text=".mcvault dosyası seçin" />
+                                                    </StackPanel>
+                                                    <Button x:Name="SelectVaultFileButton"
+                                                                Grid.Column="1"
+                                                                Margin="12,0,0,0"
+                                                                VerticalAlignment="Center"
+                                                                Click="SelectVaultFileButton_Click"
+                                                                Content="Kasa Dosyası Seç" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Height="1"
+                                                        Margin="0,20"
+                                                        Background="{StaticResource BorderBrush}" />
+
+                                            <TextBlock Margin="0,0,0,8"
+                                                           FontWeight="SemiBold"
+                                                           Text="Parola Yöntemi" />
+                                            <Border Padding="3"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <RadioButton x:Name="ManualRestorePasswordRadioButton"
+                                                                     GroupName="RestorePasswordSource"
+                                                                     Content="Parolayı Elle Gir"
+                                                                     IsChecked="True"
+                                                                     Checked="RestorePasswordSource_Changed"
+                                                                     Style="{StaticResource SegmentToggleStyle}" />
+                                                    <RadioButton x:Name="FileRestorePasswordRadioButton"
+                                                                     Grid.Column="1"
+                                                                     GroupName="RestorePasswordSource"
+                                                                     Content="Parolayı Dosyadan Kullan"
+                                                                     Checked="RestorePasswordSource_Changed"
+                                                                     Style="{StaticResource SegmentToggleStyle}" />
+                                                </Grid>
+                                            </Border>
+
+                                            <StackPanel x:Name="ManualRestorePasswordPanel" Margin="0,10,0,0">
+                                                <Border Style="{StaticResource PasswordInputStyle}">
+                                                    <Grid>
+                                                        <TextBlock x:Name="RestorePasswordPlaceholderTextBlock"
+                                                                       Margin="14,0,48,0"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       IsHitTestVisible="False"
+                                                                       Text="Kasa parolasını girin" />
+                                                        <PasswordBox x:Name="RestoreVaultPasswordBox"
+                                                                         Margin="12,0,48,0"
+                                                                         MaxLength="128"
+                                                                         PasswordChanged="RestorePasswordInput_Changed" />
+                                                        <TextBox x:Name="RestoreVaultPasswordTextBox"
+                                                                     Margin="12,0,48,0"
+                                                                     MaxLength="128"
+                                                                     TextChanged="RestorePasswordInput_Changed"
+                                                                     Visibility="Collapsed" />
+                                                        <Button x:Name="RestorePasswordVisibilityButton"
+                                                                    Width="42"
+                                                                    Height="42"
+                                                                    HorizontalAlignment="Right"
+                                                                    Style="{StaticResource IconButtonStyle}"
+                                                                    Click="RestorePasswordVisibilityButton_Click"
+                                                                    Content="&#xE890;"
+                                                                    ToolTip="Parolayı göster veya gizle" />
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock x:Name="RestorePasswordValidationTextBlock"
+                                                               Margin="2,8,0,0"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               FontSize="12"
+                                                               Text="Kasa parolasını girin." />
+                                            </StackPanel>
+
+                                            <Border x:Name="RestorePasswordFilePanel"
+                                                        Margin="0,10,0,0"
+                                                        Padding="12"
+                                                        Background="{StaticResource EditorBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="8"
+                                                        Visibility="Collapsed">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="RestorePasswordFileTextBlock"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   Text="Parola dosyası seçilmedi"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    <Button Grid.Column="1"
+                                                                Margin="10,0,0,0"
+                                                                Click="SelectRestorePasswordFileButton_Click"
+                                                                Content="Dosya Seç" />
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="2" Margin="24,12,24,22">
+                                            <Button x:Name="UnmaskButton"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Click="UnmaskButton_Click"
+                                                    Content="⛨  Ayarları Uygula ve Kodu Geri Aç"
+                                                    IsEnabled="False" />
+                                            <Button Margin="0,8,0,0"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Click="CloseSettingsDrawerButton_Click"
+                                                    Content="İptal" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <!-- Mevcut iş mantığının ortak durum hedefi -->
             <TextBlock x:Name="StatusTextBlock"
-                       Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz."
-                       TextWrapping="Wrap" />
-        </Border>
-    </Grid>
+                       Grid.Row="2"
+                       Width="1"
+                       Height="1"
+                       Opacity="0"
+                       IsHitTestVisible="False"
+                       Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz." />
+        </Grid>
+    </Border>
 </Window>
