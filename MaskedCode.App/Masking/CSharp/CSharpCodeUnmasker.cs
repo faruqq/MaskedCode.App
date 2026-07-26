@@ -77,17 +77,43 @@ public sealed class CSharpCodeUnmasker
 
         public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia)
         {
-            if (_lookup.CommentMappings.TryGetValue(
-                    trivia.ToFullString(),
-                    out var mapping))
+            var triviaText =
+                trivia.ToFullString();
+
+            var matchingMappings =
+                _lookup.CommentMappings
+                    .Where(pair =>
+                        triviaText.Contains(
+                            pair.Key,
+                            StringComparison.Ordinal))
+                    .OrderByDescending(pair =>
+                        pair.Key.Length)
+                    .ToArray();
+
+            if (matchingMappings.Length == 0)
             {
-                return RestoreTrivia(
-                    trivia,
-                    mapping);
+                return base.VisitTrivia(
+                    trivia);
             }
 
-            return base.VisitTrivia(
-                trivia);
+            var restoredText =
+                triviaText;
+
+            foreach (var matchingMapping in matchingMappings)
+            {
+                restoredText =
+                    restoredText.Replace(
+                        matchingMapping.Key,
+                        matchingMapping.Value.OriginalValue,
+                        StringComparison.Ordinal);
+
+                _lookup.MarkAsUsed(
+                    matchingMapping.Value.Index);
+            }
+
+            return RestoreTrivia(
+                trivia,
+                restoredText);
         }
 
         public override SyntaxToken VisitToken(SyntaxToken token)
@@ -136,18 +162,20 @@ public sealed class CSharpCodeUnmasker
             return visitedToken;
         }
 
-        private SyntaxTrivia RestoreTrivia(SyntaxTrivia trivia, MappingEntry mapping)
+        private static SyntaxTrivia RestoreTrivia(
+     SyntaxTrivia originalTrivia,
+     string restoredText)
         {
             var restoredTrivia =
                 SyntaxFactory
                     .ParseLeadingTrivia(
-                        mapping.OriginalValue)
+                        restoredText)
                     .FirstOrDefault(candidate =>
                         candidate.Kind() ==
-                            trivia.Kind() &&
+                            originalTrivia.Kind() &&
                         string.Equals(
                             candidate.ToFullString(),
-                            mapping.OriginalValue,
+                            restoredText,
                             StringComparison.Ordinal));
 
             if (restoredTrivia.RawKind == 0)
@@ -155,11 +183,8 @@ public sealed class CSharpCodeUnmasker
                 throw new InvalidDataException(
                     "Kasa içindeki C# yorum veya directive eşlemesi " +
                     "beklenen trivia türünü üretmedi. " +
-                    $"Tür: {trivia.Kind()}");
+                    $"Tür: {originalTrivia.Kind()}");
             }
-
-            _lookup.MarkAsUsed(
-                mapping.Index);
 
             return restoredTrivia;
         }

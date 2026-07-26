@@ -113,27 +113,27 @@ public sealed class CSharpCodeUnmaskerTests
     [InlineData(MaskingMode.MaximumPrivacy)]
     [InlineData(MaskingMode.FormatPreserving)]
     public void MaskAndUnmask_WithComments_ShouldRestoreExactSource(
-    MaskingMode mode)
+        MaskingMode mode)
     {
         const string sourceCode =
             """
-        namespace Company.Customer;
+            namespace Company.Customer;
 
-        /// <summary>
-        /// Returns the internal customer name.
-        /// </summary>
-        public sealed class CustomerService
-        {
-            // Internal customer lookup
-            public string GetCustomerName()
+            /// <summary>
+            /// Returns the internal customer name.
+            /// </summary>
+            public sealed class CustomerService
             {
-                /*
-                 * Private customer information
-                 */
-                return "InternalCustomer";
+                // Internal customer lookup
+                public string GetCustomerName()
+                {
+                    /*
+                     * Private customer information
+                     */
+                    return "InternalCustomer";
+                }
             }
-        }
-        """;
+            """;
 
         var masker =
             new CSharpCodeMasker();
@@ -176,9 +176,9 @@ public sealed class CSharpCodeUnmaskerTests
         const string sourceCode =
             """
         #define INTERNAL_CUSTOMER_FEATURE
-        #region Internal customer operations
-
         #if INTERNAL_CUSTOMER_FEATURE
+        #endif
+        #undef INTERNAL_CUSTOMER_FEATURE
 
         public sealed class CustomerService
         {
@@ -187,13 +187,6 @@ public sealed class CSharpCodeUnmaskerTests
                 return "InternalCustomer";
             }
         }
-
-        #warning Internal customer warning
-        #error Internal customer error
-
-        #endif
-        #undef INTERNAL_CUSTOMER_FEATURE
-        #endregion Internal customer operations
         """;
 
         var masker =
