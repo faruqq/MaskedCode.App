@@ -1,12 +1,11 @@
 ﻿using MaskedCode.App.Masking;
 using MaskedCode.App.Masking.Egl;
 using MaskedCode.App.Masking.Pl1;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Xunit;
+using MaskedCode.App.Masking.CSharp;
 
 namespace MaskedCode.App.Tests.Masking;
 
@@ -1478,6 +1477,64 @@ EncryptAndDecrypt_WithPl1ResultAsCommonContract_ShouldPreserveMappings()
 
         Assert.Equal(
             SourceLanguage.Egl,
+            vaultContent.SourceLanguage);
+
+        Assert.Equal(
+            maskingMode,
+            vaultContent.MaskingMode);
+
+        Assert.Equal(
+            maskingResult.Mappings,
+            vaultContent.Mappings);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void EncryptAndDecrypt_WithCSharpMaskingResult_ShouldPreserveSourceLanguage(MaskingMode maskingMode)
+    {
+        const string sourceCode =
+            """
+        namespace Company.Customer;
+
+        public sealed class CustomerService
+        {
+            public string GetCustomerName(int customerNumber)
+            {
+                // Internal customer lookup
+                return $"PrivateCustomer-{customerNumber}-100";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                maskingMode);
+
+        var vault =
+            new EncryptedMappingVault();
+
+        var encryptedVault =
+            vault.Encrypt(
+                maskingResult,
+                VaultPassword);
+
+        var vaultContent =
+            vault.Decrypt(
+                encryptedVault,
+                VaultPassword,
+                maskingResult.MaskedCode);
+
+        Assert.Equal(
+            SourceLanguage.CSharp,
+            maskingResult.SourceLanguage);
+
+        Assert.Equal(
+            SourceLanguage.CSharp,
             vaultContent.SourceLanguage);
 
         Assert.Equal(
