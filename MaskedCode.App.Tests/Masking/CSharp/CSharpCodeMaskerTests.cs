@@ -1361,4 +1361,155 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveDelimiters(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            // Internal customer number must not be logged.
+            public void Process()
+            {
+                /* Customer balance comes from the private database. */
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.DoesNotContain(
+            "Internal customer number",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Customer balance",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "//",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "/*",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "*/",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            2,
+            result.CommentCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithRepeatedComment_ShouldReuseCommentMapping()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            // Internal customer reference
+            public void First()
+            {
+            }
+
+            // Internal customer reference
+            public void Second()
+            {
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Comment));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                mapping.MaskedValue));
+
+        Assert.Equal(
+            1,
+            result.CommentCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithFormatPreservingComment_ShouldPreserveCommentLength()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            // Customer-123 must remain confidential.
+            public void Process()
+            {
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.FormatPreserving);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Comment));
+
+        Assert.Equal(
+            mapping.OriginalValue.Length,
+            mapping.MaskedValue.Length);
+
+        Assert.StartsWith(
+            "//",
+            mapping.MaskedValue);
+
+        Assert.NotEqual(
+            mapping.OriginalValue,
+            mapping.MaskedValue);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

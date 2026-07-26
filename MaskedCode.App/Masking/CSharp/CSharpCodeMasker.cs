@@ -55,6 +55,10 @@ internal sealed class CSharpCodeMasker
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
 
+        var commentMappings =
+        new Dictionary<string, string>(
+            StringComparer.Ordinal);
+
         var usedMaskedIdentifiers =
             new HashSet<string>(
                 StringComparer.Ordinal);
@@ -66,6 +70,10 @@ internal sealed class CSharpCodeMasker
         var usedMaskedNumericLiterals =
             new HashSet<string>(
                 StringComparer.Ordinal);
+
+        var usedMaskedComments =
+        new HashSet<string>(
+            StringComparer.Ordinal);
 
         var sessionId =
             Guid.NewGuid()
@@ -87,6 +95,13 @@ internal sealed class CSharpCodeMasker
                 usedMaskedNumericLiterals,
                 originalNumericLiterals);
 
+        var commentMasker =
+        new CSharpCommentMasker(
+            mode,
+            sessionId,
+            commentMappings,
+            usedMaskedComments);
+
         var rewriter =
             new IdentifierMaskingRewriter(
                 identifierMappings,
@@ -94,6 +109,7 @@ internal sealed class CSharpCodeMasker
                 originalIdentifiers,
                 literalMasker,
                 numericLiteralMasker,
+                commentMasker,
                 sessionId,
                 mode);
 
@@ -111,7 +127,8 @@ internal sealed class CSharpCodeMasker
             CreateMappings(
                 identifierMappings,
                 literalMappings,
-                numericLiteralMappings);
+                numericLiteralMappings,
+                commentMappings);
 
         return new CSharpMaskingResult(
             maskedRoot.ToFullString(),
@@ -169,13 +186,14 @@ internal sealed class CSharpCodeMasker
                 StringComparer.Ordinal);
     }
 
-    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings, IReadOnlyDictionary<string, string> numericLiteralMappings)
+    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings, IReadOnlyDictionary<string, string> numericLiteralMappings, IReadOnlyDictionary<string, string> commentMappings)
     {
         var mappings =
             new List<MaskingMapping>(
                 identifierMappings.Count +
                 literalMappings.Count +
-                numericLiteralMappings.Count);
+                numericLiteralMappings.Count +
+                commentMappings.Count);
 
         foreach (var mapping in identifierMappings)
         {
@@ -200,6 +218,15 @@ internal sealed class CSharpCodeMasker
             mappings.Add(
                 new MaskingMapping(
                     MaskingValueKind.NumericLiteral,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        foreach (var mapping in commentMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.Comment,
                     mapping.Key,
                     mapping.Value));
         }
@@ -349,16 +376,37 @@ internal sealed class CSharpCodeMasker
         private readonly MaskingMode _mode;
         private readonly CSharpLiteralMasker _literalMasker;
         private readonly CSharpNumericLiteralMasker _numericLiteralMasker;
+        private readonly CSharpCommentMasker _commentMasker;
 
-        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, string sessionId, MaskingMode mode)
+        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, CSharpCommentMasker commentMasker, string sessionId, MaskingMode mode)
         {
             _mappings = mappings;
             _usedMaskedIdentifiers = usedMaskedIdentifiers;
             _originalIdentifiers = originalIdentifiers;
             _literalMasker = literalMasker;
             _numericLiteralMasker = numericLiteralMasker;
+            _commentMasker = commentMasker;
             _sessionId = sessionId;
             _mode = mode;
+        }
+
+        public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia)
+        {
+            if (trivia.IsKind(
+                    SyntaxKind.SingleLineCommentTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.MultiLineCommentTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.MultiLineDocumentationCommentTrivia))
+            {
+                return _commentMasker.MaskTrivia(
+                    trivia);
+            }
+
+            return base.VisitTrivia(
+                trivia);
         }
 
         public override SyntaxToken VisitToken(SyntaxToken token)
