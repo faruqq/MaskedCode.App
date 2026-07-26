@@ -2,7 +2,7 @@
 
 ## Son Doğrulanan Commit
 
-`fc5f194e2a422a8d284eb0366f38801a9bec1a78`
+`3d0afd64d29db13be5fa3f23ab1531dad152e13c`
 
 Bu commit itibarıyla PL/I ve EGL kaynak kodlarının maskelenmesi,
 şifreli eşleme kasasının oluşturulması, kaynak diline göre geri açma
@@ -24,7 +24,7 @@ işlemi ve WPF arayüz entegrasyonu tamamlanmıştır.
 - Geri açılan kod panoya kopyalanabilir veya dosyaya kaydedilebilir.
 - Geri açılan dosyanın uzantısı kasadaki kaynak diline göre belirlenir.
 
-Arayüzdeki C# / .NET seçeneği henüz üretim desteğine sahip değildir.
+C# / .NET desteği geliştirme aşamasındadır ve henüz kullanılamaz.
 
 ### PL/I Maskeleme
 
@@ -327,22 +327,6 @@ yapılandırılmayacaktır.
 - Henüz commitlenmemiş değişiklikler eski commitlerde aranmamalıdır.
 - Kullanıcı “devam edelim” dediğinde son işlemin sorunsuz tamamlandığı kabul edilmelidir.
 - İşlemler Visual Studio üzerinden anlatılmalıdır; PowerShell komutu verilmemelidir.
-
-### Kod Paylaşım Standardı
-
-- Değiştirilecek metodun tamamı verilmelidir.
-- Aynı dosyanın birçok bölümü değişiyorsa dosyanın tamamı verilmelidir.
-- Eksik veya parçalı kod verilmemelidir.
-- Her değişiklik için dosya adı ve uygulanacağı yer belirtilmelidir.
-- Her paket en fazla 4–5 kod veya doküman snippet’i içermelidir.
-- Tamamlanan mantıksal paket sonunda commit adı verilmelidir.
-- Kullanıcı yeni commit hash’ini paylaşmadan sonraki pakete
-  geçilmemelidir.
-- Henüz commitlenmemiş değişiklikler eski commitlerde aranmamalıdır.
-- Kullanıcı “devam edelim” dediğinde son işlemin sorunsuz
-  tamamlandığı kabul edilmelidir.
-- İşlemler Visual Studio üzerinden anlatılmalıdır; PowerShell komutu
-  verilmemelidir.
 
 ### Test Yaklaşımı
 

@@ -19,8 +19,8 @@ geri açılmasını sağlar.
 - PL/I
 - EGL
 
-C# / .NET seçeneği arayüzde görünmektedir ancak henüz
-desteklenmemektedir.
+C# / .NET desteği geliştirme aşamasındadır ve henüz
+kullanılamaz.
 
 ## Maskelenebilen İçerikler
 
