@@ -1,4 +1,6 @@
-﻿using MaskedCode.App.Masking;
+﻿using MaskedCode.App.Animations;
+using MaskedCode.App.Masking;
+using MaskedCode.App.Masking.CSharp;
 using MaskedCode.App.Masking.Egl;
 using MaskedCode.App.Masking.Pl1;
 using Microsoft.Win32;
@@ -13,7 +15,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using MaskedCode.App.Animations;
 
 namespace MaskedCode.App;
 
@@ -523,14 +524,20 @@ public partial class MainWindow : Window
                     SourceCodeTextBox.Text,
                     selectedMode),
 
+                "CSHARP" => new CSharpCodeMasker().Mask(
+                    SourceCodeTextBox.Text,
+                    selectedMode),
+
                 _ => throw new NotSupportedException(
                     "Seçilen kaynak dili için maskeleme henüz desteklenmiyor.")
             };
 
             _lastMaskingResult = result;
             MaskedCodeTextBox.Text = result.MaskedCode;
+
             MaskModeSummaryTextBlock.Text =
-                GetMaskingModeDisplayName(result.Mode);
+                GetMaskingModeDisplayName(
+                    result.Mode);
 
             UpdateOutputButtons();
             CloseSettingsDrawer();
@@ -542,7 +549,8 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            ClearMaskingOutput(clearPassword: false);
+            ClearMaskingOutput(
+                clearPassword: false);
 
             SetStatus(
                 "Maskeleme işlemi tamamlanamadı: " +
@@ -809,14 +817,18 @@ public partial class MainWindow : Window
 
     private void SelectLanguageFromFileExtension(string filePath)
     {
-        var extension = Path.GetExtension(filePath);
+        var extension =
+            Path.GetExtension(
+                filePath);
 
-        LanguageComboBox.SelectedIndex = extension.ToLowerInvariant() switch
-        {
-            ".pli" or ".pl1" => 0,
-            ".egl" => 1,
-            _ => LanguageComboBox.SelectedIndex
-        };
+        LanguageComboBox.SelectedIndex =
+            extension.ToLowerInvariant() switch
+            {
+                ".pli" or ".pl1" => 0,
+                ".egl" => 1,
+                ".cs" => 2,
+                _ => LanguageComboBox.SelectedIndex
+            };
     }
 
     private string GetOpenFileFilter()
@@ -831,7 +843,12 @@ public partial class MainWindow : Window
                 "EGL kaynak dosyaları (*.egl)|*.egl|" +
                 "Tüm dosyalar (*.*)|*.*",
 
-            _ => "Tüm dosyalar (*.*)|*.*"
+            "CSHARP" =>
+                "C# kaynak dosyaları (*.cs)|*.cs|" +
+                "Tüm dosyalar (*.*)|*.*",
+
+            _ =>
+                "Tüm dosyalar (*.*)|*.*"
         };
     }
 
@@ -846,6 +863,9 @@ public partial class MainWindow : Window
             "EGL" =>
                 "EGL kaynak dosyaları (*.egl)|*.egl",
 
+            "CSHARP" =>
+                "C# kaynak dosyaları (*.cs)|*.cs",
+
             _ =>
                 "Metin dosyaları (*.txt)|*.txt"
         };
@@ -853,10 +873,16 @@ public partial class MainWindow : Window
 
     private string CreateMaskedFileName()
     {
-        if (!string.IsNullOrWhiteSpace(_selectedFilePath))
+        if (!string.IsNullOrWhiteSpace(
+                _selectedFilePath))
         {
-            var fileName = Path.GetFileNameWithoutExtension(_selectedFilePath);
-            var extension = Path.GetExtension(_selectedFilePath);
+            var fileName =
+                Path.GetFileNameWithoutExtension(
+                    _selectedFilePath);
+
+            var extension =
+                Path.GetExtension(
+                    _selectedFilePath);
 
             return $"{fileName}.masked{extension}";
         }
@@ -865,6 +891,7 @@ public partial class MainWindow : Window
         {
             "PL1" => "masked-code.pli",
             "EGL" => "masked-code.egl",
+            "CSHARP" => "masked-code.cs",
             _ => "masked-code.txt"
         };
     }
@@ -962,8 +989,9 @@ public partial class MainWindow : Window
         {
             Title = "Geri açılacak maskelenmiş dosyayı seçin",
             Filter =
-                "Maskelenmiş kod dosyaları (*.pli;*.pl1;*.egl;*.txt)|" +
-                "*.pli;*.pl1;*.egl;*.txt|" +
+                "Maskelenmiş kod dosyaları (*.pli;*.pl1;*.egl;*.cs;*.txt)|" +
+                "*.pli;*.pl1;*.egl;*.cs;*.txt|" +
+                "C# kaynak dosyaları (*.cs)|*.cs|" +
                 "Metin dosyaları (*.txt)|*.txt|" +
                 "Tüm dosyalar (*.*)|*.*",
             CheckFileExists = true,
@@ -1327,9 +1355,12 @@ public partial class MainWindow : Window
             isRestore: true);
     }
 
-    private async void SaveRestoredFileButton_Click(object sender, RoutedEventArgs e)
+    private async void SaveRestoredFileButton_Click(
+    object sender,
+    RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(RestoredCodeTextBox.Text))
+        if (string.IsNullOrEmpty(
+                RestoredCodeTextBox.Text))
         {
             return;
         }
@@ -1340,33 +1371,49 @@ public partial class MainWindow : Window
                 "Geri açılan kodun kaynak dili belirlenemedi.",
                 StatusTone.Error,
                 isRestore: true);
+
             return;
         }
 
-        var dialog = new SaveFileDialog
-        {
-            Title = _restoredSourceLanguage switch
+        var dialog =
+            new SaveFileDialog
             {
-                SourceLanguage.Pl1 => "Geri açılmış PL/I dosyasını kaydedin",
-                SourceLanguage.Egl => "Geri açılmış EGL dosyasını kaydedin",
-                _ => "Geri açılmış kaynak dosyayı kaydedin"
-            },
+                Title =
+                    _restoredSourceLanguage switch
+                    {
+                        SourceLanguage.Pl1 =>
+                            "Geri açılmış PL/I dosyasını kaydedin",
 
-            Filter = _restoredSourceLanguage switch
-            {
-                SourceLanguage.Pl1 =>
-                    "PL/I kaynak dosyaları (*.pli)|*.pli|" +
-                    "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+                        SourceLanguage.Egl =>
+                            "Geri açılmış EGL dosyasını kaydedin",
 
-                SourceLanguage.Egl =>
-                    "EGL kaynak dosyaları (*.egl)|*.egl",
+                        SourceLanguage.CSharp =>
+                            "Geri açılmış C# dosyasını kaydedin",
 
-                _ =>
-                    "Metin dosyaları (*.txt)|*.txt"
-            },
+                        _ =>
+                            "Geri açılmış kaynak dosyayı kaydedin"
+                    },
 
-            FileName = CreateRestoredFileName()
-        };
+                Filter =
+                    _restoredSourceLanguage switch
+                    {
+                        SourceLanguage.Pl1 =>
+                            "PL/I kaynak dosyaları (*.pli)|*.pli|" +
+                            "PL/I kaynak dosyaları (*.pl1)|*.pl1",
+
+                        SourceLanguage.Egl =>
+                            "EGL kaynak dosyaları (*.egl)|*.egl",
+
+                        SourceLanguage.CSharp =>
+                            "C# kaynak dosyaları (*.cs)|*.cs",
+
+                        _ =>
+                            "Metin dosyaları (*.txt)|*.txt"
+                    },
+
+                FileName =
+                    CreateRestoredFileName()
+            };
 
         if (dialog.ShowDialog() != true)
         {
@@ -1375,7 +1422,9 @@ public partial class MainWindow : Window
 
         try
         {
-            await File.WriteAllTextAsync(dialog.FileName, RestoredCodeTextBox.Text);
+            await File.WriteAllTextAsync(
+                dialog.FileName,
+                RestoredCodeTextBox.Text);
 
             SetStatus(
                 $"Geri açılmış dosya kaydedildi: {dialog.FileName}",
@@ -1385,7 +1434,8 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             SetStatus(
-                "Geri açılmış dosya kaydedilemedi: " + exception.Message,
+                "Geri açılmış dosya kaydedilemedi: " +
+                exception.Message,
                 StatusTone.Error,
                 isRestore: true);
         }
@@ -1834,46 +1884,73 @@ public partial class MainWindow : Window
 
     private string CreateRestoredFileName()
     {
-        var sourceLanguage = _restoredSourceLanguage ??
+        var sourceLanguage =
+            _restoredSourceLanguage ??
             throw new InvalidOperationException(
                 "Geri açılan kodun kaynak dili belirlenmedi.");
 
-        var defaultExtension = sourceLanguage switch
-        {
-            SourceLanguage.Pl1 => ".pli",
-            SourceLanguage.Egl => ".egl",
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(sourceLanguage),
-                sourceLanguage,
-                "Desteklenmeyen kaynak dili.")
-        };
+        var defaultExtension =
+            sourceLanguage switch
+            {
+                SourceLanguage.Pl1 => ".pli",
+                SourceLanguage.Egl => ".egl",
+                SourceLanguage.CSharp => ".cs",
 
-        if (string.IsNullOrWhiteSpace(_selectedMaskedFilePath))
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(sourceLanguage),
+                    sourceLanguage,
+                    "Desteklenmeyen kaynak dili.")
+            };
+
+        if (string.IsNullOrWhiteSpace(
+                _selectedMaskedFilePath))
         {
             return $"restored-code{defaultExtension}";
         }
 
-        var fileName = Path.GetFileNameWithoutExtension(_selectedMaskedFilePath);
-        var selectedExtension = Path.GetExtension(_selectedMaskedFilePath);
+        var fileName =
+            Path.GetFileNameWithoutExtension(
+                _selectedMaskedFilePath);
 
-        if (fileName.EndsWith(".masked", StringComparison.OrdinalIgnoreCase))
+        var selectedExtension =
+            Path.GetExtension(
+                _selectedMaskedFilePath);
+
+        if (fileName.EndsWith(
+                ".masked",
+                StringComparison.OrdinalIgnoreCase))
         {
-            fileName = fileName[..^".masked".Length];
+            fileName =
+                fileName[..^".masked".Length];
         }
 
-        var restoredExtension = sourceLanguage switch
-        {
-            SourceLanguage.Pl1
-                when selectedExtension.Equals(".pli", StringComparison.OrdinalIgnoreCase) ||
-                     selectedExtension.Equals(".pl1", StringComparison.OrdinalIgnoreCase) =>
-                selectedExtension,
+        var restoredExtension =
+            sourceLanguage switch
+            {
+                SourceLanguage.Pl1
+                    when selectedExtension.Equals(
+                             ".pli",
+                             StringComparison.OrdinalIgnoreCase) ||
+                         selectedExtension.Equals(
+                             ".pl1",
+                             StringComparison.OrdinalIgnoreCase) =>
+                    selectedExtension,
 
-            SourceLanguage.Egl
-                when selectedExtension.Equals(".egl", StringComparison.OrdinalIgnoreCase) =>
-                selectedExtension,
+                SourceLanguage.Egl
+                    when selectedExtension.Equals(
+                        ".egl",
+                        StringComparison.OrdinalIgnoreCase) =>
+                    selectedExtension,
 
-            _ => defaultExtension
-        };
+                SourceLanguage.CSharp
+                    when selectedExtension.Equals(
+                        ".cs",
+                        StringComparison.OrdinalIgnoreCase) =>
+                    selectedExtension,
+
+                _ =>
+                    defaultExtension
+            };
 
         return $"{fileName}.restored{restoredExtension}";
     }
@@ -1883,10 +1960,19 @@ public partial class MainWindow : Window
         return vaultContent.SourceLanguage switch
         {
             SourceLanguage.Pl1 =>
-                new Pl1CodeUnmasker().Unmask(maskedCode, vaultContent),
+                new Pl1CodeUnmasker().Unmask(
+                    maskedCode,
+                    vaultContent),
 
             SourceLanguage.Egl =>
-                new EglCodeUnmasker().Unmask(maskedCode, vaultContent),
+                new EglCodeUnmasker().Unmask(
+                    maskedCode,
+                    vaultContent),
+
+            SourceLanguage.CSharp =>
+                new CSharpCodeUnmasker().Unmask(
+                    maskedCode,
+                    vaultContent),
 
             _ => throw new InvalidDataException(
                 "Kasa içindeki kaynak dili desteklenmiyor.")

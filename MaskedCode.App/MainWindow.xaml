@@ -204,28 +204,12 @@
                    Text="✓" />
 
                         <TextBlock Grid.Row="0"
-                   Grid.Column="1"
-                   VerticalAlignment="Center"
-                   Foreground="#CFEDE5"
-                   FontSize="14"
-                   Text="PL/I ve EGL kullanılabilir" />
-
-                        <TextBlock Grid.Row="1"
-                   Grid.Column="0"
-                   Margin="0,4,0,0"
-                   VerticalAlignment="Center"
-                   Foreground="#D6A84B"
-                   FontFamily="Segoe UI Symbol"
-                   FontSize="14"
-                   Text="⌛" />
-
-                        <TextBlock Grid.Row="1"
-                   Grid.Column="1"
-                   Margin="0,4,0,0"
-                   VerticalAlignment="Center"
-                   Foreground="#CFEDE5"
-                   FontSize="14"
-                   Text="C# geliştirme aşamasında" />
+           Grid.Column="1"
+           VerticalAlignment="Center"
+           Foreground="#CFEDE5"
+           FontSize="14"
+           Text="PL/I, EGL ve C# kullanılabilir" />
+                       
                     </Grid>
                 </Border>
             </Grid>
@@ -724,10 +708,11 @@
                                                            FontWeight="SemiBold"
                                                            Text="Kaynak dil" />
                                             <ComboBox x:Name="LanguageComboBox"
-                                                          SelectionChanged="LanguageComboBox_SelectionChanged"
-                                                          SelectedIndex="0">
+          SelectionChanged="LanguageComboBox_SelectionChanged"
+          SelectedIndex="0">
                                                 <ComboBoxItem Content="PL/I" Tag="PL1" />
                                                 <ComboBoxItem Content="EGL" Tag="EGL" />
+                                                <ComboBoxItem Content="C# / .NET" Tag="CSHARP" />
                                             </ComboBox>
 
                                             <Border Margin="0,18,0,0"
@@ -1479,7 +1464,7 @@
                                                                        Margin="22,5,0,0"
                                                                        Foreground="{StaticResource TextMutedBrush}"
                                                                        FontSize="12"
-                                                                       Text="Desteklenen: .pli, .pl1, .egl" />
+                                                                       Text="Desteklenen: .pli, .pl1, .egl, .cs" />
                                                     </StackPanel>
                                                     <Button x:Name="SelectMaskedFileButton"
                                                                 Grid.Column="1"

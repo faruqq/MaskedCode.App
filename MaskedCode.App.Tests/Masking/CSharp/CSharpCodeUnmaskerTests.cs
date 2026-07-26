@@ -430,4 +430,60 @@ public sealed class CSharpCodeUnmaskerTests
             "Kasa içinde geri açılacak eşleme bulunamadı.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void MaskAndUnmask_WithCommentBeforeVarDeclaration_ShouldRestoreExactSource(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public decimal CalculateBalance(
+                decimal currentBalance,
+                decimal blockedAmount)
+            {
+                // Müşterinin kullanılabilir bakiyesini hesaplar.
+                var availableBalance =
+                    currentBalance - blockedAmount;
+
+                return availableBalance;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.DoesNotContain(
+            "Müşterinin kullanılabilir bakiyesini hesaplar.",
+            maskingResult.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
 }

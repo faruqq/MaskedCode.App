@@ -685,39 +685,52 @@ internal sealed class CSharpCodeMasker
                 trivia);
         }
 
-        public override SyntaxToken VisitToken(SyntaxToken token)
+        public override SyntaxToken VisitToken(
+    SyntaxToken token)
         {
-            if (token.IsKind(
+            var isImplicitlyTypedVariableKeyword =
+                IsImplicitlyTypedVariableKeyword(
+                    token);
+
+            var visitedToken =
+                base.VisitToken(
+                    token);
+
+            if (visitedToken.IsKind(
                     SyntaxKind.NumericLiteralToken))
             {
                 return _numericLiteralMasker.MaskToken(
-                    token);
+                    visitedToken);
             }
 
-            if (token.IsKind(
+            if (visitedToken.IsKind(
                     SyntaxKind.StringLiteralToken) ||
-                token.IsKind(
+                visitedToken.IsKind(
                     SyntaxKind.SingleLineRawStringLiteralToken) ||
-                token.IsKind(
+                visitedToken.IsKind(
                     SyntaxKind.MultiLineRawStringLiteralToken) ||
-                token.IsKind(
+                visitedToken.IsKind(
                     SyntaxKind.CharacterLiteralToken) ||
-                token.IsKind(
+                visitedToken.IsKind(
                     SyntaxKind.InterpolatedStringTextToken))
             {
                 return _literalMasker.MaskToken(
-                    token);
+                    visitedToken);
             }
 
-            if (!token.IsKind(
+            if (!visitedToken.IsKind(
                     SyntaxKind.IdentifierToken))
             {
-                return base.VisitToken(
-                    token);
+                return visitedToken;
+            }
+
+            if (isImplicitlyTypedVariableKeyword)
+            {
+                return visitedToken;
             }
 
             var originalIdentifier =
-                token.Text;
+                visitedToken.Text;
 
             if (!_mappings.TryGetValue(
                     originalIdentifier,
@@ -747,11 +760,20 @@ internal sealed class CSharpCodeMasker
                     : maskedIdentifier;
 
             return SyntaxFactory.Identifier(
-                token.LeadingTrivia,
+                visitedToken.LeadingTrivia,
                 SyntaxKind.IdentifierToken,
                 maskedIdentifier,
                 maskedValueText,
-                token.TrailingTrivia);
+                visitedToken.TrailingTrivia);
+        }
+
+        private static bool IsImplicitlyTypedVariableKeyword(SyntaxToken token)
+        {
+            return string.Equals(
+                       token.ValueText,
+                       "var",
+                       StringComparison.Ordinal) &&
+                   token.Parent is IdentifierNameSyntax;
         }
     }
 }

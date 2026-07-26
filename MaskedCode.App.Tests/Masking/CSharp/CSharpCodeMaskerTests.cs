@@ -2333,4 +2333,83 @@ public sealed class CSharpCodeMaskerTests
             "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithCommentBeforeVarDeclaration_ShouldMaskCommentAndPreserveDelimiter(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public decimal CalculateBalance(
+                decimal currentBalance,
+                decimal blockedAmount)
+            {
+                // Müşterinin kullanılabilir bakiyesini hesaplar.
+                var availableBalance =
+                    currentBalance - blockedAmount;
+
+                return availableBalance;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var commentMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Comment));
+
+        var availableBalanceMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "availableBalance"));
+
+        Assert.StartsWith(
+            "//",
+            commentMapping.MaskedValue,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Müşterinin kullanılabilir bakiyesini hesaplar.",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            commentMapping.MaskedValue,
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            $"var {availableBalanceMapping.MaskedValue}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.Kind ==
+                    MaskingValueKind.Identifier &&
+                mapping.OriginalValue ==
+                    "var");
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }
