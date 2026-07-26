@@ -276,4 +276,158 @@ public sealed class CSharpCodeUnmaskerTests
             sourceCode,
             restoredCode);
     }
+
+    [Fact]
+    public void Unmask_WithUnusedVaultMapping_ShouldRejectVaultContent()
+    {
+        const string maskedCode =
+            """
+        public sealed class CS_TEST_0001
+        {
+        }
+        """;
+
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "CustomerService",
+                "CS_TEST_0001"),
+
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "CustomerRepository",
+                "CS_TEST_0002")
+            };
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                MaskingMode.MaximumPrivacy,
+                mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var exception =
+            Assert.Throws<InvalidDataException>(() =>
+                unmasker.Unmask(
+                    maskedCode,
+                    vaultContent));
+
+        Assert.Contains(
+            "Kasa içindeki bir eşleme maskelenmiş C# kodunda bulunamadı.",
+            exception.Message);
+    }
+
+    [Fact]
+    public void Unmask_WithDuplicateMaskedValues_ShouldRejectAmbiguousMappings()
+    {
+        const string maskedCode =
+            """
+        public sealed class CS_TEST_0001
+        {
+        }
+        """;
+
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "CustomerService",
+                "CS_TEST_0001"),
+
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "AccountService",
+                "CS_TEST_0001")
+            };
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                MaskingMode.MaximumPrivacy,
+                mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var exception =
+            Assert.Throws<InvalidDataException>(() =>
+                unmasker.Unmask(
+                    maskedCode,
+                    vaultContent));
+
+        Assert.Contains(
+            "Kasa içinde aynı maskelenmiş değere sahip birden fazla C# eşlemesi bulundu.",
+            exception.Message);
+    }
+
+    [Fact]
+    public void Unmask_WithEmptyMaskedCode_ShouldRejectSourceCode()
+    {
+        var mappings =
+            new[]
+            {
+            new MaskingMapping(
+                MaskingValueKind.Identifier,
+                "CustomerService",
+                "CS_TEST_0001")
+            };
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                MaskingMode.MaximumPrivacy,
+                mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var exception =
+            Assert.Throws<ArgumentException>(() =>
+                unmasker.Unmask(
+                    string.Empty,
+                    vaultContent));
+
+        Assert.Equal(
+            "Geri açılacak maskelenmiş C# kodu boş olamaz. (Parameter 'maskedCode')",
+            exception.Message);
+    }
+
+    [Fact]
+    public void Unmask_WithEmptyMappings_ShouldRejectVaultContent()
+    {
+        const string maskedCode =
+            """
+        public sealed class CS_TEST_0001
+        {
+        }
+        """;
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                MaskingMode.MaximumPrivacy,
+                Array.Empty<MaskingMapping>(),
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var exception =
+            Assert.Throws<InvalidDataException>(() =>
+                unmasker.Unmask(
+                    maskedCode,
+                    vaultContent));
+
+        Assert.Equal(
+            "Kasa içinde geri açılacak eşleme bulunamadı.",
+            exception.Message);
+    }
 }
