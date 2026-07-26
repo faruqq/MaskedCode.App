@@ -1512,4 +1512,123 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithXmlDocumentationComments_ShouldMaskSensitiveText(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        /// <summary>
+        /// Returns the internal customer account.
+        /// </summary>
+        /// <param name="customerNumber">Private customer number.</param>
+        public sealed class CustomerService
+        {
+            /** Internal account processing documentation. */
+            public void Process(string customerNumber)
+            {
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.DoesNotContain(
+            "Returns the internal customer account",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Private customer number",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Internal account processing documentation",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "///",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "/**",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "*/",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.True(
+            result.CommentCount >= 2);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithMultiLineBlockComment_ShouldPreserveLineBreakCount()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            /*
+             * Internal customer number
+             * Private account balance
+             */
+            public void Process()
+            {
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Comment));
+
+        Assert.Equal(
+            CountOccurrences(
+                mapping.OriginalValue,
+                "\n"),
+            CountOccurrences(
+                mapping.MaskedValue,
+                "\n"));
+
+        Assert.DoesNotContain(
+            "Internal customer number",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Private account balance",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }
