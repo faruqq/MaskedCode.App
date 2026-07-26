@@ -32,10 +32,16 @@ internal sealed class CSharpCodeMasker
             syntaxTree.GetRoot();
 
         var originalIdentifiers =
-            CollectOriginalIdentifiers(root);
+            CollectOriginalIdentifiers(
+                root);
 
         var originalLiterals =
-            CollectOriginalLiterals(root);
+            CollectOriginalLiterals(
+                root);
+
+        var originalNumericLiterals =
+            CollectOriginalNumericLiterals(
+                root);
 
         var identifierMappings =
             new Dictionary<string, string>(
@@ -45,11 +51,19 @@ internal sealed class CSharpCodeMasker
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
 
+        var numericLiteralMappings =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
         var usedMaskedIdentifiers =
             new HashSet<string>(
                 StringComparer.Ordinal);
 
         var usedMaskedLiterals =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        var usedMaskedNumericLiterals =
             new HashSet<string>(
                 StringComparer.Ordinal);
 
@@ -66,17 +80,26 @@ internal sealed class CSharpCodeMasker
                 usedMaskedLiterals,
                 originalLiterals);
 
+        var numericLiteralMasker =
+            new CSharpNumericLiteralMasker(
+                mode,
+                numericLiteralMappings,
+                usedMaskedNumericLiterals,
+                originalNumericLiterals);
+
         var rewriter =
             new IdentifierMaskingRewriter(
                 identifierMappings,
                 usedMaskedIdentifiers,
                 originalIdentifiers,
                 literalMasker,
+                numericLiteralMasker,
                 sessionId,
                 mode);
 
         var maskedRoot =
-            rewriter.Visit(root);
+            rewriter.Visit(
+                root);
 
         if (maskedRoot is null)
         {
@@ -87,7 +110,8 @@ internal sealed class CSharpCodeMasker
         var mappings =
             CreateMappings(
                 identifierMappings,
-                literalMappings);
+                literalMappings,
+                numericLiteralMappings);
 
         return new CSharpMaskingResult(
             maskedRoot.ToFullString(),
@@ -131,12 +155,27 @@ internal sealed class CSharpCodeMasker
                 StringComparer.Ordinal);
     }
 
-    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings)
+    private static HashSet<string> CollectOriginalNumericLiterals(SyntaxNode root)
+    {
+        return root
+            .DescendantTokens(
+                descendIntoTrivia: true)
+            .Where(token =>
+                token.IsKind(
+                    SyntaxKind.NumericLiteralToken))
+            .Select(token =>
+                token.Text)
+            .ToHashSet(
+                StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings, IReadOnlyDictionary<string, string> numericLiteralMappings)
     {
         var mappings =
             new List<MaskingMapping>(
                 identifierMappings.Count +
-                literalMappings.Count);
+                literalMappings.Count +
+                numericLiteralMappings.Count);
 
         foreach (var mapping in identifierMappings)
         {
@@ -152,6 +191,15 @@ internal sealed class CSharpCodeMasker
             mappings.Add(
                 new MaskingMapping(
                     MaskingValueKind.StringLiteral,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        foreach (var mapping in numericLiteralMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.NumericLiteral,
                     mapping.Key,
                     mapping.Value));
         }
@@ -300,19 +348,28 @@ internal sealed class CSharpCodeMasker
         private readonly string _sessionId;
         private readonly MaskingMode _mode;
         private readonly CSharpLiteralMasker _literalMasker;
+        private readonly CSharpNumericLiteralMasker _numericLiteralMasker;
 
-        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, string sessionId, MaskingMode mode)
+        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, string sessionId, MaskingMode mode)
         {
             _mappings = mappings;
             _usedMaskedIdentifiers = usedMaskedIdentifiers;
             _originalIdentifiers = originalIdentifiers;
             _literalMasker = literalMasker;
+            _numericLiteralMasker = numericLiteralMasker;
             _sessionId = sessionId;
             _mode = mode;
         }
 
         public override SyntaxToken VisitToken(SyntaxToken token)
         {
+            if (token.IsKind(
+                    SyntaxKind.NumericLiteralToken))
+            {
+                return _numericLiteralMasker.MaskToken(
+                    token);
+            }
+
             if (token.IsKind(
                     SyntaxKind.StringLiteralToken) ||
                 token.IsKind(
@@ -324,13 +381,15 @@ internal sealed class CSharpCodeMasker
                 token.IsKind(
                     SyntaxKind.InterpolatedStringTextToken))
             {
-                return _literalMasker.MaskToken(token);
+                return _literalMasker.MaskToken(
+                    token);
             }
 
             if (!token.IsKind(
                     SyntaxKind.IdentifierToken))
             {
-                return base.VisitToken(token);
+                return base.VisitToken(
+                    token);
             }
 
             var originalIdentifier =

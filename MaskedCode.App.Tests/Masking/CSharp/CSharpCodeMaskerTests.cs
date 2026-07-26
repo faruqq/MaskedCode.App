@@ -298,6 +298,25 @@ public sealed class CSharpCodeMaskerTests
                 (MaskingMode)999));
     }
 
+    private static string GetNumericSuffix(string literal)
+    {
+        var suffixStart =
+            literal.Length;
+
+        while (suffixStart > 0 &&
+               literal[suffixStart - 1] is
+                   'u' or 'U' or
+                   'l' or 'L' or
+                   'f' or 'F' or
+                   'd' or 'D' or
+                   'm' or 'M')
+        {
+            suffixStart--;
+        }
+
+        return literal[suffixStart..];
+    }
+
     private static void AssertValidCSharp(string sourceCode)
     {
         var syntaxTree =
@@ -911,6 +930,273 @@ public sealed class CSharpCodeMaskerTests
         Assert.NotEqual(
             mapping.OriginalValue,
             mapping.MaskedValue);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithDecimalNumericLiterals_ShouldMaskValuesAndPreserveSuffixes(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class PaymentService
+        {
+            public decimal Calculate()
+            {
+                var customerNumber = 123456;
+                var balance = -1250.75M;
+                var ratio = 12.50D;
+                var percentage = 9.25F;
+
+                return balance;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var expectedLiterals =
+            new[]
+            {
+            "123456",
+            "1250.75M",
+            "12.50D",
+            "9.25F"
+            };
+
+        foreach (var literal in expectedLiterals)
+        {
+            var mapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.NumericLiteral &&
+                            mapping.OriginalValue ==
+                                literal));
+
+            Assert.NotEqual(
+                mapping.OriginalValue,
+                mapping.MaskedValue);
+
+            Assert.Equal(
+                GetNumericSuffix(
+                    mapping.OriginalValue),
+                GetNumericSuffix(
+                    mapping.MaskedValue));
+        }
+
+        Assert.Contains(
+            "-",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            expectedLiterals.Length,
+            result.NumericLiteralCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithHexadecimalAndBinaryLiterals_ShouldPreserveBaseAndSeparators(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class PermissionService
+        {
+            public void Configure()
+            {
+                var permissionMask = 0x7F_A2U;
+                var featureFlags = 0b1010_1100;
+                var longMask = 0x00FF_AA11UL;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var hexadecimalMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "0x7F_A2U"));
+
+        var binaryMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "0b1010_1100"));
+
+        var unsignedLongMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "0x00FF_AA11UL"));
+
+        Assert.StartsWith(
+            "0x",
+            hexadecimalMapping.MaskedValue);
+
+        Assert.EndsWith(
+            "U",
+            hexadecimalMapping.MaskedValue);
+
+        Assert.StartsWith(
+            "0b",
+            binaryMapping.MaskedValue);
+
+        Assert.Equal(
+            CountOccurrences(
+                binaryMapping.OriginalValue,
+                "_"),
+            CountOccurrences(
+                binaryMapping.MaskedValue,
+                "_"));
+
+        Assert.EndsWith(
+            "UL",
+            unsignedLongMapping.MaskedValue);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithScientificLiteral_ShouldMaskMantissaAndPreserveExponent(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CalculationService
+        {
+            public double Calculate()
+            {
+                var positiveRate = 1.25E+10;
+                var negativeRate = 9.75E-03;
+
+                return positiveRate + negativeRate;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var positiveMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "1.25E+10"));
+
+        var negativeMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "9.75E-03"));
+
+        Assert.NotEqual(
+            positiveMapping.OriginalValue,
+            positiveMapping.MaskedValue);
+
+        Assert.NotEqual(
+            negativeMapping.OriginalValue,
+            negativeMapping.MaskedValue);
+
+        Assert.EndsWith(
+            "E+10",
+            positiveMapping.MaskedValue);
+
+        Assert.EndsWith(
+            "E-03",
+            negativeMapping.MaskedValue);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithRepeatedNumericLiteral_ShouldReuseNumericMapping()
+    {
+        const string sourceCode =
+            """
+        public sealed class LimitService
+        {
+            public int Calculate()
+            {
+                var firstLimit = 2500;
+                var secondLimit = 2500;
+
+                return firstLimit + secondLimit;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.NumericLiteral &&
+                        mapping.OriginalValue ==
+                            "2500"));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                mapping.MaskedValue));
+
+        Assert.Equal(
+            1,
+            result.NumericLiteralCount);
 
         AssertValidCSharp(
             result.MaskedCode);
