@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MaskedCode.App.Masking.CSharp;
 
@@ -20,7 +21,8 @@ internal sealed class CSharpCodeMasker
     {
         ArgumentNullException.ThrowIfNull(sourceCode);
 
-        ValidateMaskingMode(mode);
+        ValidateMaskingMode(
+            mode);
 
         var syntaxTree =
             CSharpSyntaxTree.ParseText(
@@ -30,6 +32,9 @@ internal sealed class CSharpCodeMasker
 
         var root =
             syntaxTree.GetRoot();
+
+        ValidateNoDisabledText(
+            root);
 
         var originalIdentifiers =
             CollectOriginalIdentifiers(
@@ -142,6 +147,26 @@ internal sealed class CSharpCodeMasker
             maskedRoot.ToFullString(),
             mappings,
             mode);
+    }
+
+    private static void ValidateNoDisabledText(SyntaxNode root)
+    {
+        var containsDisabledText =
+            root
+                .DescendantTrivia(
+                    descendIntoTrivia: true)
+                .Any(trivia =>
+                    trivia.IsKind(
+                        SyntaxKind.DisabledTextTrivia));
+
+        if (!containsDisabledText)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "C# kaynak kodunda etkin olmayan koşullu derleme içeriği bulundu. " +
+            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
     }
 
     private static HashSet<string> CollectOriginalIdentifiers(SyntaxNode root)
@@ -456,6 +481,45 @@ internal sealed class CSharpCodeMasker
             {
                 return _directiveMasker.MaskTrivia(
                     trivia);
+            }
+
+            if (trivia.IsKind(
+                    SyntaxKind.DefineDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.UndefDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.IfDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.ElifDirectiveTrivia))
+            {
+                if (trivia.GetStructure() is not DirectiveTriviaSyntax directiveSyntax)
+                {
+                    throw new InvalidOperationException(
+                        "C# koşullu derleme directive yapısı ayrıştırılamadı.");
+                }
+
+                var identifierTokens =
+                    directiveSyntax
+                        .DescendantTokens()
+                        .Where(token =>
+                            token.IsKind(
+                                SyntaxKind.IdentifierToken))
+                        .ToArray();
+
+                if (identifierTokens.Length == 0)
+                {
+                    return trivia;
+                }
+
+                var updatedDirective =
+                    directiveSyntax.ReplaceTokens(
+                        identifierTokens,
+                        (originalToken, _) =>
+                            VisitToken(
+                                originalToken));
+
+                return SyntaxFactory.Trivia(
+                    updatedDirective);
             }
 
             return base.VisitTrivia(

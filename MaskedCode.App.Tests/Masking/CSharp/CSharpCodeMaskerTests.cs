@@ -1816,4 +1816,104 @@ public sealed class CSharpCodeMaskerTests
             SyntaxKind.ErrorDirectiveTrivia,
             directiveKinds);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithConditionalDirectiveSymbol_ShouldReuseIdentifierMapping(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #define INTERNAL_CUSTOMER_FEATURE
+        #if INTERNAL_CUSTOMER_FEATURE
+        #endif
+        #undef INTERNAL_CUSTOMER_FEATURE
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var symbolMapping =
+            Assert.Single(
+                result.Mappings.Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        "INTERNAL_CUSTOMER_FEATURE"));
+
+        Assert.DoesNotContain(
+            "INTERNAL_CUSTOMER_FEATURE",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            3,
+            CountOccurrences(
+                result.MaskedCode,
+                symbolMapping.MaskedValue));
+
+        Assert.Contains(
+            "#define",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#if",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#endif",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#undef",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithDisabledConditionalContent_ShouldRejectMasking(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #if UNDEFINED_PRIVATE_FEATURE
+
+        internal sealed class PrivateCustomerService
+        {
+            private const string ConnectionName = "InternalCustomerDatabase";
+        }
+
+        #endif
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var exception =
+            Assert.Throws<InvalidOperationException>(() =>
+                masker.Mask(
+                    sourceCode,
+                    mode));
+
+        Assert.Equal(
+            "C# kaynak kodunda etkin olmayan koşullu derleme içeriği bulundu. " +
+            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
+            exception.Message);
+    }
 }
