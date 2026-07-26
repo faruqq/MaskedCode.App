@@ -53,9 +53,9 @@ internal sealed class CSharpNumericLiteralMasker
             SyntaxFactory.ParseToken(
                 maskedValue);
 
-        if (!maskedToken.IsKind(
-                SyntaxKind.NumericLiteralToken) ||
-            maskedToken.ContainsDiagnostics)
+        if (!IsValidCandidate(
+                token,
+                maskedToken))
         {
             throw new InvalidOperationException(
                 $"'{originalValue}' C# numeric literalı geçerli biçimde maskelenemedi.");
@@ -92,9 +92,9 @@ internal sealed class CSharpNumericLiteralMasker
                 SyntaxFactory.ParseToken(
                     candidate);
 
-            if (!candidateToken.IsKind(
-                    SyntaxKind.NumericLiteralToken) ||
-                candidateToken.ContainsDiagnostics)
+            if (!IsValidCandidate(
+                    token,
+                    candidateToken))
             {
                 continue;
             }
@@ -103,8 +103,29 @@ internal sealed class CSharpNumericLiteralMasker
         }
 
         throw new InvalidOperationException(
-            $"'{token.Text}' C# numeric literalı için benzersiz " +
-            "bir maskeleme değeri üretilemedi.");
+            $"'{token.Text}' C# numeric literalı için özgün sayısal türü " +
+            "koruyan benzersiz bir maskeleme değeri üretilemedi.");
+    }
+
+    private static bool IsValidCandidate(SyntaxToken originalToken, SyntaxToken candidateToken)
+    {
+        if (!candidateToken.IsKind(
+                SyntaxKind.NumericLiteralToken) ||
+            candidateToken.ContainsDiagnostics)
+        {
+            return false;
+        }
+
+        var originalValueType =
+            originalToken.Value?
+                .GetType();
+
+        var candidateValueType =
+            candidateToken.Value?
+                .GetType();
+
+        return originalValueType is not null &&
+               candidateValueType == originalValueType;
     }
 
     private string CreateMaskedLiteral(string literal)

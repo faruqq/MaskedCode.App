@@ -1201,4 +1201,164 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithIntegralBoundaryValues_ShouldPreserveNumericValueTypes(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class NumericBoundaryService
+        {
+            public void Configure()
+            {
+                var intMaximum = 2147483647;
+                var uintMaximum = 4294967295U;
+                var longMaximum = 9223372036854775807L;
+                var ulongMaximum = 18446744073709551615UL;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var expectedLiterals =
+            new[]
+            {
+            "2147483647",
+            "4294967295U",
+            "9223372036854775807L",
+            "18446744073709551615UL"
+            };
+
+        foreach (var originalLiteral in expectedLiterals)
+        {
+            var mapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.NumericLiteral &&
+                            mapping.OriginalValue ==
+                                originalLiteral));
+
+            var originalToken =
+                SyntaxFactory.ParseToken(
+                    mapping.OriginalValue);
+
+            var maskedToken =
+                SyntaxFactory.ParseToken(
+                    mapping.MaskedValue);
+
+            Assert.NotEqual(
+                mapping.OriginalValue,
+                mapping.MaskedValue);
+
+            Assert.NotNull(
+                originalToken.Value);
+
+            Assert.NotNull(
+                maskedToken.Value);
+
+            Assert.Equal(
+                originalToken.Value.GetType(),
+                maskedToken.Value.GetType());
+        }
+
+        Assert.Equal(
+            expectedLiterals.Length,
+            result.NumericLiteralCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithHexadecimalBoundaryValues_ShouldPreserveNumericValueTypes(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class HexadecimalBoundaryService
+        {
+            public void Configure()
+            {
+                var intMaximum = 0x7FFFFFFF;
+                var uintMaximum = 0xFFFFFFFFU;
+                var longMaximum = 0x7FFFFFFFFFFFFFFFL;
+                var ulongMaximum = 0xFFFFFFFFFFFFFFFFUL;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var expectedLiterals =
+            new[]
+            {
+            "0x7FFFFFFF",
+            "0xFFFFFFFFU",
+            "0x7FFFFFFFFFFFFFFFL",
+            "0xFFFFFFFFFFFFFFFFUL"
+            };
+
+        foreach (var originalLiteral in expectedLiterals)
+        {
+            var mapping =
+                Assert.Single(
+                    result.Mappings.Where(
+                        mapping =>
+                            mapping.Kind ==
+                                MaskingValueKind.NumericLiteral &&
+                            mapping.OriginalValue ==
+                                originalLiteral));
+
+            var originalToken =
+                SyntaxFactory.ParseToken(
+                    mapping.OriginalValue);
+
+            var maskedToken =
+                SyntaxFactory.ParseToken(
+                    mapping.MaskedValue);
+
+            Assert.StartsWith(
+                "0x",
+                mapping.MaskedValue);
+
+            Assert.NotEqual(
+                mapping.OriginalValue,
+                mapping.MaskedValue);
+
+            Assert.NotNull(
+                originalToken.Value);
+
+            Assert.NotNull(
+                maskedToken.Value);
+
+            Assert.Equal(
+                originalToken.Value.GetType(),
+                maskedToken.Value.GetType());
+        }
+
+        Assert.Equal(
+            expectedLiterals.Length,
+            result.NumericLiteralCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }
