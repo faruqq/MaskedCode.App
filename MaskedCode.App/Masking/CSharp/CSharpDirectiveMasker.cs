@@ -57,31 +57,37 @@ internal sealed class CSharpDirectiveMasker
             return trivia;
         }
 
-        if (!_mappings.TryGetValue(
+        if (_mappings.TryGetValue(
                 originalValue,
-                out var maskedValue))
+                out var existingMaskedValue))
         {
-            maskedValue =
-                CreateUniqueMaskedDirective(
-                    originalValue,
-                    contentStart,
-                    _mappings.Count + 1);
-
-            _mappings.Add(
-                originalValue,
-                maskedValue);
-
-            _usedMaskedValues.Add(
-                maskedValue);
+            return CreateMaskedTrivia(
+                directiveSyntax,
+                existingMaskedValue,
+                contentStart);
         }
 
-        return CreateMaskedTrivia(
-            directiveSyntax,
-            maskedValue,
-            contentStart);
+        var maskedTrivia =
+            CreateUniqueMaskedTrivia(
+                directiveSyntax,
+                originalValue,
+                contentStart,
+                _mappings.Count + 1);
+
+        var actualMaskedValue =
+            maskedTrivia.ToFullString();
+
+        _mappings.Add(
+            originalValue,
+            actualMaskedValue);
+
+        _usedMaskedValues.Add(
+            actualMaskedValue);
+
+        return maskedTrivia;
     }
 
-    private string CreateUniqueMaskedDirective(string originalValue, int contentStart, int ordinal)
+    private SyntaxTrivia CreateUniqueMaskedTrivia(DirectiveTriviaSyntax directiveSyntax,string originalValue,int contentStart,int ordinal)
     {
         for (var attempt = 0;
              attempt < MaximumCandidateAttemptCount;
@@ -93,17 +99,26 @@ internal sealed class CSharpDirectiveMasker
                     contentStart,
                     ordinal + attempt);
 
-            if (string.Equals(
+            var maskedTrivia =
+                CreateMaskedTrivia(
+                    directiveSyntax,
                     candidate,
+                    contentStart);
+
+            var actualMaskedValue =
+                maskedTrivia.ToFullString();
+
+            if (string.Equals(
+                    actualMaskedValue,
                     originalValue,
                     StringComparison.Ordinal) ||
                 _usedMaskedValues.Contains(
-                    candidate))
+                    actualMaskedValue))
             {
                 continue;
             }
 
-            return candidate;
+            return maskedTrivia;
         }
 
         throw new InvalidOperationException(

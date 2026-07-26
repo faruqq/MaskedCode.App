@@ -171,23 +171,79 @@ public sealed class CSharpCodeUnmaskerTests
     [InlineData(MaskingMode.MaximumPrivacy)]
     [InlineData(MaskingMode.FormatPreserving)]
     public void MaskAndUnmask_WithDirectives_ShouldRestoreExactSource(
-    MaskingMode mode)
+        MaskingMode mode)
     {
         const string sourceCode =
             """
-        #define INTERNAL_CUSTOMER_FEATURE
-        #if INTERNAL_CUSTOMER_FEATURE
-        #endif
-        #undef INTERNAL_CUSTOMER_FEATURE
+            #define INTERNAL_CUSTOMER_FEATURE
+            #if INTERNAL_CUSTOMER_FEATURE
+            #endif
+            #undef INTERNAL_CUSTOMER_FEATURE
 
-        public sealed class CustomerService
-        {
-            public string GetCustomerName()
+            public sealed class CustomerService
             {
-                return "InternalCustomer";
+                public string GetCustomerName()
+                {
+                    return "InternalCustomer";
+                }
             }
-        }
-        """;
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.NotEqual(
+            sourceCode,
+            maskingResult.MaskedCode);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void MaskAndUnmask_WithDirectiveMessages_ShouldRestoreExactSource(
+        MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+            #region Internal customer operations
+
+            public sealed class CustomerService
+            {
+                public string GetCustomerName()
+                {
+                    return "InternalCustomer";
+                }
+            }
+
+            #warning Internal customer warning
+            #error Internal customer error
+
+            #endregion Internal customer operations
+            """;
 
         var masker =
             new CSharpCodeMasker();

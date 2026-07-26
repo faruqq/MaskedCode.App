@@ -6,10 +6,15 @@ namespace MaskedCode.App.Masking.CSharp;
 
 public sealed class CSharpCodeUnmasker
 {
-    public string Unmask(string maskedCode, MappingVaultContent vaultContent)
+    public string Unmask(
+        string maskedCode,
+        MappingVaultContent vaultContent)
     {
-        ArgumentNullException.ThrowIfNull(maskedCode);
-        ArgumentNullException.ThrowIfNull(vaultContent);
+        ArgumentNullException.ThrowIfNull(
+            maskedCode);
+
+        ArgumentNullException.ThrowIfNull(
+            vaultContent);
 
         if (maskedCode.Length == 0)
         {
@@ -36,9 +41,13 @@ public sealed class CSharpCodeUnmasker
             MappingLookup.Create(
                 vaultContent.Mappings);
 
+        var codeWithRestoredTrivia =
+            lookup.RestoreCommentMappings(
+                maskedCode);
+
         var syntaxTree =
             CSharpSyntaxTree.ParseText(
-                maskedCode,
+                codeWithRestoredTrivia,
                 new CSharpParseOptions(
                     LanguageVersion.Preview));
 
@@ -64,59 +73,22 @@ public sealed class CSharpCodeUnmasker
         return restoredRoot.ToFullString();
     }
 
-    private sealed class UnmaskingRewriter : CSharpSyntaxRewriter
+    private sealed class UnmaskingRewriter
+        : CSharpSyntaxRewriter
     {
         private readonly MappingLookup _lookup;
 
-        public UnmaskingRewriter(MappingLookup lookup)
-    : base(visitIntoStructuredTrivia: true)
+        public UnmaskingRewriter(
+            MappingLookup lookup)
+            : base(
+                visitIntoStructuredTrivia: true)
         {
             _lookup =
                 lookup;
         }
 
-        public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia)
-        {
-            var triviaText =
-                trivia.ToFullString();
-
-            var matchingMappings =
-                _lookup.CommentMappings
-                    .Where(pair =>
-                        triviaText.Contains(
-                            pair.Key,
-                            StringComparison.Ordinal))
-                    .OrderByDescending(pair =>
-                        pair.Key.Length)
-                    .ToArray();
-
-            if (matchingMappings.Length == 0)
-            {
-                return base.VisitTrivia(
-                    trivia);
-            }
-
-            var restoredText =
-                triviaText;
-
-            foreach (var matchingMapping in matchingMappings)
-            {
-                restoredText =
-                    restoredText.Replace(
-                        matchingMapping.Key,
-                        matchingMapping.Value.OriginalValue,
-                        StringComparison.Ordinal);
-
-                _lookup.MarkAsUsed(
-                    matchingMapping.Value.Index);
-            }
-
-            return RestoreTrivia(
-                trivia,
-                restoredText);
-        }
-
-        public override SyntaxToken VisitToken(SyntaxToken token)
+        public override SyntaxToken VisitToken(
+            SyntaxToken token)
         {
             var visitedToken =
                 base.VisitToken(
@@ -162,34 +134,8 @@ public sealed class CSharpCodeUnmasker
             return visitedToken;
         }
 
-        private static SyntaxTrivia RestoreTrivia(
-     SyntaxTrivia originalTrivia,
-     string restoredText)
-        {
-            var restoredTrivia =
-                SyntaxFactory
-                    .ParseLeadingTrivia(
-                        restoredText)
-                    .FirstOrDefault(candidate =>
-                        candidate.Kind() ==
-                            originalTrivia.Kind() &&
-                        string.Equals(
-                            candidate.ToFullString(),
-                            restoredText,
-                            StringComparison.Ordinal));
-
-            if (restoredTrivia.RawKind == 0)
-            {
-                throw new InvalidDataException(
-                    "Kasa içindeki C# yorum veya directive eşlemesi " +
-                    "beklenen trivia türünü üretmedi. " +
-                    $"Tür: {originalTrivia.Kind()}");
-            }
-
-            return restoredTrivia;
-        }
-
-        private SyntaxToken RestoreInterpolatedStringText(SyntaxToken token)
+        private SyntaxToken RestoreInterpolatedStringText(
+            SyntaxToken token)
         {
             if (!_lookup.StringLiteralMappings.TryGetValue(
                     token.Text,
@@ -377,9 +323,41 @@ public sealed class CSharpCodeUnmasker
                 commentMappings);
         }
 
-        public void MarkAsUsed(int mappingIndex)
+        public void MarkAsUsed(
+            int mappingIndex)
         {
-            _usedMappings[mappingIndex] = true;
+            _usedMappings[mappingIndex] =
+                true;
+        }
+
+        public string RestoreCommentMappings(
+            string maskedCode)
+        {
+            var restoredCode =
+                maskedCode;
+
+            foreach (var pair in CommentMappings
+                         .OrderByDescending(item =>
+                             item.Key.Length))
+            {
+                if (!restoredCode.Contains(
+                        pair.Key,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                restoredCode =
+                    restoredCode.Replace(
+                        pair.Key,
+                        pair.Value.OriginalValue,
+                        StringComparison.Ordinal);
+
+                MarkAsUsed(
+                    pair.Value.Index);
+            }
+
+            return restoredCode;
         }
 
         public void ValidateAllMappingsWereUsed()
