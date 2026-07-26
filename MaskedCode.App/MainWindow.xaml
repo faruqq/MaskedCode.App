@@ -103,43 +103,44 @@
 
                             <Grid.OpacityMask>
                                 <RadialGradientBrush Center="0.5,0.5"
-                             GradientOrigin="0.5,0.5"
-                             RadiusX="0.5"
-                             RadiusY="0.5">
+                                                     GradientOrigin="0.5,0.5"
+                                                     RadiusX="0.5"
+                                                     RadiusY="0.5">
                                     <GradientStop Color="#FFFFFFFF"
-                          Offset="0.00" />
+                                                  Offset="0.00" />
                                     <GradientStop Color="#FFFFFFFF"
-                          Offset="0.58" />
+                                                  Offset="0.58" />
                                     <GradientStop Color="#EFFFFFFF"
-                          Offset="0.70" />
+                                                  Offset="0.70" />
                                     <GradientStop Color="#8FFFFFFF"
-                          Offset="0.82" />
+                                                  Offset="0.82" />
                                     <GradientStop Color="#00FFFFFF"
-                          Offset="1.00" />
+                                                  Offset="1.00" />
                                 </RadialGradientBrush>
                             </Grid.OpacityMask>
 
                             <MediaElement x:Name="HeaderAnimationPrimaryMediaElement"
-                  Opacity="1"
-                  IsMuted="True"
-                  LoadedBehavior="Manual"
-                  UnloadedBehavior="Manual"
-                  MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-                  MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-                  MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-                  ScrubbingEnabled="True"
-                  Stretch="Uniform" />
+                                          Opacity="1"
+                                          IsMuted="True"
+                                          Loaded="HeaderAnimationMediaElement_Loaded"
+                                          LoadedBehavior="Manual"
+                                          UnloadedBehavior="Manual"
+                                          MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                                          MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                                          MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                                          ScrubbingEnabled="True"
+                                          Stretch="Uniform" />
 
                             <MediaElement x:Name="HeaderAnimationSecondaryMediaElement"
-                  Opacity="0"
-                  IsMuted="True"
-                  LoadedBehavior="Manual"
-                  UnloadedBehavior="Manual"
-                  MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-                  MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-                  MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-                  ScrubbingEnabled="True"
-                  Stretch="Uniform" />
+                                          Opacity="0"
+                                          IsMuted="True"
+                                          LoadedBehavior="Manual"
+                                          UnloadedBehavior="Manual"
+                                          MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                                          MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                                          MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                                          ScrubbingEnabled="True"
+                                          Stretch="Uniform" />
                         </Grid>
                     </Border>
 
