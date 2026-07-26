@@ -2,13 +2,18 @@
 
 public sealed class MaskStateHeaderAnimationProfile : IHeaderAnimationProfile
 {
+    private const int TransitionFrameRate = 60;
+
     public string Id => "mask-state";
 
     public string AssetDirectoryName => "MaskState";
 
-    public HeaderVisualState InitialState => HeaderVisualState.CodeMasking;
+    public HeaderVisualState InitialState =>
+        HeaderVisualState.CodeMasking;
 
-    public HeaderAnimationPlan CreatePlan(HeaderAnimationEvent animationEvent, HeaderVisualState currentState)
+    public HeaderAnimationPlan CreatePlan(
+        HeaderAnimationEvent animationEvent,
+        HeaderVisualState currentState)
     {
         return animationEvent switch
         {
@@ -38,65 +43,86 @@ public sealed class MaskStateHeaderAnimationProfile : IHeaderAnimationProfile
     {
         return new HeaderAnimationPlan(
             [
-                CreateLoopVideoStep("application-started.mp4")
+                CreateStaticImageStep(
+                    "States/application-started.png")
             ],
             HeaderVisualState.CodeMasking);
     }
 
-    private static HeaderAnimationPlan CreateCodeRestorePlan(HeaderVisualState currentState)
+    private static HeaderAnimationPlan CreateCodeRestorePlan(
+        HeaderVisualState currentState)
     {
-        var transitionFileName = currentState == HeaderVisualState.Error
-            ? "code-restore-tab-activated-from-error.mp4"
-            : "code-restore-tab-activated.mp4";
+        var transitionDirectory = currentState ==
+                                  HeaderVisualState.Error
+            ? "code-restore-tab-activated-from-error"
+            : "code-restore-tab-activated";
 
         return new HeaderAnimationPlan(
             [
-                CreateOnceVideoStep(transitionFileName),
-                CreateStaticImageStep("code-restore-tab-activated.png")
+                CreateFrameSequenceStep(transitionDirectory),
+                CreateStaticImageStep(
+                    "States/code-restore-tab-activated.png")
             ],
             HeaderVisualState.CodeRestore);
     }
 
-    private static HeaderAnimationPlan CreateCodeMaskingPlan(HeaderVisualState currentState)
+    private static HeaderAnimationPlan CreateCodeMaskingPlan(
+        HeaderVisualState currentState)
     {
-        var transitionFileName = currentState == HeaderVisualState.Error
-            ? "code-masking-tab-activated-from-error.mp4"
-            : "code-masking-tab-activated.mp4";
+        if (currentState == HeaderVisualState.CodeMasking)
+        {
+            return new HeaderAnimationPlan(
+                [
+                    CreateStaticImageStep(
+                        "States/application-started.png")
+                ],
+                HeaderVisualState.CodeMasking);
+        }
+
+        var transitionDirectory = currentState ==
+                                  HeaderVisualState.Error
+            ? "code-masking-tab-activated-from-error"
+            : "code-masking-tab-activated";
 
         return new HeaderAnimationPlan(
             [
-                CreateOnceVideoStep(transitionFileName),
-                CreateLoopVideoStep("application-started.mp4")
+                CreateFrameSequenceStep(transitionDirectory),
+                CreateStaticImageStep(
+                    "States/application-started.png")
             ],
             HeaderVisualState.CodeMasking);
     }
 
-    private static HeaderAnimationPlan CreateMaskingStartedPlan(HeaderVisualState currentState)
+    private static HeaderAnimationPlan CreateMaskingStartedPlan(
+        HeaderVisualState currentState)
     {
-        var transitionFileName = currentState == HeaderVisualState.Error
-            ? "masking-started-from-error.mp4"
-            : "masking-started.mp4";
+        var transitionDirectory = currentState ==
+                                  HeaderVisualState.Error
+            ? "masking-started-from-error"
+            : "masking-started";
 
         return new HeaderAnimationPlan(
             [
-                CreateOnceVideoStep(transitionFileName),
-                CreateStaticImageStep("masking-started.png")
+                CreateFrameSequenceStep(transitionDirectory),
+                CreateStaticImageStep(
+                    "States/masking-completed.png")
             ],
             HeaderVisualState.MaskingCompleted);
     }
 
-    private static HeaderAnimationPlan CreateErrorPlan(HeaderVisualState currentState)
+    private static HeaderAnimationPlan CreateErrorPlan(
+        HeaderVisualState currentState)
     {
-        var transitionFileName = currentState switch
+        var transitionDirectory = currentState switch
         {
             HeaderVisualState.CodeMasking =>
-                "error-occurred-from-application-started.mp4",
+                "error-occurred-from-application-started",
 
             HeaderVisualState.CodeRestore =>
-                "error-occurred-from-code-restore-tab-activated.mp4",
+                "error-occurred-from-code-restore-tab-activated",
 
             HeaderVisualState.MaskingCompleted =>
-                "error-occurred-from-masking-started.mp4",
+                "error-occurred-from-masking-started",
 
             HeaderVisualState.Error =>
                 null,
@@ -107,43 +133,40 @@ public sealed class MaskStateHeaderAnimationProfile : IHeaderAnimationProfile
                 "Desteklenmeyen başlık görsel durumu.")
         };
 
-        if (transitionFileName is null)
+        if (transitionDirectory is null)
         {
             return new HeaderAnimationPlan(
                 [
-                    CreateStaticImageStep("error-occurred.png")
+                    CreateStaticImageStep(
+                        "States/error-state.png")
                 ],
                 HeaderVisualState.Error);
         }
 
         return new HeaderAnimationPlan(
             [
-                CreateOnceVideoStep(transitionFileName),
-                CreateStaticImageStep("error-occurred.png")
+                CreateFrameSequenceStep(transitionDirectory),
+                CreateStaticImageStep(
+                    "States/error-state.png")
             ],
             HeaderVisualState.Error);
     }
 
-    private static HeaderAnimationStep CreateOnceVideoStep(string fileName)
+    private static HeaderAnimationStep CreateFrameSequenceStep(
+        string directoryName)
     {
         return new HeaderAnimationStep(
-            fileName,
-            HeaderAnimationAssetType.Video,
-            HeaderAnimationPlayback.Once);
+            $"Transitions/{directoryName}",
+            HeaderAnimationAssetType.PngFrameSequence,
+            HeaderAnimationPlayback.Once,
+            TransitionFrameRate);
     }
 
-    private static HeaderAnimationStep CreateLoopVideoStep(string fileName)
+    private static HeaderAnimationStep CreateStaticImageStep(
+        string assetPath)
     {
         return new HeaderAnimationStep(
-            fileName,
-            HeaderAnimationAssetType.Video,
-            HeaderAnimationPlayback.Loop);
-    }
-
-    private static HeaderAnimationStep CreateStaticImageStep(string fileName)
-    {
-        return new HeaderAnimationStep(
-            fileName,
+            assetPath,
             HeaderAnimationAssetType.Image,
             HeaderAnimationPlayback.Static);
     }

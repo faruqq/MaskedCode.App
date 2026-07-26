@@ -89,63 +89,72 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                    <Border Width="76"
-                Height="76"
-                Margin="0,0,14,0"
-                Background="{StaticResource WindowBrush}"
-                ClipToBounds="True"
-                CornerRadius="16">
-                        <Grid Width="76"
-      Height="76"
-      HorizontalAlignment="Center"
-      VerticalAlignment="Center"
-      ClipToBounds="True">
+                    <Border Width="96"
+        Height="96"
+        Margin="0,0,14,0"
+        Background="{StaticResource WindowBrush}"
+        ClipToBounds="True"
+        CornerRadius="18"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+
+                        <Grid Width="96"
+          Height="96"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          ClipToBounds="True"
+          UseLayoutRounding="True"
+          SnapsToDevicePixels="True">
 
                             <Grid.OpacityMask>
                                 <RadialGradientBrush Center="0.5,0.5"
-		                     GradientOrigin="0.5,0.5"
-		                     RadiusX="0.5"
-		                     RadiusY="0.5">
+                                 GradientOrigin="0.5,0.5"
+                                 RadiusX="0.5"
+                                 RadiusY="0.5">
                                     <GradientStop Color="#FFFFFFFF"
-			              Offset="0.00" />
+                              Offset="0.00" />
                                     <GradientStop Color="#FFFFFFFF"
-			              Offset="0.58" />
-                                    <GradientStop Color="#EFFFFFFF"
-			              Offset="0.70" />
-                                    <GradientStop Color="#8FFFFFFF"
-			              Offset="0.82" />
+                              Offset="0.68" />
+                                    <GradientStop Color="#F8FFFFFF"
+                              Offset="0.78" />
+                                    <GradientStop Color="#C0FFFFFF"
+                              Offset="0.90" />
                                     <GradientStop Color="#00FFFFFF"
-			              Offset="1.00" />
+                              Offset="1.00" />
                                 </RadialGradientBrush>
                             </Grid.OpacityMask>
 
                             <MediaElement x:Name="HeaderAnimationPrimaryMediaElement"
-	              Opacity="1"
-	              IsMuted="True"
-	              Loaded="HeaderAnimationMediaElement_Loaded"
-	              LoadedBehavior="Manual"
-	              UnloadedBehavior="Manual"
-	              MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-	              MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-	              MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-	              ScrubbingEnabled="True"
-	              Stretch="Uniform" />
+                      Opacity="1"
+                      IsMuted="True"
+                      Loaded="HeaderAnimationMediaElement_Loaded"
+                      LoadedBehavior="Manual"
+                      UnloadedBehavior="Manual"
+                      MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                      MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                      MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                      ScrubbingEnabled="True"
+                      Stretch="Uniform"
+                      SnapsToDevicePixels="True" />
 
                             <MediaElement x:Name="HeaderAnimationSecondaryMediaElement"
-	              Opacity="0"
-	              IsMuted="True"
-	              LoadedBehavior="Manual"
-	              UnloadedBehavior="Manual"
-	              MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-	              MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-	              MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-	              ScrubbingEnabled="True"
-	              Stretch="Uniform" />
+                      Opacity="0"
+                      IsMuted="True"
+                      LoadedBehavior="Manual"
+                      UnloadedBehavior="Manual"
+                      MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                      MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                      MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                      ScrubbingEnabled="True"
+                      Stretch="Uniform"
+                      SnapsToDevicePixels="True" />
 
                             <Image x:Name="HeaderAnimationImage"
-	       Opacity="0"
-	       IsHitTestVisible="False"
-	       Stretch="Uniform" />
+               Opacity="0"
+               IsHitTestVisible="False"
+               Stretch="Uniform"
+               SnapsToDevicePixels="True"
+               RenderOptions.BitmapScalingMode="HighQuality" />
                         </Grid>
                     </Border>
 

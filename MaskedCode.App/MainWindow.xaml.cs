@@ -72,6 +72,9 @@ public partial class MainWindow : Window
     private bool _isHeaderAnimationPlanRunning;
     private bool _isHeaderAnimationTransitionRunning;
 
+    private readonly PngFrameSequencePlayer _pngFrameSequencePlayer = new();
+    private CancellationTokenSource? _headerFrameSequenceCancellationTokenSource;
+
     public MainWindow()
     {
         _headerAnimationProfile = HeaderAnimationProfileSelector.Select();
@@ -2243,6 +2246,10 @@ public partial class MainWindow : Window
                 ShowHeaderImageStep(step);
                 break;
 
+            case HeaderAnimationAssetType.PngFrameSequence:
+                PlayHeaderFrameSequenceStep(step);
+                break;
+
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(step.AssetType),
@@ -2251,13 +2258,106 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void PlayHeaderFrameSequenceStep(
+    HeaderAnimationStep step)
+    {
+        var sequenceDirectory =
+            GetHeaderAnimationAssetPath(step.AssetPath);
+
+        CancelHeaderFrameSequence();
+
+        var cancellationTokenSource =
+            new CancellationTokenSource();
+
+        _headerFrameSequenceCancellationTokenSource =
+            cancellationTokenSource;
+
+        _currentHeaderAnimationStep = step;
+
+        try
+        {
+            await _pngFrameSequencePlayer.PlayAsync(
+                sequenceDirectory,
+                step.FrameRate,
+                frame =>
+                {
+                    HeaderAnimationImage.Source = frame;
+
+                    if (_activeHeaderVisual !=
+                        HeaderAnimationImage)
+                    {
+                        HideHeaderMediaElements();
+
+                        HeaderAnimationImage.BeginAnimation(
+                            UIElement.OpacityProperty,
+                            null);
+
+                        HeaderAnimationImage.Opacity = 1;
+                        _activeHeaderVisual =
+                            HeaderAnimationImage;
+
+                        _activeHeaderAnimationMediaElement =
+                            null;
+                    }
+                },
+                cancellationTokenSource.Token);
+
+            if (cancellationTokenSource.IsCancellationRequested)
+            {
+                return;
+            }
+
+            PlayNextHeaderAnimationStep();
+        }
+        catch (OperationCanceledException)
+        {
+            // Yeni bir oynatma veya pencerenin kapanması nedeniyle
+            // yapılan kontrollü iptal hata olarak gösterilmez.
+        }
+        catch (Exception exception)
+        {
+            HandleHeaderAnimationFailure(
+                $"PNG başlık animasyonu oynatılamadı: " +
+                $"{exception.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(
+                    _headerFrameSequenceCancellationTokenSource,
+                    cancellationTokenSource))
+            {
+                _headerFrameSequenceCancellationTokenSource.Dispose();
+                _headerFrameSequenceCancellationTokenSource = null;
+            }
+        }
+    }
+
+    private void HideHeaderMediaElements()
+    {
+        foreach (var mediaElement in new[]
+                 {
+                 HeaderAnimationPrimaryMediaElement,
+                 HeaderAnimationSecondaryMediaElement
+             })
+        {
+            mediaElement.BeginAnimation(
+                UIElement.OpacityProperty,
+                null);
+
+            mediaElement.Stop();
+            mediaElement.Close();
+            mediaElement.Source = null;
+            mediaElement.Opacity = 0;
+        }
+    }
+
     private void PlayHeaderVideoStep(HeaderAnimationStep step)
     {
-        var absoluteAssetPath = GetHeaderAnimationAssetPath(step.FileName);
+        var absoluteAssetPath = GetHeaderAnimationAssetPath(step.AssetPath);
 
         if (!File.Exists(absoluteAssetPath))
         {
-            HandleMissingHeaderAnimationAsset(step.FileName);
+            HandleMissingHeaderAnimationAsset(step.AssetPath);
             return;
         }
 
@@ -2294,11 +2394,13 @@ public partial class MainWindow : Window
     HeaderAnimationStep step)
     {
         var absoluteAssetPath =
-            GetHeaderAnimationAssetPath(step.FileName);
+            GetHeaderAnimationAssetPath(step.AssetPath);
 
         if (!File.Exists(absoluteAssetPath))
         {
-            HandleMissingHeaderAnimationAsset(step.FileName);
+            HandleMissingHeaderAnimationAsset(
+                step.AssetPath);
+
             return;
         }
 
@@ -2309,6 +2411,8 @@ public partial class MainWindow : Window
             bitmapImage.BeginInit();
             bitmapImage.CacheOption =
                 BitmapCacheOption.OnLoad;
+            bitmapImage.CreateOptions =
+                BitmapCreateOptions.PreservePixelFormat;
             bitmapImage.UriSource = new Uri(
                 absoluteAssetPath,
                 UriKind.Absolute);
@@ -2316,17 +2420,32 @@ public partial class MainWindow : Window
             bitmapImage.Freeze();
 
             HeaderAnimationImage.Source = bitmapImage;
+            _currentHeaderAnimationStep = step;
+
+            if (_activeHeaderVisual ==
+                HeaderAnimationImage)
+            {
+                HeaderAnimationImage.BeginAnimation(
+                    UIElement.OpacityProperty,
+                    null);
+
+                HeaderAnimationImage.Opacity = 1;
+
+                PlayNextHeaderAnimationStep();
+                return;
+            }
+
             HeaderAnimationImage.BeginAnimation(
                 UIElement.OpacityProperty,
                 null);
-            HeaderAnimationImage.Opacity = 0;
 
-            _currentHeaderAnimationStep = step;
+            HeaderAnimationImage.Opacity = 0;
 
             if (_activeHeaderVisual is null)
             {
                 HeaderAnimationImage.Opacity = 1;
-                _activeHeaderVisual = HeaderAnimationImage;
+                _activeHeaderVisual =
+                    HeaderAnimationImage;
 
                 PlayNextHeaderAnimationStep();
                 return;
@@ -2340,18 +2459,19 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             HandleHeaderAnimationFailure(
-                $"Başlık görseli açılamadı: {exception.Message}");
+                $"Başlık görseli açılamadı: " +
+                $"{exception.Message}");
         }
     }
 
-    private string GetHeaderAnimationAssetPath(string fileName)
+    private string GetHeaderAnimationAssetPath(string assetPath)
     {
         return Path.Combine(
             AppContext.BaseDirectory,
             "Assets",
             "Animations",
             _headerAnimationProfile.AssetDirectoryName,
-            fileName);
+            assetPath);
     }
 
     private void HeaderAnimationMediaElement_MediaOpened(object sender, RoutedEventArgs e)
@@ -2436,14 +2556,16 @@ public partial class MainWindow : Window
             e.ErrorException.Message);
     }
 
-    private void HandleMissingHeaderAnimationAsset(string fileName)
+    private void HandleMissingHeaderAnimationAsset(string AssetPath)
     {
         HandleHeaderAnimationFailure(
-            $"Animasyon dosyası bulunamadı: {fileName}");
+            $"Animasyon dosyası bulunamadı: {AssetPath}");
     }
 
     private void HandleHeaderAnimationFailure(string message)
     {
+        CancelHeaderFrameSequence();
+
         _headerAnimationSteps.Clear();
         _queuedHeaderAnimationEvents.Clear();
 
@@ -2563,5 +2685,24 @@ public partial class MainWindow : Window
             PlayHeaderAnimation(queuedEvent);
             return;
         }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        CancelHeaderFrameSequence();
+
+        base.OnClosed(e);
+    }
+
+    private void CancelHeaderFrameSequence()
+    {
+        if (_headerFrameSequenceCancellationTokenSource is null)
+        {
+            return;
+        }
+
+        _headerFrameSequenceCancellationTokenSource.Cancel();
+        _headerFrameSequenceCancellationTokenSource.Dispose();
+        _headerFrameSequenceCancellationTokenSource = null;
     }
 }

@@ -21,6 +21,11 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
+		
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Assets\Animations\MaskState\Transitions\" />
 	</ItemGroup>
 
 </Project>

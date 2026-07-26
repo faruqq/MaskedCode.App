@@ -20,7 +20,8 @@ public enum HeaderVisualState
 public enum HeaderAnimationAssetType
 {
     Video,
-    Image
+    Image,
+    PngFrameSequence
 }
 
 public enum HeaderAnimationPlayback
@@ -31,9 +32,10 @@ public enum HeaderAnimationPlayback
 }
 
 public sealed record HeaderAnimationStep(
-    string FileName,
+    string AssetPath,
     HeaderAnimationAssetType AssetType,
-    HeaderAnimationPlayback Playback);
+    HeaderAnimationPlayback Playback,
+    int FrameRate = 0);
 
 public sealed record HeaderAnimationPlan(
     IReadOnlyList<HeaderAnimationStep> Steps,
