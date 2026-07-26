@@ -139,21 +139,22 @@ internal sealed class PngFrameSequencePlayer
         }
     }
 
-    private static BitmapSource LoadBitmap(
-        string framePath,
-        string fileName)
+    private static BitmapSource LoadBitmap(string framePath, string fileName)
     {
         try
         {
+            using var stream = new FileStream(
+                framePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
             var bitmap = new BitmapImage();
 
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions =
-                BitmapCreateOptions.PreservePixelFormat;
-            bitmap.UriSource = new Uri(
-                framePath,
-                UriKind.Absolute);
+            bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            bitmap.StreamSource = stream;
             bitmap.EndInit();
             bitmap.Freeze();
 
