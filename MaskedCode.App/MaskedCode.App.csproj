@@ -9,21 +9,33 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Remove="Assets\Animations\encrypted-scan.mp4" />
-		<None Remove="Assets\Animations\unlock-restore.mp4" />
-		<None Remove="Assets\Animations\vault-seal.mp4" />
+		<None Remove="Assets\Animations\application-started.mp4" />
+		<None Remove="Assets\Animations\code-restore-tab-activated.mp4" />
+		<None Remove="Assets\Animations\code-masking-tab-activated.mp4" />
+		<None Remove="Assets\Animations\masking-started.mp4" />
+		<None Remove="Assets\Animations\error-occurred.mp4" />
 
-		<Content Include="Assets\Animations\encrypted-scan.mp4">
+		<Content Include="Assets\Animations\application-started.mp4">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
 
-		<Content Include="Assets\Animations\unlock-restore.mp4">
+		<Content Include="Assets\Animations\code-restore-tab-activated.mp4">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
 
-		<Content Include="Assets\Animations\vault-seal.mp4">
+		<Content Include="Assets\Animations\code-masking-tab-activated.mp4">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+
+		<Content Include="Assets\Animations\masking-started.mp4">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+
+		<Content Include="Assets\Animations\error-occurred.mp4">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>

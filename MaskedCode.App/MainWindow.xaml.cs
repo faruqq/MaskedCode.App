@@ -143,7 +143,7 @@ public partial class MainWindow : Window
             : WindowState.Maximized;
     }
 
-    private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void MainTabControl_SelectionChanged(object sender,SelectionChangedEventArgs e)
     {
         if (!IsLoaded || e.Source != MainTabControl)
         {
@@ -152,13 +152,15 @@ public partial class MainWindow : Window
 
         CloseSettingsDrawer();
 
-        if (MainTabControl.SelectedIndex == 1)
-        {
-            PlayHeaderAnimation(HeaderAnimation.UnlockRestore);
-            return;
-        }
+        PlayHeaderAnimation(
+            GetActiveTabHeaderAnimation());
+    }
 
-        PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
+    private HeaderAnimation GetActiveTabHeaderAnimation()
+    {
+        return MainTabControl.SelectedIndex == 1
+            ? HeaderAnimation.CodeRestoreTabActivated
+            : HeaderAnimation.CodeMaskingTabActivated;
     }
 
     private void MaskSettingsToggleButton_Click(object sender, RoutedEventArgs e)
@@ -461,7 +463,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void MaskButton_Click(object sender, RoutedEventArgs e)
+    private async void MaskButton_Click(object sender,RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
         {
@@ -469,6 +471,7 @@ public partial class MainWindow : Window
                 "Maskelenecek kaynak kod bulunamadı.",
                 StatusTone.Error,
                 isRestore: false);
+
             return;
         }
 
@@ -478,10 +481,12 @@ public partial class MainWindow : Window
                 "Kasa parolası en az 12 karakter olmalı veya geçerli bir parola dosyası seçilmelidir.",
                 StatusTone.Error,
                 isRestore: false);
+
             return;
         }
 
-        PlayHeaderAnimation(HeaderAnimation.VaultSeal);
+        PlayHeaderAnimation(
+            HeaderAnimation.MaskingStarted);
 
         MaskButton.IsEnabled = false;
 
@@ -527,9 +532,6 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             ClearMaskingOutput(clearPassword: false);
-
-            PlayHeaderAnimation(
-                HeaderAnimation.EncryptedScan);
 
             SetStatus(
                 "Maskeleme işlemi tamamlanamadı: " +
@@ -1274,7 +1276,7 @@ public partial class MainWindow : Window
                 isRestore: true);
 
             PlayHeaderAnimation(
-                HeaderAnimation.UnlockRestore,
+                HeaderAnimation.CodeRestoreTabActivated,
                 returnToDefaultAfterCurrentCycle: true);
         }
         catch (InvalidDataException exception)
@@ -2022,7 +2024,11 @@ public partial class MainWindow : Window
         border.Visibility = Visibility.Collapsed;
     }
 
-    private void SetStatus(string message, StatusTone tone, bool isRestore)
+    private void SetStatus(
+    string message,
+    StatusTone tone,
+    bool isRestore,
+    bool playErrorAnimation = true)
     {
         StatusTextBlock.Text = message;
 
@@ -2062,6 +2068,16 @@ public partial class MainWindow : Window
                 statusIconBorder.BorderBrush = FindBrush("ErrorBrush");
                 statusIconText.Foreground = FindBrush("ErrorBrush");
                 statusIconText.Text = "!";
+
+                if (playErrorAnimation &&
+                    _currentHeaderAnimation != HeaderAnimation.ErrorOccurred &&
+                    _loadingHeaderAnimation != HeaderAnimation.ErrorOccurred)
+                {
+                    PlayHeaderAnimation(
+                        HeaderAnimation.ErrorOccurred,
+                        returnToDefaultAfterCurrentCycle: true);
+                }
+
                 break;
 
             case StatusTone.Loading:
@@ -2103,19 +2119,20 @@ public partial class MainWindow : Window
 
     private enum HeaderAnimation
     {
-        EncryptedScan,
-        VaultSeal,
-        UnlockRestore
+        ApplicationStarted,
+        CodeRestoreTabActivated,
+        CodeMaskingTabActivated,
+        MaskingStarted,
+        ErrorOccurred
     }
 
-    private void HeaderAnimationMediaElement_Loaded(object sender, RoutedEventArgs e)
+    private void HeaderAnimationMediaElement_Loaded(object sender,RoutedEventArgs e)
     {
-        PlayHeaderAnimation(HeaderAnimation.EncryptedScan);
+        PlayHeaderAnimation(
+            HeaderAnimation.ApplicationStarted);
     }
 
-    private void HeaderAnimationMediaElement_MediaEnded(
-    object sender,
-    RoutedEventArgs e)
+    private void HeaderAnimationMediaElement_MediaEnded(object sender,RoutedEventArgs e)
     {
         if (sender is not MediaElement endedMediaElement ||
             endedMediaElement != _activeHeaderAnimationMediaElement)
@@ -2128,7 +2145,7 @@ public partial class MainWindow : Window
             _currentAnimationReturnsToDefault = false;
 
             PlayHeaderAnimation(
-                HeaderAnimation.EncryptedScan);
+                GetActiveTabHeaderAnimation());
 
             return;
         }
@@ -2138,8 +2155,8 @@ public partial class MainWindow : Window
     }
 
     private void HeaderAnimationMediaElement_MediaFailed(
-        object sender,
-        ExceptionRoutedEventArgs e)
+     object sender,
+     ExceptionRoutedEventArgs e)
     {
         if (sender is MediaElement failedMediaElement)
         {
@@ -2155,7 +2172,8 @@ public partial class MainWindow : Window
             "Başlık animasyonu açılamadı: " +
             e.ErrorException.Message,
             StatusTone.Error,
-            isRestore: MainTabControl.SelectedIndex == 1);
+            isRestore: MainTabControl.SelectedIndex == 1,
+            playErrorAnimation: false);
     }
 
     private void PlayHeaderAnimation(
@@ -2164,9 +2182,20 @@ public partial class MainWindow : Window
     {
         var animationFileName = animation switch
         {
-            HeaderAnimation.EncryptedScan => "encrypted-scan.mp4",
-            HeaderAnimation.VaultSeal => "vault-seal.mp4",
-            HeaderAnimation.UnlockRestore => "unlock-restore.mp4",
+            HeaderAnimation.ApplicationStarted =>
+                "application-started.mp4",
+
+            HeaderAnimation.CodeRestoreTabActivated =>
+                "code-restore-tab-activated.mp4",
+
+            HeaderAnimation.CodeMaskingTabActivated =>
+                "code-masking-tab-activated.mp4",
+
+            HeaderAnimation.MaskingStarted =>
+                "masking-started.mp4",
+
+            HeaderAnimation.ErrorOccurred =>
+                "error-occurred.mp4",
 
             _ => throw new ArgumentOutOfRangeException(
                 nameof(animation),
@@ -2185,7 +2214,8 @@ public partial class MainWindow : Window
             SetStatus(
                 $"Animasyon dosyası bulunamadı: {animationFileName}",
                 StatusTone.Error,
-                isRestore: MainTabControl.SelectedIndex == 1);
+                isRestore: MainTabControl.SelectedIndex == 1,
+                playErrorAnimation: false);
 
             return;
         }
@@ -2227,8 +2257,7 @@ public partial class MainWindow : Window
 
         targetMediaElement.Position = TimeSpan.Zero;
 
-        // Manual modda Play çağrısı dosyanın açılmasını ve ilk karenin
-        // hazırlanmasını başlatır. Opacity sıfır olduğu için görünmez.
+        // Video görünmeyen oynatıcıda hazırlanır.
         targetMediaElement.Play();
     }
 
