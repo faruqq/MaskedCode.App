@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="MaskedCode"
+        Title="MASKOD"
         Width="1536"
         Height="1024"
         MinWidth="1180"
@@ -42,25 +42,16 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Margin="18,0,0,0"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal">
-                        <Border Width="20"
-                                Height="20"
-                                Margin="0,0,10,0"
-                                Background="{StaticResource PrimaryBrush}"
-                                CornerRadius="6">
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontFamily="Consolas"
-                                       FontSize="10"
-                                       FontWeight="Bold"
-                                       Text="&lt;/&gt;" />
-                        </Border>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontSize="14"
-                                   Text="MaskedCode" />
-                    </StackPanel>
+                    <Image Width="116"
+                           Height="28"
+                           Margin="18,0,0,0"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           Source="/MaskedCode.App;component/Assets/Brand/maskod-logo.png"
+                           Stretch="Uniform" />
 
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
@@ -69,10 +60,12 @@
                                 Click="MinimizeButton_Click"
                                 Content="&#xE921;"
                                 ToolTip="Simge durumuna küçült" />
+
                         <Button Style="{StaticResource TitleBarButtonStyle}"
                                 Click="MaximizeRestoreButton_Click"
                                 Content="&#xE922;"
                                 ToolTip="Büyüt veya geri yükle" />
+
                         <Button Style="{StaticResource CloseTitleBarButtonStyle}"
                                 Click="CloseButton_Click"
                                 Content="&#xE8BB;"
@@ -82,109 +75,158 @@
             </Border>
 
             <!-- Ürün başlığı -->
-            <Grid Grid.Row="1" Margin="40,0,30,0">
+            <Grid Grid.Row="1"
+                  Margin="40,0,30,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <StackPanel VerticalAlignment="Center"
+                            Orientation="Horizontal">
+
+                    <!-- Animasyonlu MaskState karakteri -->
                     <Border Width="96"
-        Height="96"
-        Margin="0,0,14,0"
-        Background="{StaticResource WindowBrush}"
-        ClipToBounds="True"
-        CornerRadius="18"
-        UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+                            Height="96"
+                            Margin="0,0,14,0"
+                            Background="{StaticResource WindowBrush}"
+                            ClipToBounds="True"
+                            CornerRadius="18"
+                            UseLayoutRounding="True"
+                            SnapsToDevicePixels="True">
 
                         <Grid Width="96"
-          Height="96"
-          HorizontalAlignment="Center"
-          VerticalAlignment="Center"
-          ClipToBounds="True"
-          UseLayoutRounding="True"
-          SnapsToDevicePixels="True">
+                              Height="96"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              ClipToBounds="True"
+                              UseLayoutRounding="True"
+                              SnapsToDevicePixels="True">
 
                             <Grid.OpacityMask>
                                 <RadialGradientBrush Center="0.5,0.5"
-                                 GradientOrigin="0.5,0.5"
-                                 RadiusX="0.5"
-                                 RadiusY="0.5">
+                                                     GradientOrigin="0.5,0.5"
+                                                     RadiusX="0.5"
+                                                     RadiusY="0.5">
                                     <GradientStop Color="#FFFFFFFF"
-                              Offset="0.00" />
+                                                  Offset="0.00" />
+
                                     <GradientStop Color="#FFFFFFFF"
-                              Offset="0.68" />
+                                                  Offset="0.68" />
+
                                     <GradientStop Color="#F8FFFFFF"
-                              Offset="0.78" />
+                                                  Offset="0.78" />
+
                                     <GradientStop Color="#C0FFFFFF"
-                              Offset="0.90" />
+                                                  Offset="0.90" />
+
                                     <GradientStop Color="#00FFFFFF"
-                              Offset="1.00" />
+                                                  Offset="1.00" />
                                 </RadialGradientBrush>
                             </Grid.OpacityMask>
 
                             <MediaElement x:Name="HeaderAnimationPrimaryMediaElement"
-                      Opacity="1"
-                      IsMuted="True"
-                      Loaded="HeaderAnimationMediaElement_Loaded"
-                      LoadedBehavior="Manual"
-                      UnloadedBehavior="Manual"
-                      MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-                      MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-                      MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-                      ScrubbingEnabled="True"
-                      Stretch="Uniform"
-                      SnapsToDevicePixels="True" />
+                                          Opacity="1"
+                                          IsMuted="True"
+                                          Loaded="HeaderAnimationMediaElement_Loaded"
+                                          LoadedBehavior="Manual"
+                                          UnloadedBehavior="Manual"
+                                          MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                                          MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                                          MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                                          ScrubbingEnabled="True"
+                                          Stretch="Uniform"
+                                          SnapsToDevicePixels="True" />
 
                             <MediaElement x:Name="HeaderAnimationSecondaryMediaElement"
-                      Opacity="0"
-                      IsMuted="True"
-                      LoadedBehavior="Manual"
-                      UnloadedBehavior="Manual"
-                      MediaOpened="HeaderAnimationMediaElement_MediaOpened"
-                      MediaEnded="HeaderAnimationMediaElement_MediaEnded"
-                      MediaFailed="HeaderAnimationMediaElement_MediaFailed"
-                      ScrubbingEnabled="True"
-                      Stretch="Uniform"
-                      SnapsToDevicePixels="True" />
+                                          Opacity="0"
+                                          IsMuted="True"
+                                          LoadedBehavior="Manual"
+                                          UnloadedBehavior="Manual"
+                                          MediaOpened="HeaderAnimationMediaElement_MediaOpened"
+                                          MediaEnded="HeaderAnimationMediaElement_MediaEnded"
+                                          MediaFailed="HeaderAnimationMediaElement_MediaFailed"
+                                          ScrubbingEnabled="True"
+                                          Stretch="Uniform"
+                                          SnapsToDevicePixels="True" />
 
                             <Image x:Name="HeaderAnimationImage"
-               Opacity="0"
-               IsHitTestVisible="False"
-               Stretch="Uniform"
-               SnapsToDevicePixels="True"
-               RenderOptions.BitmapScalingMode="HighQuality" />
+                                   Opacity="0"
+                                   IsHitTestVisible="False"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   SnapsToDevicePixels="True"
+                                   Stretch="Uniform" />
                         </Grid>
                     </Border>
 
+                    <!-- MASKOD ürün logosu ve açıklaması -->
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock FontSize="28"
-                       FontWeight="SemiBold"
-                       Text="MaskedCode" />
+                        <Image Width="184"
+                               Height="42"
+                               HorizontalAlignment="Left"
+                               IsHitTestVisible="False"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               SnapsToDevicePixels="True"
+                               Source="/MaskedCode.App;component/Assets/Brand/maskod-logo.png"
+                               Stretch="Uniform" />
+
                         <TextBlock Margin="0,4,0,0"
-                       Foreground="{StaticResource TextSecondaryBrush}"
-                       FontSize="14"
-                       Text="Kaynak kodunuzu güvenli biçimde maskeleyin ve geri açın." />
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="14"
+                                   Text="Kaynak kodunuzu güvenli biçimde maskeleyin ve geri açın." />
                     </StackPanel>
                 </StackPanel>
 
+                <!-- Dil destek durumu -->
                 <Border Grid.Column="1"
-            Padding="15,8"
-            VerticalAlignment="Center"
-            Background="#112D27"
-            BorderBrush="#205044"
-            BorderThickness="1"
-            CornerRadius="18">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Margin="0,0,8,0"
-                       Foreground="{StaticResource SuccessBrush}"
-                       FontSize="16"
-                       Text="✓" />
-                        <TextBlock Foreground="#CFEDE5"
-                       FontSize="14"
-                       Text="PL/I ve EGL hazır" />
-                    </StackPanel>
+        Padding="16,9"
+        VerticalAlignment="Center"
+        Background="#112D27"
+        BorderBrush="#205044"
+        BorderThickness="1"
+        CornerRadius="24">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="22" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   Foreground="{StaticResource SuccessBrush}"
+                   FontSize="14"
+                   Text="✓" />
+
+                        <TextBlock Grid.Row="0"
+                   Grid.Column="1"
+                   VerticalAlignment="Center"
+                   Foreground="#CFEDE5"
+                   FontSize="14"
+                   Text="PL/I ve EGL kullanılabilir" />
+
+                        <TextBlock Grid.Row="1"
+                   Grid.Column="0"
+                   Margin="0,4,0,0"
+                   VerticalAlignment="Center"
+                   Foreground="#D6A84B"
+                   FontFamily="Segoe UI Symbol"
+                   FontSize="14"
+                   Text="⌛" />
+
+                        <TextBlock Grid.Row="1"
+                   Grid.Column="1"
+                   Margin="0,4,0,0"
+                   VerticalAlignment="Center"
+                   Foreground="#CFEDE5"
+                   FontSize="14"
+                   Text="C# geliştirme aşamasında" />
+                    </Grid>
                 </Border>
             </Grid>
 

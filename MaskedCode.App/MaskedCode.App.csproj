@@ -11,6 +11,9 @@
 	<ItemGroup>
 		<None Remove="Assets\Animations\ClassicVideo\**\*.*" />
 		<None Remove="Assets\Animations\MaskState\**\*.*" />
+		<None Remove="Assets\Brand\maskod-logo.png" />
+
+		<Resource Include="Assets\Brand\maskod-logo.png" />
 
 		<Content Include="Assets\Animations\ClassicVideo\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -21,11 +24,11 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
-		
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Assets\Animations\MaskState\Transitions\" />
+	  <Folder Include="Assets\Brand\" />
 	</ItemGroup>
 
 </Project>
