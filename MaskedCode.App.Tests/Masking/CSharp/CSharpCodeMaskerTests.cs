@@ -2298,4 +2298,39 @@ public sealed class CSharpCodeMaskerTests
             "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithConflictMarkers_ShouldRejectSourceCode(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string GetCustomerName()
+            {
+        <<<<<<< HEAD
+                return "InternalCustomerName";
+        =======
+                return "PublicCustomerName";
+        >>>>>>> feature/public-customer
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var exception =
+            Assert.Throws<InvalidOperationException>(() =>
+                masker.Mask(
+                    sourceCode,
+                    mode));
+
+        Assert.Equal(
+            "C# kaynak kodunda çözümlenmemiş birleştirme çakışması bulundu. " +
+            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
+            exception.Message);
+    }
 }

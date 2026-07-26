@@ -34,7 +34,7 @@ internal sealed class CSharpCodeMasker
             syntaxTree.GetRoot();
 
         ValidateNoUnsafeTrivia(
-             root);
+            root);
 
         var originalIdentifiers =
             CollectOriginalIdentifiers(
@@ -157,6 +157,18 @@ internal sealed class CSharpCodeMasker
                     descendIntoTrivia: true)
                 .ToArray();
 
+        var containsConflictMarker =
+            triviaList.Any(trivia =>
+                trivia.IsKind(
+                    SyntaxKind.ConflictMarkerTrivia));
+
+        if (containsConflictMarker)
+        {
+            throw new InvalidOperationException(
+                "C# kaynak kodunda çözümlenmemiş birleştirme çakışması bulundu. " +
+                "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
+        }
+
         var containsDisabledText =
             triviaList.Any(trivia =>
                 trivia.IsKind(
@@ -204,8 +216,7 @@ internal sealed class CSharpCodeMasker
         }
     }
 
-    private static bool IsSupportedDirectiveDiagnostic(
-    Diagnostic diagnostic)
+    private static bool IsSupportedDirectiveDiagnostic(Diagnostic diagnostic)
     {
         return string.Equals(
             diagnostic.Id,
