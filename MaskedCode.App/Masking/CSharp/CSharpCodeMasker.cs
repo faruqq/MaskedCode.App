@@ -34,11 +34,22 @@ internal sealed class CSharpCodeMasker
         var originalIdentifiers =
             CollectOriginalIdentifiers(root);
 
+        var originalLiterals =
+            CollectOriginalLiterals(root);
+
         var identifierMappings =
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
 
+        var literalMappings =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
         var usedMaskedIdentifiers =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        var usedMaskedLiterals =
             new HashSet<string>(
                 StringComparer.Ordinal);
 
@@ -47,11 +58,20 @@ internal sealed class CSharpCodeMasker
                 .ToString("N")[..8]
                 .ToUpperInvariant();
 
+        var literalMasker =
+            new CSharpLiteralMasker(
+                mode,
+                sessionId,
+                literalMappings,
+                usedMaskedLiterals,
+                originalLiterals);
+
         var rewriter =
             new IdentifierMaskingRewriter(
                 identifierMappings,
                 usedMaskedIdentifiers,
                 originalIdentifiers,
+                literalMasker,
                 sessionId,
                 mode);
 
@@ -65,13 +85,9 @@ internal sealed class CSharpCodeMasker
         }
 
         var mappings =
-            identifierMappings
-                .Select(mapping =>
-                    new MaskingMapping(
-                        MaskingValueKind.Identifier,
-                        mapping.Key,
-                        mapping.Value))
-                .ToList();
+            CreateMappings(
+                identifierMappings,
+                literalMappings);
 
         return new CSharpMaskingResult(
             maskedRoot.ToFullString(),
@@ -91,6 +107,50 @@ internal sealed class CSharpCodeMasker
                 token.Text)
             .ToHashSet(
                 StringComparer.Ordinal);
+    }
+
+    private static HashSet<string> CollectOriginalLiterals(SyntaxNode root)
+    {
+        return root
+            .DescendantTokens(
+                descendIntoTrivia: true)
+            .Where(token =>
+                token.IsKind(
+                    SyntaxKind.StringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.CharacterLiteralToken))
+            .Select(token =>
+                token.Text)
+            .ToHashSet(
+                StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings)
+    {
+        var mappings =
+            new List<MaskingMapping>(
+                identifierMappings.Count +
+                literalMappings.Count);
+
+        foreach (var mapping in identifierMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.Identifier,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        foreach (var mapping in literalMappings)
+        {
+            mappings.Add(
+                new MaskingMapping(
+                    MaskingValueKind.StringLiteral,
+                    mapping.Key,
+                    mapping.Value));
+        }
+
+        return mappings;
     }
 
     private static string CreateUniqueMaskedIdentifier(string identifier, int ordinal, string sessionId, MaskingMode mode, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers)
@@ -119,11 +179,12 @@ internal sealed class CSharpCodeMasker
                 };
 
             if (string.Equals(
-                    candidate,
-                    identifier,
-                    StringComparison.Ordinal) ||
-                originalIdentifiers.Contains(candidate) ||
-                usedMaskedIdentifiers.Contains(candidate))
+                candidate,
+                identifier,
+                StringComparison.Ordinal) ||
+            originalIdentifiers.Contains(candidate) ||
+            usedMaskedIdentifiers.Contains(candidate) ||
+            IsCSharpKeyword(candidate))
             {
                 continue;
             }
@@ -134,6 +195,20 @@ internal sealed class CSharpCodeMasker
         throw new InvalidOperationException(
             $"'{identifier}' C# identifier'ı için benzersiz " +
             "bir maskeleme değeri üretilemedi.");
+    }
+
+    private static bool IsCSharpKeyword(string identifier)
+    {
+        if (identifier.StartsWith(
+                '@'))
+        {
+            return false;
+        }
+
+        return SyntaxFacts.GetKeywordKind(identifier) !=
+                   SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(identifier) !=
+                   SyntaxKind.None;
     }
 
     private static string CreateMaximumPrivacyIdentifier(string identifier, string sessionId, int ordinal)
@@ -218,27 +293,28 @@ internal sealed class CSharpCodeMasker
         private readonly ISet<string> _originalIdentifiers;
         private readonly string _sessionId;
         private readonly MaskingMode _mode;
+        private readonly CSharpLiteralMasker _literalMasker;
 
-        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, string sessionId, MaskingMode mode)
+        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, string sessionId, MaskingMode mode)
         {
-            _mappings =
-                mappings;
-
-            _usedMaskedIdentifiers =
-                usedMaskedIdentifiers;
-
-            _originalIdentifiers =
-                originalIdentifiers;
-
-            _sessionId =
-                sessionId;
-
-            _mode =
-                mode;
+            _mappings = mappings;
+            _usedMaskedIdentifiers = usedMaskedIdentifiers;
+            _originalIdentifiers = originalIdentifiers;
+            _literalMasker = literalMasker;
+            _sessionId = sessionId;
+            _mode = mode;
         }
 
         public override SyntaxToken VisitToken(SyntaxToken token)
         {
+            if (token.IsKind(
+                    SyntaxKind.StringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.CharacterLiteralToken))
+            {
+                return _literalMasker.MaskToken(token);
+            }
+
             if (!token.IsKind(
                     SyntaxKind.IdentifierToken))
             {

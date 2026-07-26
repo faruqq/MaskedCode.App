@@ -1,0 +1,468 @@
+﻿using MaskedCode.App.Masking;
+using MaskedCode.App.Masking.CSharp;
+using Microsoft.CodeAnalysis.CSharp;
+
+namespace MaskedCode.App.Tests.Masking.CSharp;
+
+public sealed class CSharpCodeMaskerTests
+{
+    [Fact]
+    public void Mask_WithIdentifiers_ShouldMaskIdentifiersAndPreserveKeywords()
+    {
+        const string sourceCode =
+            """
+            namespace CustomerManagement;
+
+            public sealed class CustomerService
+            {
+                private readonly string customerNumber;
+
+                public string GetCustomerNumber()
+                {
+                    return customerNumber;
+                }
+            }
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var expectedIdentifiers =
+            new[]
+            {
+                "CustomerManagement",
+                "CustomerService",
+                "customerNumber",
+                "GetCustomerNumber"
+            };
+
+        foreach (var identifier in expectedIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind == MaskingValueKind.Identifier &&
+                    mapping.OriginalValue == identifier);
+
+            Assert.DoesNotContain(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        var preservedKeywords =
+            new[]
+            {
+                "namespace",
+                "public",
+                "sealed",
+                "class",
+                "private",
+                "readonly",
+                "string",
+                "return"
+            };
+
+        foreach (var keyword in preservedKeywords)
+        {
+            Assert.DoesNotContain(
+                result.Mappings,
+                mapping =>
+                    mapping.OriginalValue == keyword);
+
+            Assert.Contains(
+                keyword,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        Assert.Equal(
+            SourceLanguage.CSharp,
+            result.SourceLanguage);
+
+        Assert.Equal(
+            expectedIdentifiers.Length,
+            result.IdentifierCount);
+    }
+
+    [Fact]
+    public void Mask_WithRepeatedAndCaseSensitiveIdentifiers_ShouldReuseOnlyExactIdentifierMapping()
+    {
+        const string sourceCode =
+            """
+            public sealed class CustomerService
+            {
+                private string customerNumber;
+                private string CustomerNumber;
+
+                public string GetValue()
+                {
+                    customerNumber = CustomerNumber;
+                    return customerNumber;
+                }
+            }
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var lowerCaseMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind == MaskingValueKind.Identifier &&
+                        mapping.OriginalValue == "customerNumber"));
+
+        var upperCaseMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind == MaskingValueKind.Identifier &&
+                        mapping.OriginalValue == "CustomerNumber"));
+
+        Assert.NotEqual(
+            lowerCaseMapping.MaskedValue,
+            upperCaseMapping.MaskedValue);
+
+        Assert.Equal(
+            3,
+            CountOccurrences(
+                result.MaskedCode,
+                lowerCaseMapping.MaskedValue));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                upperCaseMapping.MaskedValue));
+    }
+
+    [Fact]
+    public void Mask_WithEscapedIdentifier_ShouldPreserveAtPrefixAndReuseMapping()
+    {
+        const string sourceCode =
+            """
+            public sealed class SampleService
+            {
+                public string GetValue()
+                {
+                    var @class = "premium";
+                    return @class;
+                }
+            }
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var escapedIdentifierMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind == MaskingValueKind.Identifier &&
+                        mapping.OriginalValue == "@class"));
+
+        Assert.StartsWith(
+            "@CS_",
+            escapedIdentifierMapping.MaskedValue);
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                escapedIdentifierMapping.MaskedValue));
+
+        Assert.DoesNotContain(
+            "@class",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Mask_WithFormatPreservingMode_ShouldPreserveIdentifierCharacterStructure()
+    {
+        const string sourceCode =
+            """
+            public sealed class CustomerService
+            {
+                private string Customer_Number01;
+
+                public string GetValue()
+                {
+                    return Customer_Number01;
+                }
+            }
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.FormatPreserving);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind == MaskingValueKind.Identifier &&
+                        mapping.OriginalValue == "Customer_Number01"));
+
+        Assert.Equal(
+            mapping.OriginalValue.Length,
+            mapping.MaskedValue.Length);
+
+        Assert.NotEqual(
+            mapping.OriginalValue,
+            mapping.MaskedValue);
+
+        for (var index = 0;
+             index < mapping.OriginalValue.Length;
+             index++)
+        {
+            var originalCharacter =
+                mapping.OriginalValue[index];
+
+            var maskedCharacter =
+                mapping.MaskedValue[index];
+
+            Assert.Equal(
+                char.IsUpper(originalCharacter),
+                char.IsUpper(maskedCharacter));
+
+            Assert.Equal(
+                char.IsLower(originalCharacter),
+                char.IsLower(maskedCharacter));
+
+            Assert.Equal(
+                char.IsDigit(originalCharacter),
+                char.IsDigit(maskedCharacter));
+
+            if (!char.IsLetterOrDigit(originalCharacter))
+            {
+                Assert.Equal(
+                    originalCharacter,
+                    maskedCharacter);
+            }
+        }
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                mapping.MaskedValue));
+    }
+
+    [Fact]
+    public void Mask_WithInvalidMode_ShouldThrowArgumentOutOfRangeException()
+    {
+        const string sourceCode =
+            """
+            public sealed class CustomerService
+            {
+            }
+            """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => masker.Mask(
+                sourceCode,
+                (MaskingMode)999));
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        return source
+            .Split(
+                value,
+                StringSplitOptions.None)
+            .Length - 1;
+    }
+
+    [Fact]
+    public void Mask_WithNormalAndRepeatedStringLiteral_ShouldReuseStringLiteralMapping()
+    {
+        const string sourceCode =
+            """
+        public sealed class SampleService
+        {
+            public string GetValue()
+            {
+                var firstValue = "premium";
+                var secondValue = "premium";
+
+                return firstValue + secondValue;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue ==
+                            "\"premium\""));
+
+        Assert.StartsWith(
+            "\"STR_",
+            mapping.MaskedValue);
+
+        Assert.EndsWith(
+            "\"",
+            mapping.MaskedValue);
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                mapping.MaskedValue));
+
+        Assert.Equal(
+            1,
+            result.StringLiteralCount);
+    }
+
+    [Fact]
+    public void Mask_WithVerbatimStringLiteral_ShouldPreserveVerbatimLiteralStructure()
+    {
+        const string sourceCode =
+            """
+        public sealed class SampleService
+        {
+            public string GetPath()
+            {
+                return @"C:\Internal\Customers";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral));
+
+        Assert.Equal(
+            "@\"C:\\Internal\\Customers\"",
+            mapping.OriginalValue);
+
+        Assert.StartsWith(
+            "@\"STR_",
+            mapping.MaskedValue);
+
+        Assert.DoesNotContain(
+            "Internal",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Mask_WithCharacterLiteral_ShouldProduceValidDifferentCharacterLiteral()
+    {
+        const string sourceCode =
+            """
+        public sealed class SampleService
+        {
+            public bool IsValid(char status)
+            {
+                return status == 'X';
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue == "'X'"));
+
+        Assert.NotEqual(
+            mapping.OriginalValue,
+            mapping.MaskedValue);
+
+        Assert.StartsWith(
+            "'",
+            mapping.MaskedValue);
+
+        Assert.EndsWith(
+            "'",
+            mapping.MaskedValue);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+}
