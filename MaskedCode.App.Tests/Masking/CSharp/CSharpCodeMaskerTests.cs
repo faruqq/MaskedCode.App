@@ -1916,4 +1916,151 @@ public sealed class CSharpCodeMaskerTests
             "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithLineDirective_ShouldMaskFileNameAndPreserveLineNumber(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #line 200 "Internal/CustomerService.cs"
+
+        public sealed class CustomerService
+        {
+        }
+
+        #line default
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var fileNameMapping =
+            Assert.Single(
+                result.Mappings.Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    mapping.OriginalValue ==
+                        "\"Internal/CustomerService.cs\""));
+
+        Assert.DoesNotContain(
+            "Internal/CustomerService.cs",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            $"#line 200 {fileNameMapping.MaskedValue}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#line default",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithRepeatedLineDirectiveFileName_ShouldReuseStringMapping(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #line 100 "Internal/CustomerService.cs"
+
+        public sealed class CustomerService
+        {
+        }
+
+        #line 300 "Internal/CustomerService.cs"
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var fileNameMapping =
+            Assert.Single(
+                result.Mappings.Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    mapping.OriginalValue ==
+                        "\"Internal/CustomerService.cs\""));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                fileNameMapping.MaskedValue));
+
+        Assert.Contains(
+            "#line 100",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#line 300",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithDefaultAndHiddenLineDirectives_ShouldPreserveDirectivesWithoutCreatingStringMappings(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #line hidden
+
+        public sealed class CustomerService
+        {
+        }
+
+        #line default
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "#line hidden",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#line default",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.Kind ==
+                MaskingValueKind.StringLiteral);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

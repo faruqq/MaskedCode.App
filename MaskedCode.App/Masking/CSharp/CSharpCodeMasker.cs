@@ -1,8 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MaskedCode.App.Masking.CSharp;
 
@@ -219,7 +219,11 @@ internal sealed class CSharpCodeMasker
                 StringComparer.Ordinal);
     }
 
-    private static IReadOnlyList<MaskingMapping> CreateMappings(IReadOnlyDictionary<string, string> identifierMappings, IReadOnlyDictionary<string, string> literalMappings, IReadOnlyDictionary<string, string> numericLiteralMappings, IReadOnlyDictionary<string, string> commentMappings)
+    private static IReadOnlyList<MaskingMapping> CreateMappings(
+        IReadOnlyDictionary<string, string> identifierMappings,
+        IReadOnlyDictionary<string, string> literalMappings,
+        IReadOnlyDictionary<string, string> numericLiteralMappings,
+        IReadOnlyDictionary<string, string> commentMappings)
     {
         var mappings =
             new List<MaskingMapping>(
@@ -267,7 +271,13 @@ internal sealed class CSharpCodeMasker
         return mappings;
     }
 
-    private static string CreateUniqueMaskedIdentifier(string identifier, int ordinal, string sessionId, MaskingMode mode, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers)
+    private static string CreateUniqueMaskedIdentifier(
+        string identifier,
+        int ordinal,
+        string sessionId,
+        MaskingMode mode,
+        ISet<string> usedMaskedIdentifiers,
+        ISet<string> originalIdentifiers)
     {
         for (var attempt = 0;
              attempt < MaximumCandidateAttemptCount;
@@ -330,7 +340,10 @@ internal sealed class CSharpCodeMasker
                SyntaxKind.None;
     }
 
-    private static string CreateMaximumPrivacyIdentifier(string identifier, string sessionId, int ordinal)
+    private static string CreateMaximumPrivacyIdentifier(
+        string identifier,
+        string sessionId,
+        int ordinal)
     {
         var prefix =
             identifier.StartsWith(
@@ -425,7 +438,16 @@ internal sealed class CSharpCodeMasker
         private readonly string _sessionId;
         private readonly MaskingMode _mode;
 
-        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, CSharpCommentMasker commentMasker, CSharpDirectiveMasker directiveMasker, string sessionId, MaskingMode mode)
+        public IdentifierMaskingRewriter(
+            IDictionary<string, string> mappings,
+            ISet<string> usedMaskedIdentifiers,
+            ISet<string> originalIdentifiers,
+            CSharpLiteralMasker literalMasker,
+            CSharpNumericLiteralMasker numericLiteralMasker,
+            CSharpCommentMasker commentMasker,
+            CSharpDirectiveMasker directiveMasker,
+            string sessionId,
+            MaskingMode mode)
         {
             _mappings =
                 mappings;
@@ -517,6 +539,60 @@ internal sealed class CSharpCodeMasker
                         (originalToken, _) =>
                             VisitToken(
                                 originalToken));
+
+                return SyntaxFactory.Trivia(
+                    updatedDirective);
+            }
+
+            if (trivia.IsKind(
+                    SyntaxKind.LineDirectiveTrivia))
+            {
+                if (trivia.GetStructure() is not LineDirectiveTriviaSyntax lineDirective)
+                {
+                    throw new InvalidOperationException(
+                        "C# line directive yapısı ayrıştırılamadı.");
+                }
+
+                if (!lineDirective.File.IsKind(
+                        SyntaxKind.StringLiteralToken))
+                {
+                    return trivia;
+                }
+
+                var maskedFile =
+                    _literalMasker.MaskToken(
+                        lineDirective.File);
+
+                var updatedDirective =
+                    lineDirective.WithFile(
+                        maskedFile);
+
+                return SyntaxFactory.Trivia(
+                    updatedDirective);
+            }
+
+            if (trivia.IsKind(
+                    SyntaxKind.LineSpanDirectiveTrivia))
+            {
+                if (trivia.GetStructure() is not LineSpanDirectiveTriviaSyntax lineSpanDirective)
+                {
+                    throw new InvalidOperationException(
+                        "C# line span directive yapısı ayrıştırılamadı.");
+                }
+
+                if (!lineSpanDirective.File.IsKind(
+                        SyntaxKind.StringLiteralToken))
+                {
+                    return trivia;
+                }
+
+                var maskedFile =
+                    _literalMasker.MaskToken(
+                        lineSpanDirective.File);
+
+                var updatedDirective =
+                    lineSpanDirective.WithFile(
+                        maskedFile);
 
                 return SyntaxFactory.Trivia(
                     updatedDirective);
