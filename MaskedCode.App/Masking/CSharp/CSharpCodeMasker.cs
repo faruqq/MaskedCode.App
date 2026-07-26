@@ -118,6 +118,10 @@ internal sealed class CSharpCodeMasker
                 token.IsKind(
                     SyntaxKind.StringLiteralToken) ||
                 token.IsKind(
+                    SyntaxKind.SingleLineRawStringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.MultiLineRawStringLiteralToken) ||
+                token.IsKind(
                     SyntaxKind.CharacterLiteralToken) ||
                 token.IsKind(
                     SyntaxKind.InterpolatedStringTextToken))
@@ -310,11 +314,15 @@ internal sealed class CSharpCodeMasker
         public override SyntaxToken VisitToken(SyntaxToken token)
         {
             if (token.IsKind(
-                SyntaxKind.StringLiteralToken) ||
-            token.IsKind(
-                SyntaxKind.CharacterLiteralToken) ||
-            token.IsKind(
-                SyntaxKind.InterpolatedStringTextToken))
+                    SyntaxKind.StringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.SingleLineRawStringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.MultiLineRawStringLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.CharacterLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.InterpolatedStringTextToken))
             {
                 return _literalMasker.MaskToken(token);
             }

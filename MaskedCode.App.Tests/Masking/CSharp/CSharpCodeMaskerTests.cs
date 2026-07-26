@@ -298,6 +298,21 @@ public sealed class CSharpCodeMaskerTests
                 (MaskingMode)999));
     }
 
+    private static void AssertValidCSharp(string sourceCode)
+    {
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                sourceCode,
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
     private static int CountOccurrences(string source, string value)
     {
         return source
@@ -712,5 +727,192 @@ public sealed class CSharpCodeMaskerTests
             diagnostic =>
                 diagnostic.Severity ==
                     Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Mask_WithSingleLineRawString_ShouldMaskContentAndPreserveDelimiter()
+    {
+        const string sourceCode =
+            """""
+        public sealed class CustomerService
+        {
+            public string GetJson()
+            {
+                return """{"customerNumber":"123456"}""";
+            }
+        }
+        """"";
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue.Contains(
+                            "customerNumber",
+                            StringComparison.Ordinal)));
+
+        Assert.StartsWith(
+            "\"\"\"STR_",
+            mapping.MaskedValue);
+
+        Assert.EndsWith(
+            "\"\"\"",
+            mapping.MaskedValue);
+
+        Assert.DoesNotContain(
+            "customerNumber",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithMultiLineRawString_ShouldMaskContentAndPreserveValidSyntax()
+    {
+        const string sourceCode =
+            """""
+        public sealed class CustomerService
+        {
+            public string GetJson()
+            {
+                return """
+                    {
+                        "customerNumber": "123456",
+                        "customerName": "Internal Customer"
+                    }
+                    """;
+            }
+        }
+        """"";
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        Assert.DoesNotContain(
+            "customerNumber",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "customerName",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Internal Customer",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithRawInterpolatedString_ShouldMaskTextAndInterpolationIdentifier()
+    {
+        const string sourceCode =
+            """""
+        public sealed class CustomerService
+        {
+            public string CreateJson(string customerNumber)
+            {
+                return $$"""
+                    {
+                        "customerNumber": "{{customerNumber}}"
+                    }
+                    """;
+            }
+        }
+        """"";
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var identifierMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "customerNumber"));
+
+        Assert.DoesNotContain(
+            "\"customerNumber\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            identifierMapping.MaskedValue,
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithFormatPreservingRawString_ShouldPreserveLiteralLength()
+    {
+        const string sourceCode =
+            """""
+        public sealed class CustomerService
+        {
+            public string GetValue()
+            {
+                return """Customer-01""";
+            }
+        }
+        """"";
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.FormatPreserving);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue ==
+                            "\"\"\"Customer-01\"\"\""));
+
+        Assert.Equal(
+            mapping.OriginalValue.Length,
+            mapping.MaskedValue.Length);
+
+        Assert.NotEqual(
+            mapping.OriginalValue,
+            mapping.MaskedValue);
+
+        AssertValidCSharp(
+            result.MaskedCode);
     }
 }

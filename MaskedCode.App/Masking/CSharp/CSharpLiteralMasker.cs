@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MaskedCode.App.Masking.CSharp;
 
@@ -115,6 +116,16 @@ internal sealed class CSharpLiteralMasker
                     token,
                     ordinal),
 
+            SyntaxKind.SingleLineRawStringLiteralToken =>
+                CreateMaskedRawStringLiteral(
+                    token,
+                    ordinal),
+
+            SyntaxKind.MultiLineRawStringLiteralToken =>
+                CreateMaskedRawStringLiteral(
+                    token,
+                    ordinal),
+
             SyntaxKind.CharacterLiteralToken =>
                 CreateMaskedCharacterLiteral(
                     token,
@@ -167,6 +178,179 @@ internal sealed class CSharpLiteralMasker
             .Text;
     }
 
+    private string CreateMaskedRawStringLiteral(SyntaxToken token, int ordinal)
+    {
+        var delimiterLength =
+            CountLeadingQuotationMarks(
+                token.Text);
+
+        if (delimiterLength < 3)
+        {
+            throw new InvalidOperationException(
+                $"'{token.Text}' geçerli bir C# raw string literalı değildir.");
+        }
+
+        return token.IsKind(
+                SyntaxKind.SingleLineRawStringLiteralToken)
+            ? CreateMaskedSingleLineRawStringLiteral(
+                token,
+                ordinal,
+                delimiterLength)
+            : CreateMaskedMultiLineRawStringLiteral(
+                token,
+                ordinal,
+                delimiterLength);
+    }
+
+    private string CreateMaskedSingleLineRawStringLiteral(SyntaxToken token, int ordinal, int delimiterLength)
+    {
+        var delimiter =
+            new string(
+                '"',
+                delimiterLength);
+
+        var originalContent =
+            token.Text.Substring(
+                delimiterLength,
+                token.Text.Length -
+                (delimiterLength * 2));
+
+        var maskedContent =
+            _mode switch
+            {
+                MaskingMode.MaximumPrivacy =>
+                    $"STR_{_sessionId}_{ordinal:D4}",
+
+                MaskingMode.FormatPreserving =>
+                    CreateFormatPreservingContent(
+                        originalContent),
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(_mode),
+                    _mode,
+                    "Desteklenmeyen maskeleme modu.")
+            };
+
+        return delimiter +
+               maskedContent +
+               delimiter;
+    }
+
+    private string CreateMaskedMultiLineRawStringLiteral(SyntaxToken token, int ordinal, int delimiterLength)
+    {
+        var firstLineBreakEnd =
+            FindFirstLineBreakEnd(
+                token.Text);
+
+        var closingDelimiterStart =
+            token.Text.LastIndexOf(
+                new string(
+                    '"',
+                    delimiterLength),
+                StringComparison.Ordinal);
+
+        if (firstLineBreakEnd < 0 ||
+            closingDelimiterStart <= firstLineBreakEnd)
+        {
+            throw new InvalidOperationException(
+                $"'{token.Text}' çok satırlı C# raw string literalı geçerli biçimde maskelenemedi.");
+        }
+
+        var content =
+            token.Text.Substring(
+                firstLineBreakEnd,
+                closingDelimiterStart -
+                firstLineBreakEnd);
+
+        var maskedContent =
+            CreateMaskedMultiLineRawContent(
+                content,
+                ordinal);
+
+        return token.Text[..firstLineBreakEnd] +
+               maskedContent +
+               token.Text[closingDelimiterStart..];
+    }
+
+    private string CreateMaskedMultiLineRawContent(string content, int ordinal)
+    {
+        var maskedContent =
+            new StringBuilder(
+                content.Length);
+
+        var replacement =
+            $"STR{_sessionId}{ordinal:D4}";
+
+        var replacementIndex =
+            0;
+
+        foreach (var character in content)
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                maskedContent.Append(
+                    character);
+
+                continue;
+            }
+
+            if (_mode == MaskingMode.FormatPreserving)
+            {
+                maskedContent.Append(
+                    CreateFormatPreservingCharacter(
+                        character));
+
+                continue;
+            }
+
+            maskedContent.Append(
+                replacement[
+                    replacementIndex %
+                    replacement.Length]);
+
+            replacementIndex++;
+        }
+
+        return maskedContent.ToString();
+    }
+
+    private static int CountLeadingQuotationMarks(string value)
+    {
+        var count =
+            0;
+
+        while (count < value.Length &&
+               value[count] == '"')
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private static int FindFirstLineBreakEnd(string value)
+    {
+        for (var index = 0;
+             index < value.Length;
+             index++)
+        {
+            if (value[index] == '\n')
+            {
+                return index + 1;
+            }
+
+            if (value[index] == '\r')
+            {
+                return index + 1 < value.Length &&
+                       value[index + 1] == '\n'
+                    ? index + 2
+                    : index + 1;
+            }
+        }
+
+        return -1;
+    }
+
     private string CreateMaskedCharacterLiteral(SyntaxToken token, int ordinal)
     {
         var maskedCharacter =
@@ -194,6 +378,13 @@ internal sealed class CSharpLiteralMasker
 
     private string CreateMaskedInterpolatedStringText(SyntaxToken token, int ordinal)
     {
+        if (IsMultiLineRawInterpolatedStringText(token))
+        {
+            return CreateMaskedMultiLineRawContent(
+                token.Text,
+                ordinal);
+        }
+
         return _mode switch
         {
             MaskingMode.MaximumPrivacy =>
@@ -208,6 +399,21 @@ internal sealed class CSharpLiteralMasker
                 _mode,
                 "Desteklenmeyen maskeleme modu.")
         };
+    }
+
+    private static bool IsMultiLineRawInterpolatedStringText(SyntaxToken token)
+    {
+        var interpolatedString =
+            token.Parent?
+                .AncestorsAndSelf()
+                .OfType<InterpolatedStringExpressionSyntax>()
+                .FirstOrDefault();
+
+        return interpolatedString?
+            .StringStartToken
+            .IsKind(
+                SyntaxKind.InterpolatedMultiLineRawStringStartToken) ==
+            true;
     }
 
     private static string CreateFormatPreservingInterpolatedText(string originalText)
@@ -313,6 +519,10 @@ internal sealed class CSharpLiteralMasker
     {
         return token.IsKind(
                    SyntaxKind.StringLiteralToken) ||
+               token.IsKind(
+                   SyntaxKind.SingleLineRawStringLiteralToken) ||
+               token.IsKind(
+                   SyntaxKind.MultiLineRawStringLiteralToken) ||
                token.IsKind(
                    SyntaxKind.CharacterLiteralToken) ||
                token.IsKind(
