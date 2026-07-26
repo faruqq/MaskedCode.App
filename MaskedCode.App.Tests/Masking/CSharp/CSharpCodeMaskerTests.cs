@@ -2237,4 +2237,65 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithSkippedTokens_ShouldRejectSourceCode(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string GetCustomerName()
+            {
+                var customerName = "PublicValue" "InternalCustomerName";
+                return customerName;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var exception =
+            Assert.Throws<InvalidOperationException>(() =>
+                masker.Mask(
+                    sourceCode,
+                    mode));
+
+        Assert.Equal(
+            "C# kaynak kodunda ayrıştırılamayan token içeriği bulundu. " +
+            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
+            exception.Message);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithBadDirective_ShouldRejectSourceCode(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #company InternalCustomerPlatform
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var exception =
+            Assert.Throws<InvalidOperationException>(() =>
+                masker.Mask(
+                    sourceCode,
+                    mode));
+
+        Assert.Equal(
+            "C# kaynak kodunda geçersiz veya desteklenmeyen directive bulundu. " +
+            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.",
+            exception.Message);
+    }
 }

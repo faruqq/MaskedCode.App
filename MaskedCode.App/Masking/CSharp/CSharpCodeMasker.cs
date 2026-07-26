@@ -33,8 +33,8 @@ internal sealed class CSharpCodeMasker
         var root =
             syntaxTree.GetRoot();
 
-        ValidateNoDisabledText(
-            root);
+        ValidateNoUnsafeTrivia(
+             root);
 
         var originalIdentifiers =
             CollectOriginalIdentifiers(
@@ -149,24 +149,68 @@ internal sealed class CSharpCodeMasker
             mode);
     }
 
-    private static void ValidateNoDisabledText(SyntaxNode root)
+    private static void ValidateNoUnsafeTrivia(SyntaxNode root)
     {
-        var containsDisabledText =
+        var triviaList =
             root
                 .DescendantTrivia(
                     descendIntoTrivia: true)
-                .Any(trivia =>
-                    trivia.IsKind(
-                        SyntaxKind.DisabledTextTrivia));
+                .ToArray();
 
-        if (!containsDisabledText)
+        var containsDisabledText =
+            triviaList.Any(trivia =>
+                trivia.IsKind(
+                    SyntaxKind.DisabledTextTrivia));
+
+        if (containsDisabledText)
         {
-            return;
+            throw new InvalidOperationException(
+                "C# kaynak kodunda etkin olmayan koşullu derleme içeriği bulundu. " +
+                "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
         }
 
-        throw new InvalidOperationException(
-            "C# kaynak kodunda etkin olmayan koşullu derleme içeriği bulundu. " +
-            "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
+        var containsBadDirective =
+            triviaList.Any(trivia =>
+                trivia.IsKind(
+                    SyntaxKind.BadDirectiveTrivia));
+
+        if (containsBadDirective)
+        {
+            throw new InvalidOperationException(
+                "C# kaynak kodunda geçersiz veya desteklenmeyen directive bulundu. " +
+                "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
+        }
+
+        var containsSkippedTokens =
+            triviaList.Any(trivia =>
+                trivia.IsKind(
+                    SyntaxKind.SkippedTokensTrivia));
+
+        var containsUnsafeSyntaxErrors =
+            root
+                .GetDiagnostics()
+                .Any(diagnostic =>
+                    diagnostic.Severity ==
+                        DiagnosticSeverity.Error &&
+                    !IsSupportedDirectiveDiagnostic(
+                        diagnostic));
+
+        if (containsSkippedTokens ||
+            containsUnsafeSyntaxErrors)
+        {
+            throw new InvalidOperationException(
+                "C# kaynak kodunda ayrıştırılamayan token içeriği bulundu. " +
+                "Bu içerik güvenli biçimde maskelenemediği için işlem durduruldu.");
+        }
+    }
+
+    private static bool IsSupportedDirectiveDiagnostic(
+    Diagnostic diagnostic)
+    {
+        return string.Equals(
+            diagnostic.Id,
+            "CS1029",
+            StringComparison.Ordinal);
     }
 
     private static HashSet<string> CollectOriginalIdentifiers(SyntaxNode root)
