@@ -9,33 +9,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Remove="Assets\Animations\application-started.mp4" />
-		<None Remove="Assets\Animations\code-restore-tab-activated.mp4" />
-		<None Remove="Assets\Animations\code-masking-tab-activated.mp4" />
-		<None Remove="Assets\Animations\masking-started.mp4" />
-		<None Remove="Assets\Animations\error-occurred.mp4" />
+		<None Remove="Assets\Animations\ClassicVideo\**\*.*" />
+		<None Remove="Assets\Animations\MaskState\**\*.*" />
 
-		<Content Include="Assets\Animations\ClassicVideo\application-started.mp4">
+		<Content Include="Assets\Animations\ClassicVideo\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
 
-		<Content Include="Assets\Animations\ClassicVideo\code-restore-tab-activated.mp4">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</Content>
-
-		<Content Include="Assets\Animations\ClassicVideo\code-masking-tab-activated.mp4">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</Content>
-
-		<Content Include="Assets\Animations\ClassicVideo\masking-started.mp4">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</Content>
-
-		<Content Include="Assets\Animations\ClassicVideo\error-occurred.mp4">
+		<Content Include="Assets\Animations\MaskState\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
