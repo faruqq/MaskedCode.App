@@ -3,5 +3,6 @@
 public enum SourceLanguage
 {
     Pl1 = 0,
-    Egl = 1
+    Egl = 1,
+    CSharp = 2
 }
