@@ -67,7 +67,7 @@ public partial class MainWindow : Window
     private HeaderVisualState _currentHeaderVisualState;
     private HeaderVisualState _planFinalHeaderVisualState;
 
-    private HeaderAnimationEvent? _queuedHeaderAnimationEvent;
+    private readonly Queue<HeaderAnimationEvent> _queuedHeaderAnimationEvents = new();
 
     private bool _isHeaderAnimationPlanRunning;
     private bool _isHeaderAnimationTransitionRunning;
@@ -2135,12 +2135,18 @@ public partial class MainWindow : Window
             HeaderAnimationEvent.ApplicationStarted);
     }
 
-    private void PlayHeaderAnimation(HeaderAnimationEvent animationEvent)
+    private void PlayHeaderAnimation(
+    HeaderAnimationEvent animationEvent)
     {
         if (_isHeaderAnimationPlanRunning ||
             _isHeaderAnimationTransitionRunning)
         {
-            _queuedHeaderAnimationEvent = animationEvent;
+            QueueHeaderAnimationEvent(animationEvent);
+            return;
+        }
+
+        if (ShouldIgnoreHeaderAnimationEvent(animationEvent))
+        {
             return;
         }
 
@@ -2159,6 +2165,62 @@ public partial class MainWindow : Window
         _isHeaderAnimationPlanRunning = true;
 
         PlayNextHeaderAnimationStep();
+    }
+
+    private void QueueHeaderAnimationEvent(
+        HeaderAnimationEvent animationEvent)
+    {
+        if (_queuedHeaderAnimationEvents.TryPeek(
+                out var queuedEvent) &&
+            queuedEvent == animationEvent &&
+            _queuedHeaderAnimationEvents.Count == 1)
+        {
+            return;
+        }
+
+        if (_queuedHeaderAnimationEvents.Count > 0 &&
+            _queuedHeaderAnimationEvents.Last() == animationEvent)
+        {
+            return;
+        }
+
+        _queuedHeaderAnimationEvents.Enqueue(animationEvent);
+    }
+
+    private bool ShouldIgnoreHeaderAnimationEvent(
+        HeaderAnimationEvent animationEvent)
+    {
+        if (_activeHeaderVisual is null)
+        {
+            return false;
+        }
+
+        return animationEvent switch
+        {
+            HeaderAnimationEvent.ApplicationStarted =>
+                _currentHeaderVisualState ==
+                HeaderVisualState.CodeMasking,
+
+            HeaderAnimationEvent.CodeMaskingTabActivated =>
+                _currentHeaderVisualState ==
+                HeaderVisualState.CodeMasking,
+
+            HeaderAnimationEvent.CodeRestoreTabActivated =>
+                _currentHeaderVisualState ==
+                HeaderVisualState.CodeRestore,
+
+            HeaderAnimationEvent.ErrorOccurred =>
+                _currentHeaderVisualState ==
+                HeaderVisualState.Error,
+
+            HeaderAnimationEvent.MaskingStarted =>
+                false,
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(animationEvent),
+                animationEvent,
+                "Desteklenmeyen başlık animasyonu olayı.")
+        };
     }
 
     private void PlayNextHeaderAnimationStep()
@@ -2228,9 +2290,11 @@ public partial class MainWindow : Window
         targetMediaElement.Play();
     }
 
-    private void ShowHeaderImageStep(HeaderAnimationStep step)
+    private void ShowHeaderImageStep(
+    HeaderAnimationStep step)
     {
-        var absoluteAssetPath = GetHeaderAnimationAssetPath(step.FileName);
+        var absoluteAssetPath =
+            GetHeaderAnimationAssetPath(step.FileName);
 
         if (!File.Exists(absoluteAssetPath))
         {
@@ -2238,36 +2302,46 @@ public partial class MainWindow : Window
             return;
         }
 
-        var bitmapImage = new BitmapImage();
-
-        bitmapImage.BeginInit();
-        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-        bitmapImage.UriSource = new Uri(
-            absoluteAssetPath,
-            UriKind.Absolute);
-        bitmapImage.EndInit();
-        bitmapImage.Freeze();
-
-        HeaderAnimationImage.Source = bitmapImage;
-        HeaderAnimationImage.BeginAnimation(
-            UIElement.OpacityProperty,
-            null);
-        HeaderAnimationImage.Opacity = 0;
-
-        _currentHeaderAnimationStep = step;
-
-        if (_activeHeaderVisual is null)
+        try
         {
-            HeaderAnimationImage.Opacity = 1;
-            _activeHeaderVisual = HeaderAnimationImage;
-            PlayNextHeaderAnimationStep();
-            return;
-        }
+            var bitmapImage = new BitmapImage();
 
-        StartHeaderAnimationCrossfade(
-            _activeHeaderVisual,
-            HeaderAnimationImage,
-            completeCurrentStep: true);
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption =
+                BitmapCacheOption.OnLoad;
+            bitmapImage.UriSource = new Uri(
+                absoluteAssetPath,
+                UriKind.Absolute);
+            bitmapImage.EndInit();
+            bitmapImage.Freeze();
+
+            HeaderAnimationImage.Source = bitmapImage;
+            HeaderAnimationImage.BeginAnimation(
+                UIElement.OpacityProperty,
+                null);
+            HeaderAnimationImage.Opacity = 0;
+
+            _currentHeaderAnimationStep = step;
+
+            if (_activeHeaderVisual is null)
+            {
+                HeaderAnimationImage.Opacity = 1;
+                _activeHeaderVisual = HeaderAnimationImage;
+
+                PlayNextHeaderAnimationStep();
+                return;
+            }
+
+            StartHeaderAnimationCrossfade(
+                _activeHeaderVisual,
+                HeaderAnimationImage,
+                completeCurrentStep: true);
+        }
+        catch (Exception exception)
+        {
+            HandleHeaderAnimationFailure(
+                $"Başlık görseli açılamadı: {exception.Message}");
+        }
     }
 
     private string GetHeaderAnimationAssetPath(string fileName)
@@ -2349,17 +2423,39 @@ public partial class MainWindow : Window
             failedMediaElement.Close();
             failedMediaElement.Source = null;
             failedMediaElement.Opacity = 0;
+
+            if (_activeHeaderVisual == failedMediaElement)
+            {
+                _activeHeaderVisual = null;
+                _activeHeaderAnimationMediaElement = null;
+            }
         }
+
+        HandleHeaderAnimationFailure(
+            "Başlık animasyonu açılamadı: " +
+            e.ErrorException.Message);
+    }
+
+    private void HandleMissingHeaderAnimationAsset(string fileName)
+    {
+        HandleHeaderAnimationFailure(
+            $"Animasyon dosyası bulunamadı: {fileName}");
+    }
+
+    private void HandleHeaderAnimationFailure(string message)
+    {
+        _headerAnimationSteps.Clear();
+        _queuedHeaderAnimationEvents.Clear();
 
         _loadingHeaderAnimationMediaElement = null;
         _loadingHeaderAnimationStep = null;
+        _currentHeaderAnimationStep = null;
+
         _isHeaderAnimationTransitionRunning = false;
         _isHeaderAnimationPlanRunning = false;
-        _headerAnimationSteps.Clear();
 
         SetStatus(
-            "Başlık animasyonu açılamadı: " +
-            e.ErrorException.Message,
+            message,
             StatusTone.Error,
             isRestore: MainTabControl.SelectedIndex == 1,
             playErrorAnimation: false);
@@ -2449,26 +2545,23 @@ public partial class MainWindow : Window
 
         _isHeaderAnimationPlanRunning = false;
 
-        if (_queuedHeaderAnimationEvent is not HeaderAnimationEvent queuedEvent)
-        {
-            return;
-        }
-
-        _queuedHeaderAnimationEvent = null;
-
-        PlayHeaderAnimation(queuedEvent);
+        PlayNextQueuedHeaderAnimationEvent();
     }
 
-    private void HandleMissingHeaderAnimationAsset(string fileName)
+    private void PlayNextQueuedHeaderAnimationEvent()
     {
-        _headerAnimationSteps.Clear();
-        _isHeaderAnimationPlanRunning = false;
-        _isHeaderAnimationTransitionRunning = false;
+        while (_queuedHeaderAnimationEvents.Count > 0)
+        {
+            var queuedEvent =
+                _queuedHeaderAnimationEvents.Dequeue();
 
-        SetStatus(
-            $"Animasyon dosyası bulunamadı: {fileName}",
-            StatusTone.Error,
-            isRestore: MainTabControl.SelectedIndex == 1,
-            playErrorAnimation: false);
+            if (ShouldIgnoreHeaderAnimationEvent(queuedEvent))
+            {
+                continue;
+            }
+
+            PlayHeaderAnimation(queuedEvent);
+            return;
+        }
     }
 }
