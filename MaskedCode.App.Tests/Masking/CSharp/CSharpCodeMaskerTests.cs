@@ -465,4 +465,252 @@ public sealed class CSharpCodeMaskerTests
                 diagnostic.Severity ==
                     Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    public void Mask_WithInterpolatedString_ShouldMaskTextAndInterpolationIdentifier()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(string customerNumber)
+            {
+                return $"Customer number: {customerNumber}";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var textMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue ==
+                            "Customer number: "));
+
+        var identifierMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "customerNumber"));
+
+        Assert.StartsWith(
+            "STR_",
+            textMapping.MaskedValue);
+
+        Assert.DoesNotContain(
+            "Customer number:",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "customerNumber",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            identifierMapping.MaskedValue,
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Mask_WithRepeatedInterpolatedText_ShouldReuseTextMapping()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(string firstValue, string secondValue)
+            {
+                var firstMessage = $"Customer: {firstValue}";
+                var secondMessage = $"Customer: {secondValue}";
+
+                return firstMessage + secondMessage;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue ==
+                            "Customer: "));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                mapping.MaskedValue));
+
+        Assert.Equal(
+            1,
+            result.Mappings.Count(
+                candidate =>
+                    candidate.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    candidate.OriginalValue ==
+                        "Customer: "));
+    }
+
+    [Fact]
+    public void Mask_WithVerbatimInterpolatedString_ShouldPreserveValidSyntax()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreatePath(string customerNumber)
+            {
+                return $@"C:\Internal\Customers\{customerNumber}";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        Assert.DoesNotContain(
+            "Internal",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Customers",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "customerNumber",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Mask_WithFormatPreservingInterpolatedString_ShouldPreserveTextStructure()
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(string customerNumber)
+            {
+                return $"Customer-01: {customerNumber}";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.FormatPreserving);
+
+        var mapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.StringLiteral &&
+                        mapping.OriginalValue ==
+                            "Customer-01: "));
+
+        Assert.Equal(
+            mapping.OriginalValue.Length,
+            mapping.MaskedValue.Length);
+
+        Assert.NotEqual(
+            mapping.OriginalValue,
+            mapping.MaskedValue);
+
+        for (var index = 0;
+             index < mapping.OriginalValue.Length;
+             index++)
+        {
+            var originalCharacter =
+                mapping.OriginalValue[index];
+
+            var maskedCharacter =
+                mapping.MaskedValue[index];
+
+            Assert.Equal(
+                char.IsUpper(originalCharacter),
+                char.IsUpper(maskedCharacter));
+
+            Assert.Equal(
+                char.IsLower(originalCharacter),
+                char.IsLower(maskedCharacter));
+
+            Assert.Equal(
+                char.IsDigit(originalCharacter),
+                char.IsDigit(maskedCharacter));
+
+            if (!char.IsLetterOrDigit(originalCharacter))
+            {
+                Assert.Equal(
+                    originalCharacter,
+                    maskedCharacter);
+            }
+        }
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode);
+
+        Assert.DoesNotContain(
+            syntaxTree.GetDiagnostics(),
+            diagnostic =>
+                diagnostic.Severity ==
+                    Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
 }

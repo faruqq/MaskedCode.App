@@ -118,7 +118,9 @@ internal sealed class CSharpCodeMasker
                 token.IsKind(
                     SyntaxKind.StringLiteralToken) ||
                 token.IsKind(
-                    SyntaxKind.CharacterLiteralToken))
+                    SyntaxKind.CharacterLiteralToken) ||
+                token.IsKind(
+                    SyntaxKind.InterpolatedStringTextToken))
             .Select(token =>
                 token.Text)
             .ToHashSet(
@@ -308,9 +310,11 @@ internal sealed class CSharpCodeMasker
         public override SyntaxToken VisitToken(SyntaxToken token)
         {
             if (token.IsKind(
-                    SyntaxKind.StringLiteralToken) ||
-                token.IsKind(
-                    SyntaxKind.CharacterLiteralToken))
+                SyntaxKind.StringLiteralToken) ||
+            token.IsKind(
+                SyntaxKind.CharacterLiteralToken) ||
+            token.IsKind(
+                SyntaxKind.InterpolatedStringTextToken))
             {
                 return _literalMasker.MaskToken(token);
             }

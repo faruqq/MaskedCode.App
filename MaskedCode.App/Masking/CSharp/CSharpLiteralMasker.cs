@@ -51,6 +51,17 @@ internal sealed class CSharpLiteralMasker
                 maskedValue);
         }
 
+        if (token.IsKind(
+                SyntaxKind.InterpolatedStringTextToken))
+        {
+            return SyntaxFactory.Token(
+                token.LeadingTrivia,
+                SyntaxKind.InterpolatedStringTextToken,
+                maskedValue,
+                maskedValue,
+                token.TrailingTrivia);
+        }
+
         var maskedToken =
             SyntaxFactory.ParseToken(
                 maskedValue);
@@ -106,6 +117,11 @@ internal sealed class CSharpLiteralMasker
 
             SyntaxKind.CharacterLiteralToken =>
                 CreateMaskedCharacterLiteral(
+                    token,
+                    ordinal),
+
+            SyntaxKind.InterpolatedStringTextToken =>
+                CreateMaskedInterpolatedStringText(
                     token,
                     ordinal),
 
@@ -176,6 +192,74 @@ internal sealed class CSharpLiteralMasker
             .Text;
     }
 
+    private string CreateMaskedInterpolatedStringText(SyntaxToken token, int ordinal)
+    {
+        return _mode switch
+        {
+            MaskingMode.MaximumPrivacy =>
+                $"STR_{_sessionId}_{ordinal:D4}",
+
+            MaskingMode.FormatPreserving =>
+                CreateFormatPreservingInterpolatedText(
+                    token.Text),
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(_mode),
+                _mode,
+                "Desteklenmeyen maskeleme modu.")
+        };
+    }
+
+    private static string CreateFormatPreservingInterpolatedText(string originalText)
+    {
+        var maskedText =
+            new StringBuilder(
+                originalText.Length);
+
+        for (var index = 0;
+             index < originalText.Length;
+             index++)
+        {
+            var character =
+                originalText[index];
+
+            if (character == '\\' &&
+                index + 1 < originalText.Length)
+            {
+                maskedText.Append(
+                    character);
+
+                maskedText.Append(
+                    originalText[index + 1]);
+
+                index++;
+                continue;
+            }
+
+            if ((character == '{' ||
+                 character == '}' ||
+                 character == '"') &&
+                index + 1 < originalText.Length &&
+                originalText[index + 1] == character)
+            {
+                maskedText.Append(
+                    character);
+
+                maskedText.Append(
+                    character);
+
+                index++;
+                continue;
+            }
+
+            maskedText.Append(
+                CreateFormatPreservingCharacter(
+                    character));
+        }
+
+        return maskedText.ToString();
+    }
+
     private static string CreateFormatPreservingContent(string originalValue)
     {
         var maskedValue =
@@ -230,6 +314,8 @@ internal sealed class CSharpLiteralMasker
         return token.IsKind(
                    SyntaxKind.StringLiteralToken) ||
                token.IsKind(
-                   SyntaxKind.CharacterLiteralToken);
+                   SyntaxKind.CharacterLiteralToken) ||
+               token.IsKind(
+                   SyntaxKind.InterpolatedStringTextToken);
     }
 }
