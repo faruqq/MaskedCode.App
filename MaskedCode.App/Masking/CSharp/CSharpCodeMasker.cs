@@ -56,8 +56,8 @@ internal sealed class CSharpCodeMasker
                 StringComparer.Ordinal);
 
         var commentMappings =
-        new Dictionary<string, string>(
-            StringComparer.Ordinal);
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
 
         var usedMaskedIdentifiers =
             new HashSet<string>(
@@ -72,8 +72,8 @@ internal sealed class CSharpCodeMasker
                 StringComparer.Ordinal);
 
         var usedMaskedComments =
-        new HashSet<string>(
-            StringComparer.Ordinal);
+            new HashSet<string>(
+                StringComparer.Ordinal);
 
         var sessionId =
             Guid.NewGuid()
@@ -96,11 +96,18 @@ internal sealed class CSharpCodeMasker
                 originalNumericLiterals);
 
         var commentMasker =
-        new CSharpCommentMasker(
-            mode,
-            sessionId,
-            commentMappings,
-            usedMaskedComments);
+            new CSharpCommentMasker(
+                mode,
+                sessionId,
+                commentMappings,
+                usedMaskedComments);
+
+        var directiveMasker =
+            new CSharpDirectiveMasker(
+                mode,
+                sessionId,
+                commentMappings,
+                usedMaskedComments);
 
         var rewriter =
             new IdentifierMaskingRewriter(
@@ -110,6 +117,7 @@ internal sealed class CSharpCodeMasker
                 literalMasker,
                 numericLiteralMasker,
                 commentMasker,
+                directiveMasker,
                 sessionId,
                 mode);
 
@@ -260,12 +268,15 @@ internal sealed class CSharpCodeMasker
                 };
 
             if (string.Equals(
-                candidate,
-                identifier,
-                StringComparison.Ordinal) ||
-            originalIdentifiers.Contains(candidate) ||
-            usedMaskedIdentifiers.Contains(candidate) ||
-            IsCSharpKeyword(candidate))
+                    candidate,
+                    identifier,
+                    StringComparison.Ordinal) ||
+                originalIdentifiers.Contains(
+                    candidate) ||
+                usedMaskedIdentifiers.Contains(
+                    candidate) ||
+                IsCSharpKeyword(
+                    candidate))
             {
                 continue;
             }
@@ -286,10 +297,12 @@ internal sealed class CSharpCodeMasker
             return false;
         }
 
-        return SyntaxFacts.GetKeywordKind(identifier) !=
-                   SyntaxKind.None ||
-               SyntaxFacts.GetContextualKeywordKind(identifier) !=
-                   SyntaxKind.None;
+        return SyntaxFacts.GetKeywordKind(
+                   identifier) !=
+               SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(
+                   identifier) !=
+               SyntaxKind.None;
     }
 
     private static string CreateMaximumPrivacyIdentifier(string identifier, string sessionId, int ordinal)
@@ -321,32 +334,40 @@ internal sealed class CSharpCodeMasker
 
     private static char CreateFormatPreservingCharacter(char character)
     {
-        if (char.IsUpper(character))
+        if (char.IsUpper(
+                character))
         {
             return (char)(
                 'A' +
-                RandomNumberGenerator.GetInt32(26));
+                RandomNumberGenerator.GetInt32(
+                    26));
         }
 
-        if (char.IsLower(character))
+        if (char.IsLower(
+                character))
         {
             return (char)(
                 'a' +
-                RandomNumberGenerator.GetInt32(26));
+                RandomNumberGenerator.GetInt32(
+                    26));
         }
 
-        if (char.IsLetter(character))
+        if (char.IsLetter(
+                character))
         {
             return (char)(
                 'A' +
-                RandomNumberGenerator.GetInt32(26));
+                RandomNumberGenerator.GetInt32(
+                    26));
         }
 
-        if (char.IsDigit(character))
+        if (char.IsDigit(
+                character))
         {
             return (char)(
                 '0' +
-                RandomNumberGenerator.GetInt32(10));
+                RandomNumberGenerator.GetInt32(
+                    10));
         }
 
         return character;
@@ -372,22 +393,41 @@ internal sealed class CSharpCodeMasker
         private readonly IDictionary<string, string> _mappings;
         private readonly ISet<string> _usedMaskedIdentifiers;
         private readonly ISet<string> _originalIdentifiers;
-        private readonly string _sessionId;
-        private readonly MaskingMode _mode;
         private readonly CSharpLiteralMasker _literalMasker;
         private readonly CSharpNumericLiteralMasker _numericLiteralMasker;
         private readonly CSharpCommentMasker _commentMasker;
+        private readonly CSharpDirectiveMasker _directiveMasker;
+        private readonly string _sessionId;
+        private readonly MaskingMode _mode;
 
-        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, CSharpCommentMasker commentMasker, string sessionId, MaskingMode mode)
+        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, CSharpCommentMasker commentMasker, CSharpDirectiveMasker directiveMasker, string sessionId, MaskingMode mode)
         {
-            _mappings = mappings;
-            _usedMaskedIdentifiers = usedMaskedIdentifiers;
-            _originalIdentifiers = originalIdentifiers;
-            _literalMasker = literalMasker;
-            _numericLiteralMasker = numericLiteralMasker;
-            _commentMasker = commentMasker;
-            _sessionId = sessionId;
-            _mode = mode;
+            _mappings =
+                mappings;
+
+            _usedMaskedIdentifiers =
+                usedMaskedIdentifiers;
+
+            _originalIdentifiers =
+                originalIdentifiers;
+
+            _literalMasker =
+                literalMasker;
+
+            _numericLiteralMasker =
+                numericLiteralMasker;
+
+            _commentMasker =
+                commentMasker;
+
+            _directiveMasker =
+                directiveMasker;
+
+            _sessionId =
+                sessionId;
+
+            _mode =
+                mode;
         }
 
         public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia)
@@ -402,6 +442,19 @@ internal sealed class CSharpCodeMasker
                     SyntaxKind.MultiLineDocumentationCommentTrivia))
             {
                 return _commentMasker.MaskTrivia(
+                    trivia);
+            }
+
+            if (trivia.IsKind(
+                    SyntaxKind.RegionDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.EndRegionDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.ErrorDirectiveTrivia) ||
+                trivia.IsKind(
+                    SyntaxKind.WarningDirectiveTrivia))
+            {
+                return _directiveMasker.MaskTrivia(
                     trivia);
             }
 

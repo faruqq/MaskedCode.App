@@ -1631,4 +1631,189 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithRegionDirectives_ShouldMaskNamesAndPreserveDirectiveStructure(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #region Internal Customer Operations
+
+        public sealed class CustomerService
+        {
+        }
+
+        #endregion Internal Customer Operations
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.DoesNotContain(
+            "Internal Customer Operations",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#region",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#endregion",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            2,
+            result.CommentCount);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode,
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
+
+        var directiveKinds =
+            syntaxTree
+                .GetRoot()
+                .DescendantTrivia(
+                    descendIntoTrivia: true)
+                .Where(trivia =>
+                    trivia.IsDirective)
+                .Select(trivia =>
+                    trivia.Kind())
+                .ToArray();
+
+        Assert.Contains(
+            SyntaxKind.RegionDirectiveTrivia,
+            directiveKinds);
+
+        Assert.Contains(
+            SyntaxKind.EndRegionDirectiveTrivia,
+            directiveKinds);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Fact]
+    public void Mask_WithUnnamedEndRegionDirective_ShouldNotCreateMapping()
+    {
+        const string sourceCode =
+            """
+        #region Internal Services
+
+        public sealed class CustomerService
+        {
+        }
+
+        #endregion
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                MaskingMode.MaximumPrivacy);
+
+        Assert.DoesNotContain(
+            "Internal Services",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#endregion",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            1,
+            result.CommentCount);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithErrorAndWarningDirectives_ShouldMaskMessagesAndPreserveDirectiveKinds(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #warning Internal customer configuration is active
+        #error Private database connection must not be published
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.DoesNotContain(
+            "Internal customer configuration",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Private database connection",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#warning",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#error",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            2,
+            result.CommentCount);
+
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                result.MaskedCode,
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
+
+        var directiveKinds =
+            syntaxTree
+                .GetRoot()
+                .DescendantTrivia(
+                    descendIntoTrivia: true)
+                .Where(trivia =>
+                    trivia.IsDirective)
+                .Select(trivia =>
+                    trivia.Kind())
+                .ToArray();
+
+        Assert.Contains(
+            SyntaxKind.WarningDirectiveTrivia,
+            directiveKinds);
+
+        Assert.Contains(
+            SyntaxKind.ErrorDirectiveTrivia,
+            directiveKinds);
+    }
 }
