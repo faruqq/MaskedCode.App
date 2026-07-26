@@ -2063,4 +2063,178 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithPragmaChecksum_ShouldMaskFileNameAndPreserveChecksumData(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #pragma checksum "Internal/Generated/CustomerService.cs" "{406ea660-64cf-4c82-b6f0-42d48172a799}" "0123456789ABCDEF"
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var fileNameMapping =
+            Assert.Single(
+                result.Mappings.Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    mapping.OriginalValue ==
+                        "\"Internal/Generated/CustomerService.cs\""));
+
+        Assert.DoesNotContain(
+            "Internal/Generated/CustomerService.cs",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            $"#pragma checksum {fileNameMapping.MaskedValue}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "\"{406ea660-64cf-4c82-b6f0-42d48172a799}\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "\"0123456789ABCDEF\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.OriginalValue ==
+                    "\"{406ea660-64cf-4c82-b6f0-42d48172a799}\"" ||
+                mapping.OriginalValue ==
+                    "\"0123456789ABCDEF\"");
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithRepeatedPragmaChecksumFileName_ShouldReuseStringMapping(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #pragma checksum "Internal/Generated/CustomerService.cs" "{406ea660-64cf-4c82-b6f0-42d48172a799}" "0123456789ABCDEF"
+        #pragma checksum "Internal/Generated/CustomerService.cs" "{8829d00f-11b8-4213-878b-770e8597ac16}" "FEDCBA9876543210"
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var fileNameMapping =
+            Assert.Single(
+                result.Mappings.Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.StringLiteral &&
+                    mapping.OriginalValue ==
+                        "\"Internal/Generated/CustomerService.cs\""));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                fileNameMapping.MaskedValue));
+
+        Assert.Contains(
+            "\"{406ea660-64cf-4c82-b6f0-42d48172a799}\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "\"{8829d00f-11b8-4213-878b-770e8597ac16}\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "\"0123456789ABCDEF\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "\"FEDCBA9876543210\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithNonChecksumPragmaDirectives_ShouldPreserveDirectiveStructure(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #pragma warning disable CS0168
+
+        public sealed class CustomerService
+        {
+            public void Process()
+            {
+                int unusedValue;
+            }
+        }
+
+        #pragma warning restore CS0168
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "#pragma warning disable CS0168",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "#pragma warning restore CS0168",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.OriginalValue ==
+                    "CS0168");
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

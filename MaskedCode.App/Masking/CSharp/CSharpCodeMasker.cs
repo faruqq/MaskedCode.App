@@ -598,6 +598,34 @@ internal sealed class CSharpCodeMasker
                     updatedDirective);
             }
 
+            if (trivia.IsKind(
+                    SyntaxKind.PragmaChecksumDirectiveTrivia))
+            {
+                if (trivia.GetStructure() is not PragmaChecksumDirectiveTriviaSyntax checksumDirective)
+                {
+                    throw new InvalidOperationException(
+                        "C# pragma checksum directive yapısı ayrıştırılamadı.");
+                }
+
+                if (!checksumDirective.File.IsKind(
+                        SyntaxKind.StringLiteralToken))
+                {
+                    throw new InvalidOperationException(
+                        "C# pragma checksum directive içindeki dosya adı ayrıştırılamadı.");
+                }
+
+                var maskedFile =
+                    _literalMasker.MaskToken(
+                        checksumDirective.File);
+
+                var updatedDirective =
+                    checksumDirective.WithFile(
+                        maskedFile);
+
+                return SyntaxFactory.Trivia(
+                    updatedDirective);
+            }
+
             return base.VisitTrivia(
                 trivia);
         }
