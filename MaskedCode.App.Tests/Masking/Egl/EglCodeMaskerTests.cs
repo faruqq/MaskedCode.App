@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace MaskedCode.App.Tests.Masking.Egl
 {
@@ -624,12 +625,18 @@ Mask_WithLineAndBlockComments_ShouldMaskContentAndPreserveLineStructure()
                             mapping.OriginalValue ==
                                 "001"));
 
+            var repeatedLiteralPattern =
+    $@"(?<![\p{{L}}\p{{N}}_.])" +
+    Regex.Escape(
+        repeatedLiteralMapping.MaskedValue) +
+    $@"(?![\p{{L}}\p{{N}}_.])";
+
             var repeatedUsageCount =
-                result.MaskedCode
-                    .Split(
-                        repeatedLiteralMapping.MaskedValue,
-                        StringSplitOptions.None)
-                    .Length - 1;
+                Regex.Matches(
+                    result.MaskedCode,
+                    repeatedLiteralPattern,
+                    RegexOptions.CultureInvariant)
+                .Count;
 
             Assert.Equal(
                 2,

@@ -25,9 +25,17 @@ internal sealed class CSharpLiteralMasker
         _originalValues = originalValues;
     }
 
-    public SyntaxToken MaskToken(SyntaxToken token)
+    public SyntaxToken MaskToken(
+    SyntaxToken token)
     {
-        if (!IsSupportedLiteral(token))
+        if (!IsSupportedLiteral(
+                token))
+        {
+            return token;
+        }
+
+        if (IsInterpolationFormatToken(
+                token))
         {
             return token;
         }
@@ -67,15 +75,27 @@ internal sealed class CSharpLiteralMasker
             SyntaxFactory.ParseToken(
                 maskedValue);
 
-        if (maskedToken.Kind() != token.Kind())
+        if (maskedToken.Kind() !=
+            token.Kind())
         {
             throw new InvalidOperationException(
                 $"'{originalValue}' C# literalı geçerli biçimde maskelenemedi.");
         }
 
         return maskedToken
-            .WithLeadingTrivia(token.LeadingTrivia)
-            .WithTrailingTrivia(token.TrailingTrivia);
+            .WithLeadingTrivia(
+                token.LeadingTrivia)
+            .WithTrailingTrivia(
+                token.TrailingTrivia);
+    }
+
+    private static bool IsInterpolationFormatToken(
+        SyntaxToken token)
+    {
+        return token.IsKind(
+                   SyntaxKind.InterpolatedStringTextToken) &&
+               token.Parent is
+                   InterpolationFormatClauseSyntax;
     }
 
     private string CreateUniqueMaskedLiteral(SyntaxToken token, int ordinal)
@@ -143,23 +163,14 @@ internal sealed class CSharpLiteralMasker
         };
     }
 
-    private string CreateMaskedStringLiteral(SyntaxToken token, int ordinal)
+    private string CreateMaskedStringLiteral(
+    SyntaxToken token,
+    int ordinal)
     {
         var maskedContent =
-            _mode switch
-            {
-                MaskingMode.MaximumPrivacy =>
-                    $"STR_{_sessionId}_{ordinal:D4}",
-
-                MaskingMode.FormatPreserving =>
-                    CreateFormatPreservingContent(
-                        token.ValueText),
-
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(_mode),
-                    _mode,
-                    "Desteklenmeyen maskeleme modu.")
-            };
+            CreateMaskedStringContent(
+                token.ValueText,
+                ordinal);
 
         if (token.Text.StartsWith(
                 "@\"",
@@ -174,8 +185,154 @@ internal sealed class CSharpLiteralMasker
         }
 
         return SyntaxFactory
-            .Literal(maskedContent)
+            .Literal(
+                maskedContent)
             .Text;
+    }
+
+    private string CreateMaskedStringContent(
+        string content,
+        int ordinal)
+    {
+        var result =
+            new StringBuilder(
+                content.Length);
+
+        var segmentStart =
+            0;
+
+        var index =
+            0;
+
+        while (index < content.Length)
+        {
+            if (!TryFindCompositeFormatItemEnd(
+                    content,
+                    index,
+                    out var formatItemEnd))
+            {
+                index++;
+                continue;
+            }
+
+            AppendMaskedStringSegment(
+                result,
+                content[segmentStart..index],
+                ordinal);
+
+            result.Append(
+                content,
+                index,
+                formatItemEnd - index);
+
+            index =
+                formatItemEnd;
+
+            segmentStart =
+                formatItemEnd;
+        }
+
+        AppendMaskedStringSegment(
+            result,
+            content[segmentStart..],
+            ordinal);
+
+        return result.ToString();
+    }
+
+    private void AppendMaskedStringSegment(
+        StringBuilder result,
+        string segment,
+        int ordinal)
+    {
+        if (segment.Length == 0)
+        {
+            return;
+        }
+
+        var maskedSegment =
+            _mode switch
+            {
+                MaskingMode.MaximumPrivacy =>
+                    segment.Any(
+                        char.IsLetterOrDigit)
+                        ? $"STR_{_sessionId}_{ordinal:D4}"
+                        : segment,
+
+                MaskingMode.FormatPreserving =>
+                    CreateFormatPreservingContent(
+                        segment),
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(_mode),
+                    _mode,
+                    "Desteklenmeyen maskeleme modu.")
+            };
+
+        result.Append(
+            maskedSegment);
+    }
+
+    private static bool TryFindCompositeFormatItemEnd(
+        string content,
+        int startIndex,
+        out int endIndex)
+    {
+        endIndex =
+            startIndex;
+
+        if (startIndex >= content.Length ||
+            content[startIndex] != '{')
+        {
+            return false;
+        }
+
+        if (startIndex + 1 < content.Length &&
+            content[startIndex + 1] == '{')
+        {
+            return false;
+        }
+
+        var index =
+            startIndex + 1;
+
+        var digitStart =
+            index;
+
+        while (index < content.Length &&
+               char.IsDigit(
+                   content[index]))
+        {
+            index++;
+        }
+
+        if (index == digitStart)
+        {
+            return false;
+        }
+
+        while (index < content.Length &&
+               content[index] != '}')
+        {
+            if (content[index] == '{' ||
+                content[index] is '\r' or '\n')
+            {
+                return false;
+            }
+
+            index++;
+        }
+
+        if (index >= content.Length ||
+            content[index] != '}')
+        {
+            return false;
+        }
+
+        endIndex =
+            index + 1;
+
+        return true;
     }
 
     private string CreateMaskedRawStringLiteral(SyntaxToken token, int ordinal)

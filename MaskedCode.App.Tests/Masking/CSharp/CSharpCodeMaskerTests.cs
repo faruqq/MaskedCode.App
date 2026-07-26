@@ -2412,4 +2412,161 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithWarningDirective_ShouldMaskMessageAndPreserveDirective(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #warning Minimum müşteri bakiyesi kontrol edilmelidir
+
+        public sealed class CustomerService
+        {
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "#warning ",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "#warning  \r",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "#warning  \n",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "Minimum müşteri bakiyesi kontrol edilmelidir",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            result.Mappings,
+            mapping =>
+                mapping.Kind ==
+                    MaskingValueKind.Comment &&
+                mapping.OriginalValue.Contains(
+                    "Minimum müşteri bakiyesi",
+                    StringComparison.Ordinal));
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithInterpolatedFormatClause_ShouldPreserveFormatClause(
+        MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(
+                decimal availableBalance)
+            {
+                return $"Balance: {availableBalance:N2} TRY";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            ":N2}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            ":R7}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithCompositeFormatString_ShouldPreserveFormatItems(
+        MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(
+                string customerNumber,
+                decimal availableBalance,
+                string auditMessage)
+            {
+                return string.Format(
+                    "{0}: {1:N2} TRY - {2}",
+                    customerNumber,
+                    availableBalance,
+                    auditMessage);
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "{0}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "{1:N2}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Contains(
+            "{2}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "{7:A3}",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "TRY",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

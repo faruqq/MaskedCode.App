@@ -30,15 +30,11 @@ internal sealed class CSharpDirectiveMasker
             usedMaskedValues;
     }
 
-    public SyntaxTrivia MaskTrivia(SyntaxTrivia trivia)
+    public SyntaxTrivia MaskTrivia(
+    SyntaxTrivia trivia)
     {
         if (!IsSupportedDirective(
                 trivia))
-        {
-            return trivia;
-        }
-
-        if (trivia.GetStructure() is not DirectiveTriviaSyntax directiveSyntax)
         {
             return trivia;
         }
@@ -62,14 +58,13 @@ internal sealed class CSharpDirectiveMasker
                 out var existingMaskedValue))
         {
             return CreateMaskedTrivia(
-                directiveSyntax,
                 existingMaskedValue,
-                contentStart);
+                trivia.Kind());
         }
 
         var maskedTrivia =
             CreateUniqueMaskedTrivia(
-                directiveSyntax,
+                trivia,
                 originalValue,
                 contentStart,
                 _mappings.Count + 1);
@@ -87,7 +82,11 @@ internal sealed class CSharpDirectiveMasker
         return maskedTrivia;
     }
 
-    private SyntaxTrivia CreateUniqueMaskedTrivia(DirectiveTriviaSyntax directiveSyntax,string originalValue,int contentStart,int ordinal)
+    private SyntaxTrivia CreateUniqueMaskedTrivia(
+    SyntaxTrivia trivia,
+    string originalValue,
+    int contentStart,
+    int ordinal)
     {
         for (var attempt = 0;
              attempt < MaximumCandidateAttemptCount;
@@ -101,9 +100,8 @@ internal sealed class CSharpDirectiveMasker
 
             var maskedTrivia =
                 CreateMaskedTrivia(
-                    directiveSyntax,
                     candidate,
-                    contentStart);
+                    trivia.Kind());
 
             var actualMaskedValue =
                 maskedTrivia.ToFullString();
@@ -126,90 +124,81 @@ internal sealed class CSharpDirectiveMasker
             "bir maskeleme değeri üretilemedi.");
     }
 
-    private SyntaxTrivia CreateMaskedTrivia(DirectiveTriviaSyntax directiveSyntax, string maskedValue, int contentStart)
+    private static SyntaxTrivia CreateMaskedTrivia(
+    string maskedValue,
+    SyntaxKind expectedKind)
     {
-        var originalValue =
-            directiveSyntax
-                .ParentTrivia
-                .ToFullString();
+        var parsingSource =
+            CreateDirectiveParsingSource(
+                maskedValue,
+                expectedKind);
 
-        var originalContent =
-            originalValue[contentStart..];
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                parsingSource,
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
 
-        var maskedContent =
-            maskedValue[contentStart..];
+        var parsedDirective =
+            syntaxTree
+                .GetRoot()
+                .DescendantTrivia(
+                    descendIntoTrivia: true)
+                .FirstOrDefault(
+                    trivia =>
+                        trivia.IsKind(
+                            expectedKind));
 
-        var endOfDirectiveToken =
-            directiveSyntax.EndOfDirectiveToken;
-
-        var originalTrailingTriviaText =
-            endOfDirectiveToken
-                .LeadingTrivia
-                .ToFullString();
-
-        var contentWithoutLineBreak =
-            RemoveTrailingLineBreak(
-                maskedContent);
-
-        var lineBreak =
-            GetTrailingLineBreak(
-                originalContent);
-
-        var replacementTrivia =
-            SyntaxFactory.ParseTrailingTrivia(
-                contentWithoutLineBreak);
-
-        var updatedEndOfDirectiveToken =
-            endOfDirectiveToken.WithLeadingTrivia(
-                replacementTrivia);
-
-        var updatedDirective =
-            directiveSyntax.ReplaceToken(
-                endOfDirectiveToken,
-                updatedEndOfDirectiveToken);
-
-        var updatedTrivia =
-            SyntaxFactory.Trivia(
-                updatedDirective);
-
-        var updatedValue =
-            updatedTrivia.ToFullString();
-
-        if (!string.IsNullOrEmpty(
-                lineBreak) &&
-            !updatedValue.EndsWith(
-                lineBreak,
-                StringComparison.Ordinal))
+        if (parsedDirective.RawKind == 0)
         {
-            updatedDirective =
-                updatedDirective.ReplaceToken(
-                    updatedDirective.EndOfDirectiveToken,
-                    updatedDirective.EndOfDirectiveToken.WithTrailingTrivia(
-                        SyntaxFactory.EndOfLine(
-                            lineBreak)));
-
-            updatedTrivia =
-                SyntaxFactory.Trivia(
-                    updatedDirective);
+            throw new InvalidOperationException(
+                $"'{maskedValue}' C# directive metni " +
+                "geçerli biçimde ayrıştırılamadı.");
         }
 
-        if (string.Equals(
-                updatedTrivia.ToFullString(),
-                originalValue,
-                StringComparison.Ordinal) ||
-            string.Equals(
-                originalTrailingTriviaText,
-                updatedDirective
-                    .EndOfDirectiveToken
-                    .LeadingTrivia
-                    .ToFullString(),
+        var actualValue =
+            parsedDirective.ToFullString();
+
+        if (!string.Equals(
+                actualValue,
+                maskedValue,
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"'{originalValue}' C# directive metni geçerli biçimde maskelenemedi.");
+                $"'{maskedValue}' C# directive metni " +
+                "ayrıştırılırken karakter yapısı korunamadı.");
         }
 
-        return updatedTrivia;
+        return parsedDirective;
+    }
+
+    private static string CreateDirectiveParsingSource(
+    string maskedValue,
+    SyntaxKind expectedKind)
+    {
+        if (expectedKind !=
+            SyntaxKind.EndRegionDirectiveTrivia)
+        {
+            return maskedValue;
+        }
+
+        var lineBreak =
+            GetPreferredLineBreak(
+                maskedValue);
+
+        return
+            $"#region MASKING_CONTEXT{lineBreak}" +
+            maskedValue;
+    }
+
+    private static string GetPreferredLineBreak(
+    string value)
+    {
+        return value.Contains(
+            "\r\n",
+            StringComparison.Ordinal)
+            ? "\r\n"
+            : "\n";
     }
 
     private string CreateMaskedDirective(string directive, int contentStart, int ordinal)
@@ -380,50 +369,6 @@ internal sealed class CSharpDirectiveMasker
             .Any(character =>
                 char.IsLetterOrDigit(
                     character));
-    }
-
-    private static string RemoveTrailingLineBreak(string value)
-    {
-        if (value.EndsWith(
-                "\r\n",
-                StringComparison.Ordinal))
-        {
-            return value[..^2];
-        }
-
-        if (value.EndsWith(
-                '\r') ||
-            value.EndsWith(
-                '\n'))
-        {
-            return value[..^1];
-        }
-
-        return value;
-    }
-
-    private static string GetTrailingLineBreak(string value)
-    {
-        if (value.EndsWith(
-                "\r\n",
-                StringComparison.Ordinal))
-        {
-            return "\r\n";
-        }
-
-        if (value.EndsWith(
-                '\r'))
-        {
-            return "\r";
-        }
-
-        if (value.EndsWith(
-                '\n'))
-        {
-            return "\n";
-        }
-
-        return string.Empty;
     }
 
     private static bool IsSupportedDirective(SyntaxTrivia trivia)

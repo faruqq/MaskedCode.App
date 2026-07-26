@@ -474,6 +474,7 @@
 
                                     <Border x:Name="MaskRightEditorCard"
                                             Grid.Column="2"
+                                            ClipToBounds="True"
                                             Style="{StaticResource EditorCardStyle}">
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -552,16 +553,18 @@
                                             </Grid>
 
                                             <Border Grid.Row="1"
+                                                    ClipToBounds="True"
                                                     Background="{StaticResource EditorBrush}"
                                                     BorderBrush="{StaticResource BorderBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="8">
-                                                <Grid>
+                                                <Grid ClipToBounds="True">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="60" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
-                                                    <Border BorderBrush="{StaticResource BorderBrush}"
+                                                    <Border ClipToBounds="True"
+                                                            BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="0,0,1,0">
                                                         <TextBlock x:Name="MaskedLineNumbersTextBlock"
                                                                    Padding="0,12,14,12"
