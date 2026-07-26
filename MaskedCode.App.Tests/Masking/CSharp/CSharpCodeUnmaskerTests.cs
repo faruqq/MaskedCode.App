@@ -108,4 +108,123 @@ public sealed class CSharpCodeUnmaskerTests
             "Seçilen kasa C# kaynak koduna ait değil.",
             exception.Message);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void MaskAndUnmask_WithComments_ShouldRestoreExactSource(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        namespace Company.Customer;
+
+        /// <summary>
+        /// Returns the internal customer name.
+        /// </summary>
+        public sealed class CustomerService
+        {
+            // Internal customer lookup
+            public string GetCustomerName()
+            {
+                /*
+                 * Private customer information
+                 */
+                return "InternalCustomer";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.NotEqual(
+            sourceCode,
+            maskingResult.MaskedCode);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void MaskAndUnmask_WithDirectives_ShouldRestoreExactSource(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        #define INTERNAL_CUSTOMER_FEATURE
+        #region Internal customer operations
+
+        #if INTERNAL_CUSTOMER_FEATURE
+
+        public sealed class CustomerService
+        {
+            public string GetCustomerName()
+            {
+                return "InternalCustomer";
+            }
+        }
+
+        #warning Internal customer warning
+        #error Internal customer error
+
+        #endif
+        #undef INTERNAL_CUSTOMER_FEATURE
+        #endregion Internal customer operations
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.NotEqual(
+            sourceCode,
+            maskingResult.MaskedCode);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
 }

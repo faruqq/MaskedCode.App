@@ -69,9 +69,25 @@ public sealed class CSharpCodeUnmasker
         private readonly MappingLookup _lookup;
 
         public UnmaskingRewriter(MappingLookup lookup)
+    : base(visitIntoStructuredTrivia: true)
         {
             _lookup =
                 lookup;
+        }
+
+        public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia)
+        {
+            if (_lookup.CommentMappings.TryGetValue(
+                    trivia.ToFullString(),
+                    out var mapping))
+            {
+                return RestoreTrivia(
+                    trivia,
+                    mapping);
+            }
+
+            return base.VisitTrivia(
+                trivia);
         }
 
         public override SyntaxToken VisitToken(SyntaxToken token)
@@ -118,6 +134,34 @@ public sealed class CSharpCodeUnmasker
             }
 
             return visitedToken;
+        }
+
+        private SyntaxTrivia RestoreTrivia(SyntaxTrivia trivia, MappingEntry mapping)
+        {
+            var restoredTrivia =
+                SyntaxFactory
+                    .ParseLeadingTrivia(
+                        mapping.OriginalValue)
+                    .FirstOrDefault(candidate =>
+                        candidate.Kind() ==
+                            trivia.Kind() &&
+                        string.Equals(
+                            candidate.ToFullString(),
+                            mapping.OriginalValue,
+                            StringComparison.Ordinal));
+
+            if (restoredTrivia.RawKind == 0)
+            {
+                throw new InvalidDataException(
+                    "Kasa içindeki C# yorum veya directive eşlemesi " +
+                    "beklenen trivia türünü üretmedi. " +
+                    $"Tür: {trivia.Kind()}");
+            }
+
+            _lookup.MarkAsUsed(
+                mapping.Index);
+
+            return restoredTrivia;
         }
 
         private SyntaxToken RestoreInterpolatedStringText(SyntaxToken token)
@@ -183,7 +227,8 @@ public sealed class CSharpCodeUnmasker
             IReadOnlyList<MaskingMapping> mappings,
             IReadOnlyDictionary<string, MappingEntry> identifierMappings,
             IReadOnlyDictionary<string, MappingEntry> stringLiteralMappings,
-            IReadOnlyDictionary<string, MappingEntry> numericLiteralMappings)
+            IReadOnlyDictionary<string, MappingEntry> numericLiteralMappings,
+            IReadOnlyDictionary<string, MappingEntry> commentMappings)
         {
             _mappings =
                 mappings;
@@ -199,6 +244,9 @@ public sealed class CSharpCodeUnmasker
 
             NumericLiteralMappings =
                 numericLiteralMappings;
+
+            CommentMappings =
+                commentMappings;
         }
 
         public IReadOnlyDictionary<string, MappingEntry> IdentifierMappings
@@ -216,6 +264,11 @@ public sealed class CSharpCodeUnmasker
             get;
         }
 
+        public IReadOnlyDictionary<string, MappingEntry> CommentMappings
+        {
+            get;
+        }
+
         public static MappingLookup Create(
             IReadOnlyList<MaskingMapping> mappings)
         {
@@ -228,6 +281,10 @@ public sealed class CSharpCodeUnmasker
                     StringComparer.Ordinal);
 
             var numericLiteralMappings =
+                new Dictionary<string, MappingEntry>(
+                    StringComparer.Ordinal);
+
+            var commentMappings =
                 new Dictionary<string, MappingEntry>(
                     StringComparer.Ordinal);
 
@@ -253,12 +310,6 @@ public sealed class CSharpCodeUnmasker
                         "Kasa içinde boş değere sahip bir eşleme bulundu.");
                 }
 
-                if (mapping.Kind ==
-                    MaskingValueKind.Comment)
-                {
-                    continue;
-                }
-
                 var targetDictionary =
                     mapping.Kind switch
                     {
@@ -270,6 +321,9 @@ public sealed class CSharpCodeUnmasker
 
                         MaskingValueKind.NumericLiteral =>
                             numericLiteralMappings,
+
+                        MaskingValueKind.Comment =>
+                            commentMappings,
 
                         _ => throw new InvalidDataException(
                             "Kasa içinde desteklenmeyen bir eşleme türü bulundu.")
@@ -294,7 +348,8 @@ public sealed class CSharpCodeUnmasker
                 mappings,
                 identifierMappings,
                 stringLiteralMappings,
-                numericLiteralMappings);
+                numericLiteralMappings,
+                commentMappings);
         }
 
         public void MarkAsUsed(int mappingIndex)
@@ -308,12 +363,6 @@ public sealed class CSharpCodeUnmasker
                  index < _usedMappings.Length;
                  index++)
             {
-                if (_mappings[index].Kind ==
-                    MaskingValueKind.Comment)
-                {
-                    continue;
-                }
-
                 if (_usedMappings[index])
                 {
                     continue;
