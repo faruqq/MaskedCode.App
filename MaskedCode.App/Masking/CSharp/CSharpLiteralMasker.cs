@@ -25,8 +25,7 @@ internal sealed class CSharpLiteralMasker
         _originalValues = originalValues;
     }
 
-    public SyntaxToken MaskToken(
-    SyntaxToken token)
+    public SyntaxToken MaskToken(SyntaxToken token)
     {
         if (!IsSupportedLiteral(
                 token))
@@ -35,6 +34,12 @@ internal sealed class CSharpLiteralMasker
         }
 
         if (IsInterpolationFormatToken(
+                token))
+        {
+            return token;
+        }
+
+        if (!CanCreateDifferentMaskedValue(
                 token))
         {
             return token;
@@ -96,6 +101,64 @@ internal sealed class CSharpLiteralMasker
                    SyntaxKind.InterpolatedStringTextToken) &&
                token.Parent is
                    InterpolationFormatClauseSyntax;
+    }
+
+    private bool CanCreateDifferentMaskedValue(SyntaxToken token)
+    {
+        if (token.IsKind(
+                SyntaxKind.StringLiteralToken))
+        {
+            return ContainsMaskableStringContent(
+                token.ValueText);
+        }
+
+        if (_mode ==
+            MaskingMode.FormatPreserving)
+        {
+            return token.ValueText.Any(
+                char.IsLetterOrDigit);
+        }
+
+        if (token.IsKind(
+                SyntaxKind.MultiLineRawStringLiteralToken))
+        {
+            return token.ValueText.Any(
+                character =>
+                    !char.IsWhiteSpace(
+                        character));
+        }
+
+        return true;
+    }
+
+    private static bool ContainsMaskableStringContent(string content)
+    {
+        var index =
+            0;
+
+        while (index < content.Length)
+        {
+            if (TryFindCompositeFormatItemEnd(
+                    content,
+                    index,
+                    out var formatItemEnd))
+            {
+                index =
+                    formatItemEnd;
+
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(
+                    content[index]))
+            {
+                return true;
+            }
+
+            index++;
+        }
+
+        return false;
     }
 
     private string CreateUniqueMaskedLiteral(SyntaxToken token, int ordinal)

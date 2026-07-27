@@ -2573,6 +2573,52 @@ public sealed class CSharpCodeMaskerTests
     [Theory]
     [InlineData(MaskingMode.MaximumPrivacy)]
     [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithCompositeFormatStringContainingOnlyFormatItemsAndPunctuation_ShouldPreserveLiteralWithoutMapping(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public string CreateMessage(
+                string customerNumber,
+                decimal availableBalance)
+            {
+                return string.Format(
+                    "{0} - {1:N2}",
+                    customerNumber,
+                    availableBalance);
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "\"{0} - {1:N2}\"",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.Kind ==
+                    MaskingValueKind.StringLiteral &&
+                mapping.OriginalValue ==
+                    "\"{0} - {1:N2}\"");
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
     public void Mask_WithFrameworkSymbols_ShouldPreserveFrameworkSymbolsAndMaskSourceIdentifiers(MaskingMode mode)
     {
         const string sourceCode =
