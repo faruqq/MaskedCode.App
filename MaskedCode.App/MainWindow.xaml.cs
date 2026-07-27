@@ -2060,6 +2060,101 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CodeEditor_MouseLeftButtonUp(
+     object sender,
+     MouseButtonEventArgs e)
+    {
+        if (sender is not TextBox sourceTextBox ||
+            e.ChangedButton != MouseButton.Left ||
+            e.ClickCount != 1)
+        {
+            return;
+        }
+
+        // Fare sürüklenerek manuel metin seçildiyse
+        // kullanıcının yaptığı seçime müdahale edilmez.
+        if (sourceTextBox.SelectionLength > 0)
+        {
+            return;
+        }
+
+        var characterIndex =
+            sourceTextBox.GetCharacterIndexFromPoint(
+                e.GetPosition(sourceTextBox),
+                true);
+
+        if (characterIndex < 0)
+        {
+            return;
+        }
+
+        var lineIndex =
+            sourceTextBox.GetLineIndexFromCharacterIndex(
+                characterIndex);
+
+        if (lineIndex < 0)
+        {
+            return;
+        }
+
+        SelectEditorLineWithoutScrolling(
+            sourceTextBox,
+            lineIndex);
+
+        var linkedTextBox =
+            GetLinkedEditor(
+                sourceTextBox);
+
+        if (linkedTextBox is null)
+        {
+            return;
+        }
+
+        SelectEditorLineWithoutScrolling(
+            linkedTextBox,
+            lineIndex);
+    }
+
+    private static void SelectEditorLineWithoutScrolling(
+     TextBox textBox,
+     int lineIndex)
+    {
+        if (lineIndex < 0 ||
+            lineIndex >= textBox.LineCount)
+        {
+            return;
+        }
+
+        var lineStart =
+            textBox.GetCharacterIndexFromLineIndex(
+                lineIndex);
+
+        if (lineStart < 0)
+        {
+            return;
+        }
+
+        var lineLength =
+            textBox.GetLineLength(
+                lineIndex);
+
+        var verticalOffset =
+            textBox.VerticalOffset;
+
+        var horizontalOffset =
+            textBox.HorizontalOffset;
+
+        textBox.Select(
+            lineStart,
+            lineLength);
+
+        textBox.ScrollToVerticalOffset(
+            verticalOffset);
+
+        textBox.ScrollToHorizontalOffset(
+            horizontalOffset);
+    }
+
     private TextBox? GetLinkedEditor(
         TextBox sourceTextBox)
     {
@@ -2189,8 +2284,9 @@ public partial class MainWindow : Window
         var paragraph = new Paragraph
         {
             Margin = new Thickness(0),
-            LineHeight = 22,
-            LineStackingStrategy = LineStackingStrategy.BlockLineHeight
+            LineHeight = 19,
+            LineStackingStrategy =
+        LineStackingStrategy.BlockLineHeight
         };
 
         var currentIndex = 0;

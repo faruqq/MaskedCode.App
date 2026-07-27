@@ -410,11 +410,13 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
+             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="SourceCodeTextBox_TextChanged"
-             TextWrapping="NoWrap"
+MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
+TextChanged="SourceCodeTextBox_TextChanged"
+TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -716,11 +718,13 @@
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
              IsReadOnly="True"
+             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="CodeOutputTextBox_TextChanged"
-             TextWrapping="NoWrap"
+MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
+TextChanged="CodeOutputTextBox_TextChanged"
+TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -1272,11 +1276,13 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
+             IsInactiveSelectionHighlightEnabled="True"                                               
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="MaskedInputTextBox_TextChanged"
-             TextWrapping="NoWrap"
+MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
+TextChanged="MaskedInputTextBox_TextChanged"
+TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -1566,11 +1572,13 @@
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
              IsReadOnly="True"
+             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="CodeOutputTextBox_TextChanged"
-             TextWrapping="NoWrap"
+MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
+TextChanged="CodeOutputTextBox_TextChanged"
+TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
