@@ -1,6 +1,8 @@
 ﻿using MaskedCode.App.Masking;
 using MaskedCode.App.Masking.CSharp;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.IO;
 
 namespace MaskedCode.App.Tests.Masking.CSharp;
 
@@ -330,6 +332,68 @@ public sealed class CSharpCodeMaskerTests
             diagnostic =>
                 diagnostic.Severity ==
                     Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+    }
+
+    private static void AssertCompilableCSharp(
+    string sourceCode)
+    {
+        var syntaxTree =
+            CSharpSyntaxTree.ParseText(
+                sourceCode,
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
+
+        var trustedPlatformAssemblies =
+            AppContext.GetData(
+                "TRUSTED_PLATFORM_ASSEMBLIES") as string;
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(
+                trustedPlatformAssemblies));
+
+        var references =
+            trustedPlatformAssemblies!
+                .Split(
+                    Path.PathSeparator,
+                    StringSplitOptions.RemoveEmptyEntries |
+                    StringSplitOptions.TrimEntries)
+                .Distinct(
+                    StringComparer.OrdinalIgnoreCase)
+                .Select(path =>
+                    MetadataReference.CreateFromFile(
+                        path))
+                .ToArray();
+
+        var compilation =
+            CSharpCompilation.Create(
+                assemblyName:
+                    $"MaskedCode.CompilationTest.{Guid.NewGuid():N}",
+                syntaxTrees:
+                    new[]
+                    {
+                    syntaxTree
+                    },
+                references:
+                    references,
+                options:
+                    new CSharpCompilationOptions(
+                        OutputKind.DynamicallyLinkedLibrary));
+
+        var errors =
+            compilation
+                .GetDiagnostics()
+                .Where(diagnostic =>
+                    diagnostic.Severity ==
+                        DiagnosticSeverity.Error)
+                .ToArray();
+
+        Assert.True(
+            errors.Length == 0,
+            string.Join(
+                Environment.NewLine,
+                errors.Select(
+                    diagnostic =>
+                        diagnostic.ToString())));
     }
 
     private static int CountOccurrences(string source, string value)
@@ -2925,4 +2989,159 @@ public sealed class CSharpCodeMaskerTests
             sourceCode,
             restoredCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithNameOfExpression_ShouldPreserveOperatorAndMaskOperand(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class CustomerService
+        {
+            public CustomerService(
+                string customerNumber)
+            {
+                ArgumentNullException.ThrowIfNull(
+                    customerNumber);
+
+                CustomerNumber =
+                    customerNumber;
+            }
+
+            public string CustomerNumber
+            {
+                get;
+            }
+
+            public string GetParameterName(
+                string customerNumber)
+            {
+                return nameof(customerNumber);
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        Assert.Contains(
+            "nameof(",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            "nameof(customerNumber)",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.DoesNotContain(
+            result.Mappings,
+            mapping =>
+                mapping.Kind ==
+                    MaskingValueKind.Identifier &&
+                mapping.OriginalValue ==
+                    "nameof");
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithShortAttributeName_ShouldPreserveAttributeSuffixRelationship(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using System;
+
+        [AttributeUsage(
+            AttributeTargets.Class |
+            AttributeTargets.Method)]
+        public sealed class CustomerAuditAttribute : Attribute
+        {
+            public CustomerAuditAttribute(
+                string operationName)
+            {
+                OperationName =
+                    operationName;
+            }
+
+            public string OperationName
+            {
+                get;
+            }
+        }
+
+        [CustomerAudit("Customer operation")]
+        public sealed class CustomerService
+        {
+            [CustomerAudit("Get customer")]
+            public string GetCustomer()
+            {
+                return "Customer";
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var fullNameMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "CustomerAuditAttribute"));
+
+        var shortNameMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "CustomerAudit"));
+
+        Assert.Equal(
+            shortNameMapping.MaskedValue +
+            "Attribute",
+            fullNameMapping.MaskedValue);
+
+        Assert.Contains(
+            $"class {fullNameMapping.MaskedValue} : Attribute",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                $"[{shortNameMapping.MaskedValue}("));
+
+        Assert.DoesNotContain(
+            "CustomerAudit",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        AssertCompilableCSharp(
+            result.MaskedCode);
+    }
+
+
 }

@@ -332,6 +332,70 @@ internal sealed class CSharpCodeMasker
         return mappings;
     }
 
+    private static string CreateUniqueMaskedAttributeRoot(
+    string shortAttributeName,
+    int ordinal,
+    string sessionId,
+    MaskingMode mode,
+    ISet<string> usedMaskedIdentifiers,
+    ISet<string> originalIdentifiers)
+    {
+        const string attributeSuffix =
+            "Attribute";
+
+        for (var attempt = 0;
+             attempt < MaximumCandidateAttemptCount;
+             attempt++)
+        {
+            var candidateRoot =
+                mode switch
+                {
+                    MaskingMode.MaximumPrivacy =>
+                        CreateMaximumPrivacyIdentifier(
+                            shortAttributeName,
+                            sessionId,
+                            ordinal + attempt),
+
+                    MaskingMode.FormatPreserving =>
+                        CreateFormatPreservingIdentifier(
+                            shortAttributeName),
+
+                    _ => throw new ArgumentOutOfRangeException(
+                        nameof(mode),
+                        mode,
+                        "Desteklenmeyen maskeleme modu.")
+                };
+
+            var candidateFullName =
+                candidateRoot +
+                attributeSuffix;
+
+            if (string.Equals(
+                    candidateRoot,
+                    shortAttributeName,
+                    StringComparison.Ordinal) ||
+                originalIdentifiers.Contains(
+                    candidateRoot) ||
+                originalIdentifiers.Contains(
+                    candidateFullName) ||
+                usedMaskedIdentifiers.Contains(
+                    candidateRoot) ||
+                usedMaskedIdentifiers.Contains(
+                    candidateFullName) ||
+                IsCSharpKeyword(
+                    candidateRoot))
+            {
+                continue;
+            }
+
+            return candidateRoot;
+        }
+
+        throw new InvalidOperationException(
+            $"'{shortAttributeName}' C# attribute adı için benzersiz " +
+            "bir maskeleme değeri üretilemedi.");
+    }
+
     private static string CreateUniqueMaskedIdentifier(
         string identifier,
         int ordinal,
@@ -729,9 +793,22 @@ internal sealed class CSharpCodeMasker
             }
 
             if (isImplicitlyTypedVariableKeyword ||
-                shouldPreserveFrameworkSymbol)
+    IsNameOfOperator(
+        token) ||
+    shouldPreserveFrameworkSymbol)
             {
                 return visitedToken;
+            }
+
+            if (_frameworkSymbolClassifier.TryGetSourceAttributeIdentifier(
+                    token,
+                    out var attributeTypeName,
+                    out var usesShortAttributeName))
+            {
+                return MaskAttributeIdentifier(
+                    visitedToken,
+                    attributeTypeName,
+                    usesShortAttributeName);
             }
 
             var originalIdentifier =
@@ -758,6 +835,99 @@ internal sealed class CSharpCodeMasker
                     maskedIdentifier);
             }
 
+            return CreateIdentifierToken(visitedToken,maskedIdentifier);
+        }
+
+        private SyntaxToken MaskAttributeIdentifier(
+    SyntaxToken token,
+    string attributeTypeName,
+    bool usesShortName)
+        {
+            const string attributeSuffix =
+                "Attribute";
+
+            var shortAttributeName =
+                attributeTypeName[..^attributeSuffix.Length];
+
+            if (!_mappings.TryGetValue(
+                    shortAttributeName,
+                    out var maskedRoot))
+            {
+                if (_mappings.TryGetValue(
+                        attributeTypeName,
+                        out var maskedFullName) &&
+                    maskedFullName.EndsWith(
+                        attributeSuffix,
+                        StringComparison.Ordinal))
+                {
+                    maskedRoot =
+                        maskedFullName[..^attributeSuffix.Length];
+                }
+                else
+                {
+                    maskedRoot =
+                        CreateUniqueMaskedAttributeRoot(
+                            shortAttributeName,
+                            _mappings.Count + 1,
+                            _sessionId,
+                            _mode,
+                            _usedMaskedIdentifiers,
+                            _originalIdentifiers);
+                }
+
+                AddAttributeMappingIfMissing(
+                    shortAttributeName,
+                    maskedRoot);
+            }
+
+            var maskedAttributeTypeName =
+                maskedRoot +
+                attributeSuffix;
+
+            AddAttributeMappingIfMissing(
+                attributeTypeName,
+                maskedAttributeTypeName);
+
+            var maskedIdentifier =
+                usesShortName
+                    ? maskedRoot
+                    : maskedAttributeTypeName;
+
+            return CreateIdentifierToken(
+                token,
+                maskedIdentifier);
+        }
+
+        private void AddAttributeMappingIfMissing(
+            string originalIdentifier,
+            string maskedIdentifier)
+        {
+            if (_mappings.ContainsKey(
+                    originalIdentifier))
+            {
+                return;
+            }
+
+            if (_usedMaskedIdentifiers.Contains(
+                    maskedIdentifier))
+            {
+                throw new InvalidOperationException(
+                    $"'{originalIdentifier}' C# attribute adı için üretilen " +
+                    "maskeleme değeri başka bir identifier tarafından kullanılıyor.");
+            }
+
+            _mappings.Add(
+                originalIdentifier,
+                maskedIdentifier);
+
+            _usedMaskedIdentifiers.Add(
+                maskedIdentifier);
+        }
+
+        private static SyntaxToken CreateIdentifierToken(
+            SyntaxToken token,
+            string maskedIdentifier)
+        {
             var maskedValueText =
                 maskedIdentifier.StartsWith(
                     '@')
@@ -765,11 +935,33 @@ internal sealed class CSharpCodeMasker
                     : maskedIdentifier;
 
             return SyntaxFactory.Identifier(
-                visitedToken.LeadingTrivia,
+                token.LeadingTrivia,
                 SyntaxKind.IdentifierToken,
                 maskedIdentifier,
                 maskedValueText,
-                visitedToken.TrailingTrivia);
+                token.TrailingTrivia);
+        }
+
+        private static bool IsNameOfOperator(
+    SyntaxToken token)
+        {
+            if (!string.Equals(
+                    token.Text,
+                    "nameof",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (token.Parent is not IdentifierNameSyntax identifierName)
+            {
+                return false;
+            }
+
+            return identifierName.Parent is InvocationExpressionSyntax invocation &&
+                   ReferenceEquals(
+                       invocation.Expression,
+                       identifierName);
         }
 
         private static bool IsImplicitlyTypedVariableKeyword(SyntaxToken token)

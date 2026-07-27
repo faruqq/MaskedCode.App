@@ -99,6 +99,72 @@ internal sealed class CSharpFrameworkSymbolClassifier
                    symbol);
     }
 
+    public bool TryGetSourceAttributeIdentifier(
+    SyntaxToken token,
+    out string attributeTypeName,
+    out bool usesShortName)
+    {
+        attributeTypeName =
+            string.Empty;
+
+        usesShortName =
+            false;
+
+        if (!token.IsKind(
+                SyntaxKind.IdentifierToken))
+        {
+            return false;
+        }
+
+        var attributeType =
+            ResolveSourceAttributeType(
+                token);
+
+        if (attributeType is null)
+        {
+            return false;
+        }
+
+        const string attributeSuffix =
+            "Attribute";
+
+        if (!attributeType.Name.EndsWith(
+                attributeSuffix,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var shortName =
+            attributeType.Name[..^attributeSuffix.Length];
+
+        var tokenName =
+            token.ValueText;
+
+        if (!string.Equals(
+                tokenName,
+                attributeType.Name,
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                tokenName,
+                shortName,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        attributeTypeName =
+            attributeType.Name;
+
+        usesShortName =
+            string.Equals(
+                tokenName,
+                shortName,
+                StringComparison.Ordinal);
+
+        return true;
+    }
+
     private bool IsSourceDeclaration(SyntaxToken token)
     {
         var identifierValue =
@@ -118,6 +184,86 @@ internal sealed class CSharpFrameworkSymbolClassifier
             if (string.Equals(
                     declaredSymbol.Name,
                     identifierValue,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private INamedTypeSymbol? ResolveSourceAttributeType(
+    SyntaxToken token)
+    {
+        if (token.Parent is TypeDeclarationSyntax typeDeclaration &&
+            typeDeclaration.Identifier == token)
+        {
+            var declaredType =
+                _semanticModel.GetDeclaredSymbol(
+                    typeDeclaration);
+
+            return IsSourceAttributeType(
+                    declaredType)
+                ? declaredType
+                : null;
+        }
+
+        var attributeSyntax =
+            token
+                .Parent?
+                .AncestorsAndSelf()
+                .OfType<AttributeSyntax>()
+                .FirstOrDefault();
+
+        if (attributeSyntax is null ||
+            !attributeSyntax.Name
+                .DescendantTokens()
+                .Contains(
+                    token))
+        {
+            return null;
+        }
+
+        var symbolInfo =
+            _semanticModel.GetSymbolInfo(
+                attributeSyntax);
+
+        var attributeConstructor =
+            symbolInfo.Symbol as IMethodSymbol ??
+            symbolInfo
+                .CandidateSymbols
+                .OfType<IMethodSymbol>()
+                .FirstOrDefault();
+
+        var attributeType =
+            attributeConstructor?
+                .ContainingType;
+
+        return IsSourceAttributeType(
+                attributeType)
+            ? attributeType
+            : null;
+    }
+
+    private bool IsSourceAttributeType(
+        INamedTypeSymbol? typeSymbol)
+    {
+        if (typeSymbol is null ||
+            !SymbolEqualityComparer.Default.Equals(
+                typeSymbol.ContainingAssembly,
+                _sourceAssembly))
+        {
+            return false;
+        }
+
+        for (var currentType = typeSymbol;
+             currentType is not null;
+             currentType = currentType.BaseType)
+        {
+            if (string.Equals(
+                    currentType.ToDisplayString(),
+                    "System.Attribute",
                     StringComparison.Ordinal))
             {
                 return true;
