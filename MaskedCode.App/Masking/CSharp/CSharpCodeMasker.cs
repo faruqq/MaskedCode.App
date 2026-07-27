@@ -49,10 +49,6 @@ internal sealed class CSharpCodeMasker
             CollectOriginalLiterals(
                 root);
 
-        var originalNumericLiterals =
-            CollectOriginalNumericLiterals(
-                root);
-
         var identifierMappings =
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
@@ -99,11 +95,10 @@ internal sealed class CSharpCodeMasker
                 originalLiterals);
 
         var numericLiteralMasker =
-            new CSharpNumericLiteralMasker(
-                mode,
-                numericLiteralMappings,
-                usedMaskedNumericLiterals,
-                originalNumericLiterals);
+             new CSharpNumericLiteralMasker(
+                 mode,
+                 numericLiteralMappings,
+                 usedMaskedNumericLiterals);
 
         var commentMasker =
             new CSharpCommentMasker(
@@ -260,20 +255,6 @@ internal sealed class CSharpCodeMasker
                     SyntaxKind.CharacterLiteralToken) ||
                 token.IsKind(
                     SyntaxKind.InterpolatedStringTextToken))
-            .Select(token =>
-                token.Text)
-            .ToHashSet(
-                StringComparer.Ordinal);
-    }
-
-    private static HashSet<string> CollectOriginalNumericLiterals(SyntaxNode root)
-    {
-        return root
-            .DescendantTokens(
-                descendIntoTrivia: true)
-            .Where(token =>
-                token.IsKind(
-                    SyntaxKind.NumericLiteralToken))
             .Select(token =>
                 token.Text)
             .ToHashSet(

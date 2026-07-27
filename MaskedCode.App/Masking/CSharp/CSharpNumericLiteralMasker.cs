@@ -12,14 +12,15 @@ internal sealed class CSharpNumericLiteralMasker
     private readonly MaskingMode _mode;
     private readonly IDictionary<string, string> _mappings;
     private readonly ISet<string> _usedMaskedValues;
-    private readonly ISet<string> _originalValues;
 
-    public CSharpNumericLiteralMasker(MaskingMode mode, IDictionary<string, string> mappings, ISet<string> usedMaskedValues, ISet<string> originalValues)
+    public CSharpNumericLiteralMasker(
+    MaskingMode mode,
+    IDictionary<string, string> mappings,
+    ISet<string> usedMaskedValues)
     {
         _mode = mode;
         _mappings = mappings;
         _usedMaskedValues = usedMaskedValues;
-        _originalValues = originalValues;
     }
 
     public SyntaxToken MaskToken(SyntaxToken token)
@@ -77,13 +78,11 @@ internal sealed class CSharpNumericLiteralMasker
                     token.Text);
 
             if (string.Equals(
-                    candidate,
-                    token.Text,
-                    StringComparison.Ordinal) ||
-                _originalValues.Contains(
-                    candidate) ||
-                _usedMaskedValues.Contains(
-                    candidate))
+                candidate,
+                token.Text,
+                StringComparison.Ordinal) ||
+            _usedMaskedValues.Contains(
+                candidate))
             {
                 continue;
             }

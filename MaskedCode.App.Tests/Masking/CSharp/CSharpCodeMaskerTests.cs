@@ -3143,5 +3143,70 @@ public sealed class CSharpCodeMaskerTests
             result.MaskedCode);
     }
 
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithManyDistinctSingleDigitLiterals_ShouldMaskAndRestoreAllValues(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        public sealed class SingleDigitService
+        {
+            public int Calculate(int value)
+            {
+                return value switch
+                {
+                    0 => 1,
+                    1 => 2,
+                    2 => 3,
+                    3 => 4,
+                    4 => 5,
+                    5 => 6,
+                    6 => 8,
+                    8 => 0,
+                    _ => 2
+                };
+            }
+        }
+        """;
 
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var numericMappings =
+            result.Mappings
+                .Where(mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.NumericLiteral)
+                .ToArray();
+
+        Assert.Equal(
+            8,
+            numericMappings.Length);
+
+        Assert.Equal(
+            numericMappings.Length,
+            numericMappings
+                .Select(mapping =>
+                    mapping.MaskedValue)
+                .Distinct(
+                    StringComparer.Ordinal)
+                .Count());
+
+        Assert.All(
+            numericMappings,
+            mapping =>
+                Assert.NotEqual(
+                    mapping.OriginalValue,
+                    mapping.MaskedValue));
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

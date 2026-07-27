@@ -513,9 +513,17 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MaskButton_Click(object sender, RoutedEventArgs e)
+    private async void MaskButton_Click(
+    object sender,
+    RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(SourceCodeTextBox.Text))
+        if (_isOperationRunning)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                SourceCodeTextBox.Text))
         {
             SetStatus(
                 "Maskelenecek kaynak kod bulunamadı.",
@@ -533,7 +541,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        MaskButton.IsEnabled = false;
+        var sourceCode =
+            SourceCodeTextBox.Text;
+
+        var selectedMode =
+            GetSelectedMaskingMode();
+
+        var selectedLanguage =
+            GetSelectedLanguage();
 
         PlayHeaderAnimation(
             HeaderAnimationEvent.MaskingStarted);
@@ -543,30 +558,27 @@ public partial class MainWindow : Window
             StatusTone.Loading,
             isRestore: false);
 
+        StartOperationLoader(
+            "Kod güvenli biçimde maskeleniyor...");
+
         try
         {
-            var selectedMode = GetSelectedMaskingMode();
+            // Loader katmanının işlem başlamadan önce ekrana çizilmesini sağlar.
+            await Task.Yield();
 
-            IMaskingResult result = GetSelectedLanguage() switch
-            {
-                "PL1" => new Pl1CodeMasker().Mask(
-                    SourceCodeTextBox.Text,
-                    selectedMode),
+            var result =
+                await Task.Run(
+                    () =>
+                        MaskCode(
+                            sourceCode,
+                            selectedLanguage,
+                            selectedMode));
 
-                "EGL" => new EglCodeMasker().Mask(
-                    SourceCodeTextBox.Text,
-                    selectedMode),
+            _lastMaskingResult =
+                result;
 
-                "CSHARP" => new CSharpCodeMasker().Mask(
-                    SourceCodeTextBox.Text,
-                    selectedMode),
-
-                _ => throw new NotSupportedException(
-                    "Seçilen kaynak dili için maskeleme henüz desteklenmiyor.")
-            };
-
-            _lastMaskingResult = result;
-            MaskedCodeTextBox.Text = result.MaskedCode;
+            MaskedCodeTextBox.Text =
+                result.MaskedCode;
 
             MaskModeSummaryTextBlock.Text =
                 GetMaskingModeDisplayName(
@@ -593,7 +605,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            UpdateMaskButton();
+            StopOperationLoader();
         }
     }
 
@@ -1242,9 +1254,15 @@ public partial class MainWindow : Window
         UpdateUnmaskButton();
     }
 
-    private async void UnmaskButton_Click(object sender, RoutedEventArgs e)
+    private async void UnmaskButton_Click(object sender,RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(MaskedInputTextBox.Text))
+        if (_isOperationRunning)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                MaskedInputTextBox.Text))
         {
             SetStatus(
                 "Geri açılacak maskelenmiş kod bulunamadı.",
@@ -1253,7 +1271,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_selectedVaultFilePath))
+        if (string.IsNullOrWhiteSpace(
+                _selectedVaultFilePath))
         {
             SetStatus(
                 "Şifreli eşleme kasası seçilmedi.",
@@ -1266,8 +1285,9 @@ public partial class MainWindow : Window
 
         try
         {
-            password = await ResolvePasswordAsync(
-                isRestorePassword: true);
+            password =
+                await ResolvePasswordAsync(
+                    isRestorePassword: true);
         }
         catch (Exception exception)
         {
@@ -1279,9 +1299,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        var maskedCode = MaskedInputTextBox.Text;
+        var maskedCode =
+            MaskedInputTextBox.Text;
 
-        UnmaskButton.IsEnabled = false;
+        var vaultFilePath =
+            _selectedVaultFilePath;
+
         RestoredCodeTextBox.Clear();
 
         SetStatus(
@@ -1289,31 +1312,40 @@ public partial class MainWindow : Window
             StatusTone.Loading,
             isRestore: true);
 
+        StartOperationLoader(
+            "Kasa doğrulanıyor ve kod geri açılıyor...");
+
         try
         {
+            // Loader katmanının işlem başlamadan önce ekrana çizilmesini sağlar.
+            await Task.Yield();
+
             var encryptedVault =
                 await ReadVaultFileSafelyAsync(
-                    _selectedVaultFilePath);
+                    vaultFilePath);
 
-            var unmaskingResult = await Task.Run(
-                () =>
-                {
-                    var vault =
-                        new EncryptedMappingVault();
+            var unmaskingResult =
+                await Task.Run(
+                    () =>
+                    {
+                        var vault =
+                            new EncryptedMappingVault();
 
-                    var vaultContent = vault.Decrypt(
-                        encryptedVault,
-                        password,
-                        maskedCode);
+                        var vaultContent =
+                            vault.Decrypt(
+                                encryptedVault,
+                                password,
+                                maskedCode);
 
-                    var restoredCode = UnmaskCode(
-                        maskedCode,
-                        vaultContent);
+                        var restoredCode =
+                            UnmaskCode(
+                                maskedCode,
+                                vaultContent);
 
-                    return (
-                        RestoredCode: restoredCode,
-                        vaultContent.SourceLanguage);
-                });
+                        return (
+                            RestoredCode: restoredCode,
+                            vaultContent.SourceLanguage);
+                    });
 
             RestoredCodeTextBox.Text =
                 unmaskingResult.RestoredCode;
@@ -1321,24 +1353,32 @@ public partial class MainWindow : Window
             _restoredSourceLanguage =
                 unmaskingResult.SourceLanguage;
 
-            CopyRestoredButton.IsEnabled = true;
-            SaveRestoredFileButton.IsEnabled = true;
+            CopyRestoredButton.IsEnabled =
+                true;
 
-            RestorePasswordSummaryIcon.Text = "✓";
+            SaveRestoredFileButton.IsEnabled =
+                true;
+
+            RestorePasswordSummaryIcon.Text =
+                "✓";
+
             RestorePasswordSummaryIcon.Foreground =
-                FindBrush("SuccessBrush");
+                FindBrush(
+                    "SuccessBrush");
 
             RestorePasswordSummaryTextBlock.Text =
                 "Parola doğrulandı";
 
             RestorePasswordSummaryTextBlock.Foreground =
-                FindBrush("TextPrimaryBrush");
+                FindBrush(
+                    "TextPrimaryBrush");
 
             RestorePasswordValidationTextBlock.Text =
                 "Parola doğrulandı ve kasa açıldı.";
 
             RestorePasswordValidationTextBlock.Foreground =
-                FindBrush("SuccessBrush");
+                FindBrush(
+                    "SuccessBrush");
 
             CloseSettingsDrawer();
 
@@ -1369,7 +1409,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            UpdateUnmaskButton();
+            StopOperationLoader();
         }
     }
 
@@ -1988,6 +2028,32 @@ public partial class MainWindow : Window
         return $"{fileName}.restored{restoredExtension}";
     }
 
+    private static IMaskingResult MaskCode(
+    string sourceCode,
+    string selectedLanguage,
+    MaskingMode maskingMode)
+    {
+        return selectedLanguage switch
+        {
+            "PL1" =>
+                new Pl1CodeMasker().Mask(
+                    sourceCode,
+                    maskingMode),
+
+            "EGL" =>
+                new EglCodeMasker().Mask(
+                    sourceCode,
+                    maskingMode),
+
+            "CSHARP" =>
+                new CSharpCodeMasker().Mask(
+                    sourceCode,
+                    maskingMode),
+
+            _ => throw new NotSupportedException(
+                "Seçilen kaynak dili için maskeleme henüz desteklenmiyor.")
+        };
+    }
     private static string UnmaskCode(string maskedCode, MappingVaultContent vaultContent)
     {
         return vaultContent.SourceLanguage switch
@@ -2987,6 +3053,15 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         CancelHeaderFrameSequence();
+
+        _operationLoaderCancellationTokenSource?
+            .Cancel();
+
+        _operationLoaderCancellationTokenSource?
+            .Dispose();
+
+        _operationLoaderCancellationTokenSource =
+            null;
 
         base.OnClosed(e);
     }
