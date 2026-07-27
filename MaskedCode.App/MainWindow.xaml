@@ -31,8 +31,7 @@
                    FontSize="14"
                    Text="{Binding}"
                    TextAlignment="Right"
-                   Cursor="Hand"
-                   MouseLeftButtonDown="LineNumber_MouseLeftButtonDown" />
+                   Cursor="Hand"/>
         </DataTemplate>
     </Window.Resources>
 
@@ -422,7 +421,6 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
@@ -732,7 +730,6 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsInactiveSelectionHighlightEnabled="True"
              IsReadOnly="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
@@ -1294,7 +1291,6 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
@@ -1592,7 +1588,6 @@
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsInactiveSelectionHighlightEnabled="True"
              IsReadOnly="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
