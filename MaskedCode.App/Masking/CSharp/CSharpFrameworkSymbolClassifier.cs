@@ -122,14 +122,6 @@ internal sealed class CSharpFrameworkSymbolClassifier
             {
                 return true;
             }
-
-            if (node is NamespaceDeclarationSyntax or
-                FileScopedNamespaceDeclarationSyntax)
-            {
-                return SymbolEqualityComparer.Default.Equals(
-                    declaredSymbol.ContainingAssembly,
-                    _sourceAssembly);
-            }
         }
 
         return false;
@@ -183,10 +175,9 @@ internal sealed class CSharpFrameworkSymbolClassifier
 
     private bool IsFrameworkSymbol(ISymbol symbol)
     {
-        if (symbol is IAliasSymbol aliasSymbol)
+        if (symbol is IAliasSymbol)
         {
-            return IsFrameworkSymbol(
-                aliasSymbol.Target);
+            return false;
         }
 
         if (symbol is INamespaceSymbol namespaceSymbol)

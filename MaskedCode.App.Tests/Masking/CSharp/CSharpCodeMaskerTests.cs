@@ -2569,4 +2569,314 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithFrameworkSymbols_ShouldPreserveFrameworkSymbolsAndMaskSourceIdentifiers(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using System;
+        using System.Collections.Generic;
+        using System.Globalization;
+        using System.Linq;
+        using System.Threading.Tasks;
+
+        namespace Company.Customer;
+
+        public sealed class CustomerService
+        {
+            public async Task<List<string>> GetCustomerNamesAsync(
+                IEnumerable<string> customerNames)
+            {
+                var normalizedNames =
+                    customerNames
+                        .Select(customerName =>
+                            customerName.ToUpper(
+                                CultureInfo.InvariantCulture))
+                        .ToList();
+
+                Console.WriteLine(
+                    Guid.NewGuid());
+
+                await Task.CompletedTask;
+
+                return normalizedNames;
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var sourceIdentifiers =
+            new[]
+            {
+            "Company",
+            "Customer",
+            "CustomerService",
+            "GetCustomerNamesAsync",
+            "customerNames",
+            "normalizedNames",
+            "customerName"
+            };
+
+        foreach (var identifier in sourceIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.DoesNotContain(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        var frameworkIdentifiers =
+            new[]
+            {
+            "System",
+            "Collections",
+            "Generic",
+            "Globalization",
+            "Linq",
+            "Threading",
+            "Tasks",
+            "Task",
+            "List",
+            "IEnumerable",
+            "Select",
+            "ToUpper",
+            "CultureInfo",
+            "InvariantCulture",
+            "ToList",
+            "Console",
+            "WriteLine",
+            "Guid",
+            "NewGuid",
+            "CompletedTask"
+            };
+
+        foreach (var identifier in frameworkIdentifiers)
+        {
+            Assert.DoesNotContain(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.Contains(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithFrameworkAlias_ShouldMaskAliasAndPreserveFrameworkTarget(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using Runtime = System;
+
+        public sealed class CustomerService
+        {
+            public void WriteCustomer()
+            {
+                Runtime.Console.WriteLine(
+                    "Internal customer");
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var aliasMapping =
+            Assert.Single(
+                result.Mappings.Where(
+                    mapping =>
+                        mapping.Kind ==
+                            MaskingValueKind.Identifier &&
+                        mapping.OriginalValue ==
+                            "Runtime"));
+
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                result.MaskedCode,
+                aliasMapping.MaskedValue));
+
+        Assert.DoesNotContain(
+            "Runtime",
+            result.MaskedCode,
+            StringComparison.Ordinal);
+
+        var preservedFrameworkIdentifiers =
+            new[]
+            {
+            "System",
+            "Console",
+            "WriteLine"
+            };
+
+        foreach (var identifier in preservedFrameworkIdentifiers)
+        {
+            Assert.DoesNotContain(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.Contains(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithUnresolvedSymbols_ShouldMaskSymbolsForSafeFallback(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using ExternalCompany.Framework;
+
+        public sealed class CustomerService
+        {
+            private ExternalClient client;
+
+            public ExternalResult Execute(
+                ExternalRequest request)
+            {
+                return client.Send(
+                    request);
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var unresolvedIdentifiers =
+            new[]
+            {
+            "ExternalCompany",
+            "Framework",
+            "ExternalClient",
+            "ExternalResult",
+            "ExternalRequest",
+            "Send"
+            };
+
+        foreach (var identifier in unresolvedIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.DoesNotContain(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void MaskAndUnmask_WithFrameworkSymbolsAndAlias_ShouldRestoreExactSource(MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using Runtime = System;
+        using System.Collections.Generic;
+        using System.Threading.Tasks;
+
+        namespace Company.Customer;
+
+        public sealed class CustomerService
+        {
+            public async Task<List<string>> GetCustomersAsync()
+            {
+                Runtime.Console.WriteLine(
+                    Runtime.Guid.NewGuid());
+
+                await Task.CompletedTask;
+
+                return new List<string>();
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var maskingResult =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var vaultContent =
+            new MappingVaultContent(
+                DateTimeOffset.UtcNow,
+                maskingResult.Mode,
+                maskingResult.Mappings,
+                SourceLanguage.CSharp);
+
+        var unmasker =
+            new CSharpCodeUnmasker();
+
+        var restoredCode =
+            unmasker.Unmask(
+                maskingResult.MaskedCode,
+                vaultContent);
+
+        Assert.NotEqual(
+            sourceCode,
+            maskingResult.MaskedCode);
+
+        Assert.Equal(
+            sourceCode,
+            restoredCode);
+    }
 }
