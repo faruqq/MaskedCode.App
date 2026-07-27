@@ -370,6 +370,7 @@
                        FontFamily="Cascadia Mono, Consolas"
                        FontSize="14"
                        LineHeight="19"
+                                                                       TextBlock.LineStackingStrategy="BlockLineHeight"
                        Text="1" />
                                                         </Canvas>
                                                     </Border>
@@ -682,6 +683,7 @@
                        FontFamily="Cascadia Mono, Consolas"
                        FontSize="14"
                        LineHeight="19"
+                                                                       TextBlock.LineStackingStrategy="BlockLineHeight"
                        Text="1" />
                                                         </Canvas>
                                                     </Border>
@@ -1242,6 +1244,7 @@
                        FontFamily="Cascadia Mono, Consolas"
                        FontSize="14"
                        LineHeight="19"
+                       TextBlock.LineStackingStrategy="BlockLineHeight"
                        Text="1" />
                                                         </Canvas>
                                                     </Border>
@@ -1540,6 +1543,7 @@
                        FontFamily="Cascadia Mono, Consolas"
                        FontSize="14"
                        LineHeight="19"
+                       TextBlock.LineStackingStrategy="BlockLineHeight"
                        Text="1" />
                                                         </Canvas>
                                                     </Border>

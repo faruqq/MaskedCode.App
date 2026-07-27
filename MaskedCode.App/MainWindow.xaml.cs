@@ -22,6 +22,7 @@ public partial class MainWindow : Window
 {
     private const long MaximumVaultFileSizeInBytes = 64L * 1024L * 1024L;
     private const int MinimumPasswordLength = 12;
+    private const double CodeEditorLineHeight = 19;
 
     private static readonly Regex SyntaxTokenRegex = new(
         @"(?<comment>/\*[\s\S]*?\*/|//[^\r\n]*|--[^\r\n]*)" +
@@ -2061,8 +2062,8 @@ public partial class MainWindow : Window
     }
 
     private void LineNumbersBorder_MouseLeftButtonDown(
-    object sender,
-    MouseButtonEventArgs e)
+     object sender,
+     MouseButtonEventArgs e)
     {
         if (sender is not Border lineNumbersBorder ||
             e.ChangedButton != MouseButton.Left)
@@ -2080,29 +2081,71 @@ public partial class MainWindow : Window
             return;
         }
 
+        /*
+         * Neden var?
+         * Satır numarası alanındaki tıklamayı doğrudan editörün
+         * sabit satır geometrisine dönüştürür.
+         *
+         * Ne çözüyor?
+         * GetCharacterIndexFromPoint kullanıldığında boş satırlarda
+         * en yakın karakterin bulunması nedeniyle oluşan kademeli
+         * satır kaymasını engeller.
+         *
+         * Hangi örneği destekliyor?
+         * Dördüncü satır numarasına tıklandığında doğrudan
+         * "using System;" satırının seçilmesini sağlar.
+         *
+         * Nerede kullanılır?
+         * Kaynak, maskelenmiş, geri açma girişi ve geri açılmış
+         * kod editörlerinin satır numarası alanlarında kullanılır.
+         *
+         * Gelecekte neye temel olur?
+         * Satır bazlı karşılaştırma ve eşlenik satır seçimi
+         * davranışlarının güvenilir biçimde genişletilmesine
+         * temel olur.
+         */
         var mousePosition =
             e.GetPosition(
-                sourceTextBox);
+                lineNumbersBorder);
 
-        var characterIndex =
-            sourceTextBox.GetCharacterIndexFromPoint(
-                new Point(
-                    sourceTextBox.Padding.Left + 1,
-                    mousePosition.Y),
-                true);
+        var documentPositionY =
+            mousePosition.Y +
+            sourceTextBox.VerticalOffset -
+            sourceTextBox.Padding.Top;
 
-        if (characterIndex < 0)
+        if (documentPositionY < 0)
         {
             return;
         }
 
         var lineIndex =
-            sourceTextBox.GetLineIndexFromCharacterIndex(
-                characterIndex);
+            (int)Math.Floor(
+                documentPositionY /
+                CodeEditorLineHeight);
 
-        if (lineIndex < 0)
+        if (lineIndex < 0 ||
+            lineIndex >= sourceTextBox.LineCount)
         {
             return;
+        }
+
+        var linkedTextBox =
+            GetLinkedEditor(
+                sourceTextBox);
+
+        /*
+         * Önce karşı editör odaklanıp seçilir.
+         * Ardından kaynak editör yeniden odaklanır.
+         *
+         * Böylece kaynak seçim aktif, karşı editördeki seçim ise
+         * görünür bir pasif seçim olarak kalır.
+         */
+        if (linkedTextBox is not null)
+        {
+            SelectEditorLineText(
+                linkedTextBox,
+                lineIndex,
+                focusEditor: true);
         }
 
         SelectEditorLineText(
@@ -2110,25 +2153,13 @@ public partial class MainWindow : Window
             lineIndex,
             focusEditor: true);
 
-        var linkedTextBox =
-            GetLinkedEditor(
-                sourceTextBox);
-
-        if (linkedTextBox is not null)
-        {
-            SelectEditorLineText(
-                linkedTextBox,
-                lineIndex,
-                focusEditor: false);
-        }
-
         e.Handled = true;
     }
 
     private static void SelectEditorLineText(
-     TextBox textBox,
-     int lineIndex,
-     bool focusEditor)
+    TextBox textBox,
+    int lineIndex,
+    bool focusEditor)
     {
         if (lineIndex < 0 ||
             lineIndex >= textBox.LineCount)
@@ -2148,6 +2179,37 @@ public partial class MainWindow : Window
         var lineTextLength =
             textBox.GetLineLength(
                 lineIndex);
+
+        /*
+         * Satır sonundaki CR ve LF karakterleri gerçek metin
+         * seçimine dahil edilmez. Böylece yalnızca kullanıcı
+         * fareyle sürükleyerek seçmiş gibi satırdaki kod seçilir.
+         */
+        while (lineTextLength > 0)
+        {
+            var lastCharacterIndex =
+                lineStart +
+                lineTextLength -
+                1;
+
+            if (lastCharacterIndex < 0 ||
+                lastCharacterIndex >= textBox.Text.Length)
+            {
+                lineTextLength--;
+                continue;
+            }
+
+            var lastCharacter =
+                textBox.Text[lastCharacterIndex];
+
+            if (lastCharacter != '\r' &&
+                lastCharacter != '\n')
+            {
+                break;
+            }
+
+            lineTextLength--;
+        }
 
         var verticalOffset =
             textBox.VerticalOffset;
