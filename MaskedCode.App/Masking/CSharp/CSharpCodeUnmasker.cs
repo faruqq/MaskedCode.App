@@ -170,13 +170,14 @@ public sealed class CSharpCodeUnmasker
                 SyntaxFactory.ParseToken(
                     mapping.OriginalValue);
 
-            if (restoredToken.Kind() !=
-                token.Kind())
+            if (!restoredToken.IsKind(token.Kind()))
             {
                 throw new InvalidDataException(
                     "Kasa içindeki C# eşlemesi beklenen token türünü üretmedi. " +
                     $"Tür: {token.Kind()}");
             }
+
+            
 
             _lookup.MarkAsUsed(
                 mapping.Index);

@@ -19,7 +19,8 @@ internal sealed class CSharpCodeMasker
 
     public CSharpMaskingResult Mask(string sourceCode, MaskingMode mode)
     {
-        ArgumentNullException.ThrowIfNull(sourceCode);
+        ArgumentNullException.ThrowIfNull(
+            sourceCode);
 
         ValidateMaskingMode(
             mode);
@@ -35,6 +36,10 @@ internal sealed class CSharpCodeMasker
 
         ValidateNoUnsafeTrivia(
             root);
+
+        var frameworkSymbolClassifier =
+            CSharpFrameworkSymbolClassifier.Create(
+                syntaxTree);
 
         var originalIdentifiers =
             CollectOriginalIdentifiers(
@@ -123,6 +128,7 @@ internal sealed class CSharpCodeMasker
                 numericLiteralMasker,
                 commentMasker,
                 directiveMasker,
+                frameworkSymbolClassifier,
                 sessionId,
                 mode);
 
@@ -492,17 +498,9 @@ internal sealed class CSharpCodeMasker
         private readonly CSharpDirectiveMasker _directiveMasker;
         private readonly string _sessionId;
         private readonly MaskingMode _mode;
+        private readonly CSharpFrameworkSymbolClassifier _frameworkSymbolClassifier;
 
-        public IdentifierMaskingRewriter(
-            IDictionary<string, string> mappings,
-            ISet<string> usedMaskedIdentifiers,
-            ISet<string> originalIdentifiers,
-            CSharpLiteralMasker literalMasker,
-            CSharpNumericLiteralMasker numericLiteralMasker,
-            CSharpCommentMasker commentMasker,
-            CSharpDirectiveMasker directiveMasker,
-            string sessionId,
-            MaskingMode mode)
+        public IdentifierMaskingRewriter(IDictionary<string, string> mappings, ISet<string> usedMaskedIdentifiers, ISet<string> originalIdentifiers, CSharpLiteralMasker literalMasker, CSharpNumericLiteralMasker numericLiteralMasker, CSharpCommentMasker commentMasker, CSharpDirectiveMasker directiveMasker, CSharpFrameworkSymbolClassifier frameworkSymbolClassifier, string sessionId, MaskingMode mode)
         {
             _mappings =
                 mappings;
@@ -524,6 +522,9 @@ internal sealed class CSharpCodeMasker
 
             _directiveMasker =
                 directiveMasker;
+
+            _frameworkSymbolClassifier =
+                frameworkSymbolClassifier;
 
             _sessionId =
                 sessionId;
@@ -685,11 +686,14 @@ internal sealed class CSharpCodeMasker
                 trivia);
         }
 
-        public override SyntaxToken VisitToken(
-    SyntaxToken token)
+        public override SyntaxToken VisitToken(SyntaxToken token)
         {
             var isImplicitlyTypedVariableKeyword =
                 IsImplicitlyTypedVariableKeyword(
+                    token);
+
+            var shouldPreserveFrameworkSymbol =
+                _frameworkSymbolClassifier.ShouldPreserve(
                     token);
 
             var visitedToken =
@@ -724,7 +728,8 @@ internal sealed class CSharpCodeMasker
                 return visitedToken;
             }
 
-            if (isImplicitlyTypedVariableKeyword)
+            if (isImplicitlyTypedVariableKeyword ||
+                shouldPreserveFrameworkSymbol)
             {
                 return visitedToken;
             }
