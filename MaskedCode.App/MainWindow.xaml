@@ -20,6 +20,22 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
+    <Window.Resources>
+        <DataTemplate x:Key="LineNumberItemTemplate">
+            <TextBlock Height="19"
+                   Padding="0"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Center"
+                   Foreground="{StaticResource TextMutedBrush}"
+                   FontFamily="Cascadia Mono, Consolas"
+                   FontSize="14"
+                   Text="{Binding}"
+                   TextAlignment="Right"
+                   Cursor="Hand"
+                   MouseLeftButtonDown="LineNumber_MouseLeftButtonDown" />
+        </DataTemplate>
+    </Window.Resources>
+
     <Border Background="{StaticResource WindowBrush}"
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="1">
@@ -356,23 +372,14 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <Border x:Name="SourceLineNumbersBorder"
-                                                            ClipToBounds="True"
-                                                            Background="Transparent"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="0,0,1,0"
-                                                            Cursor="Hand"
-                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
-                                                        <Canvas ClipToBounds="True">
-                                                            <TextBlock x:Name="SourceLineNumbersTextBlock"
-                       Canvas.Right="14"
-                       Padding="0,12,0,12"
-                       Foreground="{StaticResource TextMutedBrush}"
-                       FontFamily="Cascadia Mono, Consolas"
-                       FontSize="14"
-                       LineHeight="19"
-                                                                       TextBlock.LineStackingStrategy="BlockLineHeight"
-                       Text="1" />
-                                                        </Canvas>
+        ClipToBounds="True"
+        Background="Transparent"
+        BorderBrush="{StaticResource BorderBrush}"
+        BorderThickness="0,0,1,0">
+                                                        <ItemsControl x:Name="SourceLineNumbersItemsControl"
+                  Margin="0,12,14,12"
+                  HorizontalContentAlignment="Stretch"
+                  ItemTemplate="{StaticResource LineNumberItemTemplate}" />
                                                     </Border>
 
                                                     <Canvas Grid.Column="1"
@@ -673,8 +680,7 @@
                                                             Background="Transparent"
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="0,0,1,0"
-                                                            Cursor="Hand"
-                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
+                                                            Cursor="Hand">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="MaskedLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -1234,8 +1240,7 @@
                                                             Background="Transparent"
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="0,0,1,0"
-                                                            Cursor="Hand"
-                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
+                                                            Cursor="Hand">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="MaskedInputLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -1533,8 +1538,7 @@
                                                             Background="Transparent"
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="0,0,1,0"
-                                                            Cursor="Hand"
-                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
+                                                            Cursor="Hand">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="RestoredLineNumbersTextBlock"
                        Canvas.Right="14"

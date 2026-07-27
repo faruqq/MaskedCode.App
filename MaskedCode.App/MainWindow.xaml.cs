@@ -22,7 +22,6 @@ public partial class MainWindow : Window
 {
     private const long MaximumVaultFileSizeInBytes = 64L * 1024L * 1024L;
     private const int MinimumPasswordLength = 12;
-    private const double CodeEditorLineHeight = 19;
 
     private static readonly Regex SyntaxTokenRegex = new(
         @"(?<comment>/\*[\s\S]*?\*/|//[^\r\n]*|--[^\r\n]*)" +
@@ -91,10 +90,21 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        UpdateLineNumbers(SourceCodeTextBox, SourceLineNumbersTextBlock);
-        UpdateLineNumbers(MaskedCodeTextBox, MaskedLineNumbersTextBlock);
-        UpdateLineNumbers(MaskedInputTextBox, MaskedInputLineNumbersTextBlock);
-        UpdateLineNumbers(RestoredCodeTextBox, RestoredLineNumbersTextBlock);
+        UpdateLineNumbers(
+    SourceCodeTextBox,
+    SourceLineNumbersItemsControl);
+
+        UpdateLineNumbers(
+            MaskedCodeTextBox,
+            MaskedLineNumbersItemsControl);
+
+        UpdateLineNumbers(
+            MaskedInputTextBox,
+            MaskedInputLineNumbersItemsControl);
+
+        UpdateLineNumbers(
+            RestoredCodeTextBox,
+            RestoredLineNumbersItemsControl);
         UpdateSyntaxHighlighting(SourceCodeTextBox.Text, SourceSyntaxRichTextBox);
         UpdateSyntaxHighlighting(MaskedCodeTextBox.Text, MaskedSyntaxRichTextBox);
         UpdateSyntaxHighlighting(MaskedInputTextBox.Text, MaskedInputSyntaxRichTextBox);
@@ -1983,12 +1993,18 @@ public partial class MainWindow : Window
         };
     }
 
-    private static void UpdateLineNumbers(TextBox textBox, TextBlock lineNumbers)
+    private static void UpdateLineNumbers(TextBox textBox,ItemsControl lineNumbers)
     {
-        var lineCount = Math.Max(1, textBox.LineCount);
-        lineNumbers.Text = string.Join(
-            Environment.NewLine,
-            Enumerable.Range(1, lineCount));
+        var lineCount =
+            Math.Max(
+                1,
+                textBox.LineCount);
+
+        lineNumbers.ItemsSource =
+            Enumerable.Range(
+                    1,
+                    lineCount)
+                .ToArray();
     }
 
     private void CodeEditor_ScrollChanged(
@@ -2061,105 +2077,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void LineNumbersBorder_MouseLeftButtonDown(
-     object sender,
-     MouseButtonEventArgs e)
-    {
-        if (sender is not Border lineNumbersBorder ||
-            e.ChangedButton != MouseButton.Left)
-        {
-            return;
-        }
-
-        var sourceTextBox =
-            GetEditorFromLineNumbersBorder(
-                lineNumbersBorder);
-
-        if (sourceTextBox is null ||
-            sourceTextBox.LineCount == 0)
-        {
-            return;
-        }
-
-        /*
-         * Neden var?
-         * Satır numarası alanındaki tıklamayı doğrudan editörün
-         * sabit satır geometrisine dönüştürür.
-         *
-         * Ne çözüyor?
-         * GetCharacterIndexFromPoint kullanıldığında boş satırlarda
-         * en yakın karakterin bulunması nedeniyle oluşan kademeli
-         * satır kaymasını engeller.
-         *
-         * Hangi örneği destekliyor?
-         * Dördüncü satır numarasına tıklandığında doğrudan
-         * "using System;" satırının seçilmesini sağlar.
-         *
-         * Nerede kullanılır?
-         * Kaynak, maskelenmiş, geri açma girişi ve geri açılmış
-         * kod editörlerinin satır numarası alanlarında kullanılır.
-         *
-         * Gelecekte neye temel olur?
-         * Satır bazlı karşılaştırma ve eşlenik satır seçimi
-         * davranışlarının güvenilir biçimde genişletilmesine
-         * temel olur.
-         */
-        var mousePosition =
-            e.GetPosition(
-                lineNumbersBorder);
-
-        var documentPositionY =
-            mousePosition.Y +
-            sourceTextBox.VerticalOffset -
-            sourceTextBox.Padding.Top;
-
-        if (documentPositionY < 0)
-        {
-            return;
-        }
-
-        var lineIndex =
-            (int)Math.Floor(
-                documentPositionY /
-                CodeEditorLineHeight);
-
-        if (lineIndex < 0 ||
-            lineIndex >= sourceTextBox.LineCount)
-        {
-            return;
-        }
-
-        var linkedTextBox =
-            GetLinkedEditor(
-                sourceTextBox);
-
-        /*
-         * Önce karşı editör odaklanıp seçilir.
-         * Ardından kaynak editör yeniden odaklanır.
-         *
-         * Böylece kaynak seçim aktif, karşı editördeki seçim ise
-         * görünür bir pasif seçim olarak kalır.
-         */
-        if (linkedTextBox is not null)
-        {
-            SelectEditorLineText(
-                linkedTextBox,
-                lineIndex,
-                focusEditor: true);
-        }
-
-        SelectEditorLineText(
-            sourceTextBox,
-            lineIndex,
-            focusEditor: true);
-
-        e.Handled = true;
-    }
-
     private static void SelectEditorLineText(
-    TextBox textBox,
-    int lineIndex,
-    bool focusEditor)
+     TextBox textBox,
+     int lineIndex,
+     bool focusEditor)
     {
         if (lineIndex < 0 ||
             lineIndex >= textBox.LineCount)
@@ -2181,9 +2102,9 @@ public partial class MainWindow : Window
                 lineIndex);
 
         /*
-         * Satır sonundaki CR ve LF karakterleri gerçek metin
-         * seçimine dahil edilmez. Böylece yalnızca kullanıcı
-         * fareyle sürükleyerek seçmiş gibi satırdaki kod seçilir.
+         * GetLineLength bazı satırlarda CR ve LF karakterlerini
+         * uzunluğa dahil edebilir. Kullanıcının fareyle yalnızca
+         * satır metnini seçtiği davranışı korumak için bunlar çıkarılır.
          */
         while (lineTextLength > 0)
         {
@@ -2192,8 +2113,7 @@ public partial class MainWindow : Window
                 lineTextLength -
                 1;
 
-            if (lastCharacterIndex < 0 ||
-                lastCharacterIndex >= textBox.Text.Length)
+            if (lastCharacterIndex >= textBox.Text.Length)
             {
                 lineTextLength--;
                 continue;
@@ -2217,54 +2137,20 @@ public partial class MainWindow : Window
         var horizontalOffset =
             textBox.HorizontalOffset;
 
+        textBox.Select(
+            lineStart,
+            lineTextLength);
+
         if (focusEditor)
         {
             textBox.Focus();
         }
-
-        textBox.Select(
-            lineStart,
-            lineTextLength);
 
         textBox.ScrollToVerticalOffset(
             verticalOffset);
 
         textBox.ScrollToHorizontalOffset(
             horizontalOffset);
-    }
-
-    private TextBox? GetEditorFromLineNumbersBorder(
-    Border lineNumbersBorder)
-    {
-        if (ReferenceEquals(
-                lineNumbersBorder,
-                SourceLineNumbersBorder))
-        {
-            return SourceCodeTextBox;
-        }
-
-        if (ReferenceEquals(
-                lineNumbersBorder,
-                MaskedLineNumbersBorder))
-        {
-            return MaskedCodeTextBox;
-        }
-
-        if (ReferenceEquals(
-                lineNumbersBorder,
-                MaskedInputLineNumbersBorder))
-        {
-            return MaskedInputTextBox;
-        }
-
-        if (ReferenceEquals(
-                lineNumbersBorder,
-                RestoredLineNumbersBorder))
-        {
-            return RestoredCodeTextBox;
-        }
-
-        return null;
     }
 
     private TextBox? GetLinkedEditor(
@@ -2307,18 +2193,14 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private (
-        TextBlock? LineNumbers,
-        RichTextBox? SyntaxEditor)
-        GetEditorScrollParts(
-            TextBox textBox)
+    private (ItemsControl? LineNumbers,RichTextBox? SyntaxEditor)GetEditorScrollParts(TextBox textBox)
     {
         if (ReferenceEquals(
                 textBox,
                 SourceCodeTextBox))
         {
             return (
-                SourceLineNumbersTextBlock,
+                SourceLineNumbersItemsControl,
                 SourceSyntaxRichTextBox);
         }
 
@@ -2327,7 +2209,7 @@ public partial class MainWindow : Window
                 MaskedCodeTextBox))
         {
             return (
-                MaskedLineNumbersTextBlock,
+                MaskedLineNumbersItemsControl,
                 MaskedSyntaxRichTextBox);
         }
 
@@ -2336,7 +2218,7 @@ public partial class MainWindow : Window
                 MaskedInputTextBox))
         {
             return (
-                MaskedInputLineNumbersTextBlock,
+                MaskedInputLineNumbersItemsControl,
                 MaskedInputSyntaxRichTextBox);
         }
 
@@ -2345,13 +2227,149 @@ public partial class MainWindow : Window
                 RestoredCodeTextBox))
         {
             return (
-                RestoredLineNumbersTextBlock,
+                RestoredLineNumbersItemsControl,
                 RestoredSyntaxRichTextBox);
         }
 
         return (
             null,
             null);
+    }
+
+    /*
+ * Neden var?
+ * Tıklanan satır numarasını doğrudan ilgili öğenin
+ * DataContext değerinden alır.
+ *
+ * Ne çözüyor?
+ * Font, DPI, padding, boş satır ve scroll koordinatlarından
+ * kaynaklanan kademeli satır kaymasını tamamen ortadan kaldırır.
+ *
+ * Hangi örneği destekliyor?
+ * 100 numaralı öğeye tıklandığında hesaplama yapmadan
+ * doğrudan 100. kod satırını seçer.
+ *
+ * Nerede kullanılır?
+ * Dört kod editörünün satır numarası öğelerinde kullanılır.
+ *
+ * Gelecekte neye temel olur?
+ * Satır bazlı karşılaştırma ve eşlenik seçim davranışlarına
+ * güvenilir bir satır kimliği sağlar.
+ */
+    private void LineNumber_MouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (sender is not TextBlock lineNumberTextBlock ||
+            lineNumberTextBlock.DataContext is not int lineNumber ||
+            e.ChangedButton != MouseButton.Left)
+        {
+            return;
+        }
+
+        var lineNumbersItemsControl =
+            FindVisualParent<ItemsControl>(
+                lineNumberTextBlock);
+
+        if (lineNumbersItemsControl is null)
+        {
+            return;
+        }
+
+        var sourceTextBox =
+            GetEditorFromLineNumbers(
+                lineNumbersItemsControl);
+
+        if (sourceTextBox is null)
+        {
+            return;
+        }
+
+        var lineIndex =
+            lineNumber - 1;
+
+        if (lineIndex < 0 ||
+            lineIndex >= sourceTextBox.LineCount)
+        {
+            return;
+        }
+
+        var linkedTextBox =
+            GetLinkedEditor(
+                sourceTextBox);
+
+        if (linkedTextBox is not null &&
+            lineIndex < linkedTextBox.LineCount)
+        {
+            SelectEditorLineText(
+                linkedTextBox,
+                lineIndex,
+                focusEditor: false);
+        }
+
+        SelectEditorLineText(
+            sourceTextBox,
+            lineIndex,
+            focusEditor: true);
+
+        e.Handled = true;
+    }
+
+    private TextBox? GetEditorFromLineNumbers(
+        ItemsControl lineNumbers)
+    {
+        if (ReferenceEquals(
+                lineNumbers,
+                SourceLineNumbersItemsControl))
+        {
+            return SourceCodeTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbers,
+                MaskedLineNumbersItemsControl))
+        {
+            return MaskedCodeTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbers,
+                MaskedInputLineNumbersItemsControl))
+        {
+            return MaskedInputTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbers,
+                RestoredLineNumbersItemsControl))
+        {
+            return RestoredCodeTextBox;
+        }
+
+        return null;
+    }
+
+    private static TParent? FindVisualParent<TParent>(
+        DependencyObject child)
+        where TParent : DependencyObject
+    {
+        var current =
+            VisualTreeHelper.GetParent(
+                child);
+
+        while (current is not null)
+        {
+            if (current is TParent parent)
+            {
+                return parent;
+            }
+
+            current =
+                VisualTreeHelper.GetParent(
+                    current);
+        }
+
+        return null;
     }
 
     private void EditorScrollLinkToggleButton_Click(
