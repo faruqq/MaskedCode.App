@@ -79,6 +79,10 @@ public partial class MainWindow : Window
     private readonly PngFrameSequencePlayer _pngFrameSequencePlayer = new();
     private CancellationTokenSource? _headerFrameSequenceCancellationTokenSource;
 
+    private readonly OperationLoaderPlayer _operationLoaderPlayer = new();
+    private CancellationTokenSource? _operationLoaderCancellationTokenSource;
+    private bool _isOperationRunning;
+
     public MainWindow()
     {
         _headerAnimationProfile = HeaderAnimationProfileSelector.Select();
@@ -123,6 +127,20 @@ public partial class MainWindow : Window
         UpdateSyntaxHighlighting(
             RestoredCodeTextBox.Text,
             RestoredSyntaxRichTextBox);
+
+        UpdatePasswordSourceState();
+        UpdateMaskButton();
+        UpdateUnmaskButton();
+
+        SetStatus(
+            "Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz.",
+            StatusTone.Neutral,
+            isRestore: false);
+
+        SetStatus(
+            "Maskelenmiş dosya, kasa ve parola seçerek kodu geri açabilirsiniz.",
+            StatusTone.Neutral,
+            isRestore: true);
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -2205,14 +2223,16 @@ public partial class MainWindow : Window
                 : "Dikey kaydırma bağlantısı kapalı";
     }
 
-    private void UpdateSyntaxHighlighting(string code, RichTextBox richTextBox)
+    private void UpdateSyntaxHighlighting(
+    string code,
+    RichTextBox richTextBox)
     {
         var paragraph = new Paragraph
         {
             Margin = new Thickness(0),
-            LineHeight = 22,
+            LineHeight = 19,
             LineStackingStrategy =
-        LineStackingStrategy.BlockLineHeight
+                LineStackingStrategy.BlockLineHeight
         };
 
         var currentIndex = 0;
@@ -2240,7 +2260,9 @@ public partial class MainWindow : Window
                     match.Value,
                     brushKey));
 
-            currentIndex = match.Index + match.Length;
+            currentIndex =
+                match.Index +
+                match.Length;
         }
 
         if (currentIndex < code.Length)
@@ -2251,15 +2273,18 @@ public partial class MainWindow : Window
                     "TextPrimaryBrush"));
         }
 
-        richTextBox.Document = new FlowDocument(paragraph)
-        {
-            PagePadding = new Thickness(0),
-            PageWidth = 100000,
-            FontFamily = new FontFamily(
-                "Cascadia Code, Cascadia Mono, Consolas"),
-            FontSize = 14,
-            Foreground = FindBrush("TextPrimaryBrush")
-        };
+        richTextBox.Document =
+            new FlowDocument(paragraph)
+            {
+                PagePadding = new Thickness(0),
+                PageWidth = 100000,
+                FontFamily = new FontFamily(
+                    "Cascadia Code, Cascadia Mono, Consolas"),
+                FontSize = 14,
+                Foreground =
+                    FindBrush(
+                        "TextPrimaryBrush")
+            };
     }
 
     private Run CreateSyntaxRun(string text, string brushKey)
@@ -2976,5 +3001,95 @@ public partial class MainWindow : Window
         _headerFrameSequenceCancellationTokenSource.Cancel();
         _headerFrameSequenceCancellationTokenSource.Dispose();
         _headerFrameSequenceCancellationTokenSource = null;
+    }
+
+    private void StartOperationLoader(
+    string message)
+    {
+        if (_isOperationRunning)
+        {
+            return;
+        }
+
+        _isOperationRunning = true;
+
+        MaskButton.IsEnabled = false;
+        UnmaskButton.IsEnabled = false;
+
+        OperationLoaderTextBlock.Text =
+            message;
+
+        OperationLoaderImage.Source =
+            null;
+
+        OperationLoaderLayer.Visibility =
+            Visibility.Visible;
+
+        _operationLoaderCancellationTokenSource =
+            new CancellationTokenSource();
+
+        _ = PlayOperationLoaderAsync(
+            _operationLoaderCancellationTokenSource.Token);
+    }
+
+    private async Task PlayOperationLoaderAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var sequenceDirectory =
+                Path.Combine(
+                    AppContext.BaseDirectory,
+                    "Assets",
+                    "Animations",
+                    "OperationLoader",
+                    "NeonSapphire");
+
+            await _operationLoaderPlayer.PlayAsync(
+                sequenceDirectory,
+                frame =>
+                    OperationLoaderImage.Source =
+                        frame,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // İşlem tamamlandığında loader kontrollü olarak durdurulur.
+        }
+        catch (Exception exception)
+        {
+            OperationLoaderLayer.Visibility =
+                Visibility.Collapsed;
+
+            SetStatus(
+                "Loader başlatılamadı: " +
+                exception.Message,
+                StatusTone.Error,
+                isRestore:
+                    MainTabControl.SelectedIndex == 1);
+        }
+    }
+
+    private void StopOperationLoader()
+    {
+        _operationLoaderCancellationTokenSource?
+            .Cancel();
+
+        _operationLoaderCancellationTokenSource?
+            .Dispose();
+
+        _operationLoaderCancellationTokenSource =
+            null;
+
+        OperationLoaderImage.Source =
+            null;
+
+        OperationLoaderLayer.Visibility =
+            Visibility.Collapsed;
+
+        _isOperationRunning = false;
+
+        UpdateMaskButton();
+        UpdateUnmaskButton();
     }
 }

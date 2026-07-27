@@ -11,8 +11,6 @@
         <SolidColorBrush x:Key="BorderBrush" Color="#2B3853" />
         <SolidColorBrush x:Key="BorderStrongBrush" Color="#3B4A68" />
         <SolidColorBrush x:Key="PrimaryBrush" Color="#5B8CFF" />
-        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#5B8CFF" />
-        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#F4F7FC" />
         <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#72A0FF" />
         <SolidColorBrush x:Key="PrimaryPressedBrush" Color="#4678E8" />
         <SolidColorBrush x:Key="PrimarySoftBrush" Color="#162A4E" />

@@ -9,14 +9,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp"
-		                  Version="5.6.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove="Assets\Animations\ClassicVideo\**\*.*" />
 		<None Remove="Assets\Animations\MaskState\**\*.*" />
 		<None Remove="Assets\Brand\maskod-logo.png" />
+		<None Remove="Assets\Animations\OperationLoader\**\*.*" />
 
 		<Resource Include="Assets\Brand\maskod-logo.png" />
 
@@ -26,6 +26,11 @@
 		</Content>
 
 		<Content Include="Assets\Animations\MaskState\**\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+
+		<Content Include="Assets\Animations\OperationLoader\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>

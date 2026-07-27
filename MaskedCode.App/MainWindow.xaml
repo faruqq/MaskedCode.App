@@ -20,21 +20,6 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <Window.Resources>
-        <DataTemplate x:Key="LineNumberItemTemplate">
-            <TextBlock Height="19"
-                   Padding="0"
-                   HorizontalAlignment="Stretch"
-                   VerticalAlignment="Center"
-                   Foreground="{StaticResource TextMutedBrush}"
-                   FontFamily="Cascadia Mono, Consolas"
-                   FontSize="14"
-                   Text="{Binding}"
-                   TextAlignment="Right"
-                   Cursor="Hand"/>
-        </DataTemplate>
-    </Window.Resources>
-
     <Border Background="{StaticResource WindowBrush}"
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="1">
@@ -375,10 +360,17 @@
         Background="Transparent"
         BorderBrush="{StaticResource BorderBrush}"
         BorderThickness="0,0,1,0">
-                                                        <ItemsControl x:Name="SourceLineNumbersItemsControl"
-                  Margin="0,12,14,12"
-                  HorizontalContentAlignment="Stretch"
-                  ItemTemplate="{StaticResource LineNumberItemTemplate}" />
+                                                        <Canvas ClipToBounds="True">
+                                                            <TextBlock x:Name="SourceLineNumbersTextBlock"
+                   Canvas.Right="14"
+                   Padding="0,12,0,12"
+                   Foreground="{StaticResource TextMutedBrush}"
+                   FontFamily="Cascadia Mono, Consolas"
+                   FontSize="14"
+                   LineHeight="19"
+                   TextBlock.LineStackingStrategy="BlockLineHeight"
+                   Text="1" />
+                                                        </Canvas>
                                                     </Border>
 
                                                     <Canvas Grid.Column="1"
@@ -1903,6 +1895,34 @@
                        Opacity="0"
                        IsHitTestVisible="False"
                        Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz." />
+
+            <Grid x:Name="OperationLoaderLayer"
+      Grid.RowSpan="3"
+      Panel.ZIndex="100"
+      Background="#99070C17"
+      IsHitTestVisible="True"
+      Visibility="Collapsed">
+
+                <StackPanel HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                    <Image x:Name="OperationLoaderImage"
+               Width="176"
+               Height="176"
+               HorizontalAlignment="Center"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               SnapsToDevicePixels="True"
+               Stretch="Uniform" />
+
+                    <TextBlock x:Name="OperationLoaderTextBlock"
+                   Margin="0,16,0,0"
+                   HorizontalAlignment="Center"
+                   Foreground="{StaticResource TextPrimaryBrush}"
+                   FontSize="15"
+                   FontWeight="SemiBold"
+                   Text="İşlem gerçekleştiriliyor..." />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>
