@@ -373,53 +373,23 @@
                                                         </Canvas>
                                                     </Border>
 
-                                                    <Canvas Grid.Column="1"
-            ClipToBounds="True"
-            IsHitTestVisible="False">
-                                                        <Border x:Name="SourceActiveLineBorder"
-                Canvas.Left="0"
-                Canvas.Right="0"
-                Width="{Binding ActualWidth,
-                                RelativeSource={RelativeSource AncestorType=Canvas}}"
-                Height="19"
-                Background="{StaticResource PrimarySoftBrush}"
-                BorderBrush="#405B8CFF"
-                BorderThickness="0,1,0,1"
-                Opacity="0"
-                IsHitTestVisible="False" />
-                                                    </Canvas>
-
-                                                    <RichTextBox x:Name="SourceSyntaxRichTextBox"
-                 Grid.Column="1"
-                 Padding="14,12"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 ClipToBounds="True"
-                 Focusable="False"
-                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                 FontSize="14"
-                 IsHitTestVisible="False"
-                 IsReadOnly="True"
-                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
-
                                                     <TextBox x:Name="SourceCodeTextBox"
-             Grid.Column="1"
-             Padding="14,12"
-             AcceptsReturn="True"
-             AcceptsTab="True"
-             ClipToBounds="True"
-             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-             FontSize="14"
-             Foreground="Transparent"
-             HorizontalScrollBarVisibility="Auto"
-             TextBlock.LineHeight="19"
-             TextBlock.LineStackingStrategy="BlockLineHeight"
-             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="SourceCodeTextBox_TextChanged"
-             TextWrapping="NoWrap"
-             VerticalContentAlignment="Top"
-             VerticalScrollBarVisibility="Auto" />
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             TextBlock.LineHeight="19"
+                                                             TextBlock.LineStackingStrategy="BlockLineHeight"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="SourceCodeTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
@@ -684,52 +654,24 @@
                                                         </Canvas>
                                                     </Border>
 
-                                                    <Canvas Grid.Column="1"
-            ClipToBounds="True"
-            IsHitTestVisible="False">
-                                                        <Border x:Name="MaskedActiveLineBorder"
-                Canvas.Left="0"
-                Canvas.Right="0"
-                Width="{Binding ActualWidth,
-                                RelativeSource={RelativeSource AncestorType=Canvas}}"
-                Height="19"
-                Background="{StaticResource PrimarySoftBrush}"
-                BorderBrush="#405B8CFF"
-                BorderThickness="0,1,0,1"
-                Opacity="0"
-                IsHitTestVisible="False" />
-                                                    </Canvas>
-
-                                                    <RichTextBox x:Name="MaskedSyntaxRichTextBox"
-                 Grid.Column="1"
-                 Padding="14,12"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 Focusable="False"
-                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                 FontSize="14"
-                 IsHitTestVisible="False"
-                 IsReadOnly="True"
-                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
-
                                                     <TextBox x:Name="MaskedCodeTextBox"
-             Grid.Column="1"
-             Padding="14,12"
-             AcceptsReturn="True"
-             AcceptsTab="True"
-             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-             FontSize="14"
-             Foreground="Transparent"
-             HorizontalScrollBarVisibility="Auto"
-             IsReadOnly="True"
-             TextBlock.LineHeight="19"
-             TextBlock.LineStackingStrategy="BlockLineHeight"
-             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="CodeOutputTextBox_TextChanged"
-             TextWrapping="NoWrap"
-             VerticalContentAlignment="Top"
-             VerticalScrollBarVisibility="Auto" />
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             IsReadOnly="True"
+                                                             TextBlock.LineHeight="19"
+                                                             TextBlock.LineStackingStrategy="BlockLineHeight"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="CodeOutputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
@@ -1243,53 +1185,23 @@
                                                         </Canvas>
                                                     </Border>
 
-                                                    <Canvas Grid.Column="1"
-            ClipToBounds="True"
-            IsHitTestVisible="False">
-                                                        <Border x:Name="MaskedInputActiveLineBorder"
-                Canvas.Left="0"
-                Canvas.Right="0"
-                Width="{Binding ActualWidth,
-                                RelativeSource={RelativeSource AncestorType=Canvas}}"
-                Height="19"
-                Background="{StaticResource PrimarySoftBrush}"
-                BorderBrush="#405B8CFF"
-                BorderThickness="0,1,0,1"
-                Opacity="0"
-                IsHitTestVisible="False" />
-                                                    </Canvas>
-
-                                                    <RichTextBox x:Name="MaskedInputSyntaxRichTextBox"
-                 Grid.Column="1"
-                 Padding="14,12"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 ClipToBounds="True"
-                 Focusable="False"
-                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                 FontSize="14"
-                 IsHitTestVisible="False"
-                 IsReadOnly="True"
-                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
-
                                                     <TextBox x:Name="MaskedInputTextBox"
-             Grid.Column="1"
-             Padding="14,12"
-             AcceptsReturn="True"
-             AcceptsTab="True"
-             ClipToBounds="True"
-             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-             FontSize="14"
-             Foreground="Transparent"
-             HorizontalScrollBarVisibility="Auto"
-             TextBlock.LineHeight="19"
-             TextBlock.LineStackingStrategy="BlockLineHeight"
-             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="MaskedInputTextBox_TextChanged"
-             TextWrapping="NoWrap"
-             VerticalContentAlignment="Top"
-             VerticalScrollBarVisibility="Auto" />
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             TextBlock.LineHeight="19"
+                                                             TextBlock.LineStackingStrategy="BlockLineHeight"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="MaskedInputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
@@ -1540,54 +1452,24 @@
                                                         </Canvas>
                                                     </Border>
 
-                                                    <Canvas Grid.Column="1"
-            ClipToBounds="True"
-            IsHitTestVisible="False">
-                                                        <Border x:Name="RestoredActiveLineBorder"
-                Canvas.Left="0"
-                Canvas.Right="0"
-                Width="{Binding ActualWidth,
-                                RelativeSource={RelativeSource AncestorType=Canvas}}"
-                Height="19"
-                Background="{StaticResource PrimarySoftBrush}"
-                BorderBrush="#405B8CFF"
-                BorderThickness="0,1,0,1"
-                Opacity="0"
-                IsHitTestVisible="False" />
-                                                    </Canvas>
-
-                                                    <RichTextBox x:Name="RestoredSyntaxRichTextBox"
-                 Grid.Column="1"
-                 Padding="14,12"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 ClipToBounds="True"
-                 Focusable="False"
-                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                 FontSize="14"
-                 IsHitTestVisible="False"
-                 IsReadOnly="True"
-                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
-
                                                     <TextBox x:Name="RestoredCodeTextBox"
-             Grid.Column="1"
-             Padding="14,12"
-             AcceptsReturn="True"
-             AcceptsTab="True"
-             ClipToBounds="True"
-             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-             FontSize="14"
-             Foreground="Transparent"
-             HorizontalScrollBarVisibility="Auto"
-             IsReadOnly="True"
-             TextBlock.LineHeight="19"
-             TextBlock.LineStackingStrategy="BlockLineHeight"
-             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-             TextChanged="CodeOutputTextBox_TextChanged"
-             TextWrapping="NoWrap"
-             VerticalContentAlignment="Top"
-             VerticalScrollBarVisibility="Auto" />
+                                                             Grid.Column="1"
+                                                             Padding="14,12"
+                                                             AcceptsReturn="True"
+                                                             AcceptsTab="True"
+                                                             ClipToBounds="True"
+                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                                                             FontSize="14"
+                                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                                             HorizontalScrollBarVisibility="Auto"
+                                                             IsReadOnly="True"
+                                                             TextBlock.LineHeight="19"
+                                                             TextBlock.LineStackingStrategy="BlockLineHeight"
+                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+                                                             TextChanged="CodeOutputTextBox_TextChanged"
+                                                             TextWrapping="NoWrap"
+                                                             VerticalContentAlignment="Top"
+                                                             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
@@ -1926,3 +1808,4 @@
         </Grid>
     </Border>
 </Window>
+

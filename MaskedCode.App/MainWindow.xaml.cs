@@ -6,11 +6,9 @@ using MaskedCode.App.Masking.Pl1;
 using Microsoft.Win32;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -22,21 +20,6 @@ public partial class MainWindow : Window
 {
     private const long MaximumVaultFileSizeInBytes = 64L * 1024L * 1024L;
     private const int MinimumPasswordLength = 12;
-
-    private static readonly Regex SyntaxTokenRegex = new(
-        @"(?<comment>/\*[\s\S]*?\*/|//[^\r\n]*|--[^\r\n]*)" +
-        @"|(?<string>'(?:''|\\.|[^'])*'|""(?:""""|\\.|[^""])*"")" +
-        @"|(?<number>\b\d+(?:\.\d+)?\b)" +
-        @"|(?<keyword>\b(?:DCL|DECLARE|PROCEDURE|END|CALL|IF|THEN|ELSE|" +
-        @"DO|WHILE|UNTIL|SELECT|WHEN|OTHERWISE|RETURN|PUT|GET|SKIP|LIST|" +
-        @"CHAR|FIXED|DECIMAL|BIN|INIT|STATIC|RECORD|FUNCTION|PROGRAM|" +
-        @"PRIVATE|PUBLIC|MAIN|SQL|INTO|FROM|WHERE|UPDATE|INSERT|DELETE|" +
-        @"VALUES|SET|FOR|FOREACH|IN|OUT|INOUT|TRY|ONEXCEPTION|THROW|" +
-        @"NEW|NULL|TRUE|FALSE|STRING|INT|SMALLINT|BIGINT|NUM|DATE|" +
-        @"TIMESTAMP|BOOLEAN|CASE|DEFAULT|OPEN|CLOSE|EXECUTE)\b)",
-        RegexOptions.Compiled |
-        RegexOptions.IgnoreCase |
-        RegexOptions.CultureInvariant);
 
     private string? _selectedFilePath;
     private string? _selectedMaskedFilePath;
@@ -111,22 +94,6 @@ public partial class MainWindow : Window
         UpdateLineNumbers(
             RestoredCodeTextBox,
             RestoredLineNumbersTextBlock);
-
-        UpdateSyntaxHighlighting(
-            SourceCodeTextBox.Text,
-            SourceSyntaxRichTextBox);
-
-        UpdateSyntaxHighlighting(
-            MaskedCodeTextBox.Text,
-            MaskedSyntaxRichTextBox);
-
-        UpdateSyntaxHighlighting(
-            MaskedInputTextBox.Text,
-            MaskedInputSyntaxRichTextBox);
-
-        UpdateSyntaxHighlighting(
-            RestoredCodeTextBox.Text,
-            RestoredSyntaxRichTextBox);
 
         UpdatePasswordSourceState();
         UpdateMaskButton();
@@ -735,10 +702,6 @@ public partial class MainWindow : Window
             SourceCodeTextBox,
             SourceLineNumbersTextBlock);
 
-        UpdateSyntaxHighlighting(
-            SourceCodeTextBox.Text,
-            SourceSyntaxRichTextBox);
-
         if (!IsLoaded)
         {
             return;
@@ -811,21 +774,33 @@ public partial class MainWindow : Window
             "Kod yapıştırabilir veya dosya seçebilirsiniz";
     }
 
-    private void CodeOutputTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    private void CodeOutputTextBox_TextChanged(
+    object sender,
+    TextChangedEventArgs e)
     {
-        if (sender == MaskedCodeTextBox)
+        if (ReferenceEquals(
+                sender,
+                MaskedCodeTextBox))
         {
-            UpdateLineNumbers(MaskedCodeTextBox, MaskedLineNumbersTextBlock);
-            UpdateSyntaxHighlighting(MaskedCodeTextBox.Text, MaskedSyntaxRichTextBox);
+            UpdateLineNumbers(
+                MaskedCodeTextBox,
+                MaskedLineNumbersTextBlock);
+
             return;
         }
 
-        if (sender == RestoredCodeTextBox)
+        if (!ReferenceEquals(
+                sender,
+                RestoredCodeTextBox))
         {
-            UpdateLineNumbers(RestoredCodeTextBox, RestoredLineNumbersTextBlock);
-            UpdateSyntaxHighlighting(RestoredCodeTextBox.Text, RestoredSyntaxRichTextBox);
-            UpdateRestoredOutputButtons();
+            return;
         }
+
+        UpdateLineNumbers(
+            RestoredCodeTextBox,
+            RestoredLineNumbersTextBlock);
+
+        UpdateRestoredOutputButtons();
     }
 
     private void UpdateRestoredOutputButtons()
@@ -1156,10 +1131,6 @@ public partial class MainWindow : Window
         UpdateLineNumbers(
             MaskedInputTextBox,
             MaskedInputLineNumbersTextBlock);
-
-        UpdateSyntaxHighlighting(
-            MaskedInputTextBox.Text,
-            MaskedInputSyntaxRichTextBox);
 
         if (!IsLoaded)
         {
@@ -2096,34 +2067,27 @@ public partial class MainWindow : Window
     }
 
     private void CodeEditor_ScrollChanged(
-    object sender,
-    ScrollChangedEventArgs e)
+     object sender,
+     ScrollChangedEventArgs e)
     {
         if (sender is not TextBox sourceTextBox)
         {
             return;
         }
 
-        var editorParts =
-            GetEditorScrollParts(
+        var lineNumbers =
+            GetEditorLineNumbers(
                 sourceTextBox);
 
-        if (editorParts.LineNumbers is null ||
-            editorParts.SyntaxEditor is null)
+        if (lineNumbers is null)
         {
             return;
         }
 
-        editorParts.LineNumbers.RenderTransform =
+        lineNumbers.RenderTransform =
             new TranslateTransform(
                 0,
                 -e.VerticalOffset);
-
-        editorParts.SyntaxEditor.ScrollToVerticalOffset(
-            e.VerticalOffset);
-
-        editorParts.SyntaxEditor.ScrollToHorizontalOffset(
-            e.HorizontalOffset);
 
         SynchronizeLinkedEditorScroll(
             sourceTextBox,
@@ -2205,51 +2169,38 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private (
-    TextBlock? LineNumbers,
-    RichTextBox? SyntaxEditor)
-    GetEditorScrollParts(
-        TextBox textBox)
+    private TextBlock? GetEditorLineNumbers(
+    TextBox textBox)
     {
         if (ReferenceEquals(
                 textBox,
                 SourceCodeTextBox))
         {
-            return (
-                SourceLineNumbersTextBlock,
-                SourceSyntaxRichTextBox);
+            return SourceLineNumbersTextBlock;
         }
 
         if (ReferenceEquals(
                 textBox,
                 MaskedCodeTextBox))
         {
-            return (
-                MaskedLineNumbersTextBlock,
-                MaskedSyntaxRichTextBox);
+            return MaskedLineNumbersTextBlock;
         }
 
         if (ReferenceEquals(
                 textBox,
                 MaskedInputTextBox))
         {
-            return (
-                MaskedInputLineNumbersTextBlock,
-                MaskedInputSyntaxRichTextBox);
+            return MaskedInputLineNumbersTextBlock;
         }
 
         if (ReferenceEquals(
                 textBox,
                 RestoredCodeTextBox))
         {
-            return (
-                RestoredLineNumbersTextBlock,
-                RestoredSyntaxRichTextBox);
+            return RestoredLineNumbersTextBlock;
         }
 
-        return (
-            null,
-            null);
+        return null;
     }
 
     private void EditorScrollLinkToggleButton_Click(
@@ -2287,78 +2238,6 @@ public partial class MainWindow : Window
             _isRestoreEditorScrollLinked
                 ? "Dikey kaydırma bağlantısı açık"
                 : "Dikey kaydırma bağlantısı kapalı";
-    }
-
-    private void UpdateSyntaxHighlighting(
-    string code,
-    RichTextBox richTextBox)
-    {
-        var paragraph = new Paragraph
-        {
-            Margin = new Thickness(0),
-            LineHeight = 19,
-            LineStackingStrategy =
-                LineStackingStrategy.BlockLineHeight
-        };
-
-        var currentIndex = 0;
-
-        foreach (Match match in SyntaxTokenRegex.Matches(code))
-        {
-            if (match.Index > currentIndex)
-            {
-                paragraph.Inlines.Add(
-                    CreateSyntaxRun(
-                        code[currentIndex..match.Index],
-                        "TextPrimaryBrush"));
-            }
-
-            var brushKey = match.Groups["comment"].Success
-                ? "SuccessBrush"
-                : match.Groups["string"].Success
-                    ? "WarningBrush"
-                    : match.Groups["number"].Success
-                        ? "PrimaryHoverBrush"
-                        : "SyntaxKeywordBrush";
-
-            paragraph.Inlines.Add(
-                CreateSyntaxRun(
-                    match.Value,
-                    brushKey));
-
-            currentIndex =
-                match.Index +
-                match.Length;
-        }
-
-        if (currentIndex < code.Length)
-        {
-            paragraph.Inlines.Add(
-                CreateSyntaxRun(
-                    code[currentIndex..],
-                    "TextPrimaryBrush"));
-        }
-
-        richTextBox.Document =
-            new FlowDocument(paragraph)
-            {
-                PagePadding = new Thickness(0),
-                PageWidth = 100000,
-                FontFamily = new FontFamily(
-                    "Cascadia Code, Cascadia Mono, Consolas"),
-                FontSize = 14,
-                Foreground =
-                    FindBrush(
-                        "TextPrimaryBrush")
-            };
-    }
-
-    private Run CreateSyntaxRun(string text, string brushKey)
-    {
-        return new Run(text)
-        {
-            Foreground = FindBrush(brushKey)
-        };
     }
 
     private static string CreateFileMetaText(string filePath, string content)
