@@ -209,7 +209,7 @@
            Foreground="#CFEDE5"
            FontSize="14"
            Text="PL/I, EGL ve C# kullanılabilir" />
-                       
+
                     </Grid>
                 </Border>
             </Grid>
@@ -354,55 +354,78 @@
                                                         <ColumnDefinition Width="60" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
+
                                                     <Border ClipToBounds="True"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="0,0,1,0">
-                                                        <TextBlock x:Name="SourceLineNumbersTextBlock"
-                                                                   Padding="0,12,14,12"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{StaticResource TextMutedBrush}"
-                                                                   FontFamily="Cascadia Mono, Consolas"
-                                                                   FontSize="14"
-                                                                   LineHeight="22"
-                                                                   Text="1" />
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+                                                        <Canvas ClipToBounds="True">
+                                                            <TextBlock x:Name="SourceLineNumbersTextBlock"
+                       Canvas.Right="14"
+                       Padding="0,12,0,12"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       FontFamily="Cascadia Mono, Consolas"
+                       FontSize="14"
+                       LineHeight="19"
+                       Text="1" />
+                                                        </Canvas>
                                                     </Border>
+
+                                                    <Canvas Grid.Column="1"
+            ClipToBounds="True"
+            IsHitTestVisible="False">
+                                                        <Border x:Name="SourceActiveLineBorder"
+                Canvas.Left="0"
+                Canvas.Right="0"
+                Width="{Binding ActualWidth,
+                                RelativeSource={RelativeSource AncestorType=Canvas}}"
+                Height="19"
+                Background="{StaticResource PrimarySoftBrush}"
+                BorderBrush="#405B8CFF"
+                BorderThickness="0,1,0,1"
+                Opacity="0"
+                IsHitTestVisible="False" />
+                                                    </Canvas>
+
                                                     <RichTextBox x:Name="SourceSyntaxRichTextBox"
-                                                                 Grid.Column="1"
-                                                                 Padding="14,12"
-                                                                 Background="Transparent"
-                                                                 BorderThickness="0"
-                                                                 ClipToBounds="True"
-                                                                 Focusable="False"
-                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                                 FontSize="14"
-                                                                 IsHitTestVisible="False"
-                                                                 IsReadOnly="True"
-                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                 Grid.Column="1"
+                 Padding="14,12"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 ClipToBounds="True"
+                 Focusable="False"
+                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                 FontSize="14"
+                 IsHitTestVisible="False"
+                 IsReadOnly="True"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
                                                     <TextBox x:Name="SourceCodeTextBox"
-                                                             Grid.Column="1"
-                                                             Padding="14,12"
-                                                             AcceptsReturn="True"
-                                                             AcceptsTab="True"
-                                                             ClipToBounds="True"
-                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                             FontSize="14"
-                                                             Foreground="Transparent"
-                                                             HorizontalScrollBarVisibility="Auto"
-                                                             TextBlock.LineHeight="22"
-                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-                                                             TextChanged="SourceCodeTextBox_TextChanged"
-                                                             TextWrapping="NoWrap"
-                                                             VerticalContentAlignment="Top"
-                                                             VerticalScrollBarVisibility="Auto" />
+             Grid.Column="1"
+             Padding="14,12"
+             AcceptsReturn="True"
+             AcceptsTab="True"
+             ClipToBounds="True"
+             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+             FontSize="14"
+             Foreground="Transparent"
+             HorizontalScrollBarVisibility="Auto"
+             TextBlock.LineHeight="19"
+             TextBlock.LineStackingStrategy="BlockLineHeight"
+             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+             TextChanged="SourceCodeTextBox_TextChanged"
+             TextWrapping="NoWrap"
+             VerticalContentAlignment="Top"
+             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
                                     </Border>
 
-                                    <GridSplitter x:Name="MaskGridSplitter"
-                                                  Grid.Column="1"
-                                                  Width="14"
+                                    <Grid Grid.Column="1"
+                                          Width="14"
+                                          Panel.ZIndex="2">
+                                        <GridSplitter x:Name="MaskGridSplitter"
                                                   HorizontalAlignment="Stretch"
                                                   VerticalAlignment="Stretch"
                                                   Background="Transparent"
@@ -413,12 +436,12 @@
                                                   ResizeDirection="Columns"
                                                   ShowsPreview="False"
                                                   ToolTip="Editörlerin genişliğini değiştirmek için sürükleyin. Sıfırlamak için çift tıklayın.">
-                                        <GridSplitter.Template>
-                                            <ControlTemplate TargetType="GridSplitter">
-                                                <Border x:Name="SplitterHitArea"
+                                            <GridSplitter.Template>
+                                                <ControlTemplate TargetType="GridSplitter">
+                                                    <Border x:Name="SplitterHitArea"
                                                         Width="14"
                                                         Background="Transparent">
-                                                    <Border x:Name="SplitterHandle"
+                                                        <Border x:Name="SplitterHandle"
                                                             Width="6"
                                                             Height="54"
                                                             HorizontalAlignment="Center"
@@ -427,50 +450,125 @@
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="1"
                                                             CornerRadius="3">
-                                                        <StackPanel HorizontalAlignment="Center"
+                                                            <StackPanel HorizontalAlignment="Center"
                                                                     VerticalAlignment="Center">
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                        </StackPanel>
+                                                            </StackPanel>
+                                                        </Border>
                                                     </Border>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="SplitterHitArea"
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="SplitterHitArea"
                                                                 Property="Background"
                                                                 Value="#101B2E" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="Background"
                                                                 Value="{StaticResource PrimarySoftBrush}" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="BorderBrush"
                                                                 Value="{StaticResource PrimaryBrush}" />
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="SplitterHitArea"
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="SplitterHitArea"
                                                                 Property="Background"
                                                                 Value="#17243A" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="Background"
                                                                 Value="{StaticResource PrimaryBrush}" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="BorderBrush"
                                                                 Value="{StaticResource PrimaryHoverBrush}" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </GridSplitter.Template>
-                                    </GridSplitter>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </GridSplitter.Template>
+                                        </GridSplitter>
+
+                                        <ToggleButton x:Name="MaskScrollLinkToggleButton"
+                                                      Width="30"
+                                                      Height="42"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Panel.ZIndex="3"
+                                                      Background="{StaticResource PrimarySoftBrush}"
+                                                      BorderBrush="{StaticResource PrimaryBrush}"
+                                                      BorderThickness="1"
+                                                      Cursor="Hand"
+                                                      Focusable="False"
+                                                      IsChecked="True"
+                                                      Click="EditorScrollLinkToggleButton_Click"
+                                                      ToolTip="Dikey kaydırma bağlantısı açık">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="LinkButtonBorder"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                            CornerRadius="7">
+                                                        <Viewbox Width="17"
+                                                                 Height="17"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center">
+                                                            <Canvas Width="24"
+                                                                    Height="24">
+                                                                <Path x:Name="LinkIcon"
+                                                                      Width="24"
+                                                                      Height="24"
+                                                                      Data="M10.59,13.41 9.17,12 10.59,10.59 12,12 10.59,13.41 M7.05,17.66 5.64,16.24 8.46,13.41 9.88,14.83 7.05,17.66 M16.95,6.34 18.36,7.76 15.54,10.59 14.12,9.17 16.95,6.34 M8.46,15.54 6.34,17.66 C4.78,19.22 2.25,19.22 0.69,17.66 C-0.87,16.1 -0.87,13.57 0.69,12.01 L4.93,7.76 C6.49,6.2 9.02,6.2 10.58,7.76 L11.29,8.47 9.88,9.88 9.17,9.17 C8.39,8.39 7.12,8.39 6.34,9.17 L2.1,13.42 C1.32,14.2 1.32,15.46 2.1,16.24 C2.88,17.02 4.15,17.02 4.93,16.24 L7.05,14.12 8.46,15.54 M15.54,8.46 17.66,6.34 C19.22,4.78 21.75,4.78 23.31,6.34 C24.87,7.9 24.87,10.43 23.31,11.99 L19.07,16.24 C17.51,17.8 14.98,17.8 13.42,16.24 L12.71,15.53 14.12,14.12 14.83,14.83 C15.61,15.61 16.88,15.61 17.66,14.83 L21.9,10.58 C22.68,9.8 22.68,8.54 21.9,7.76 C21.12,6.98 19.85,6.98 19.07,7.76 L16.95,9.88 15.54,8.46"
+                                                                      Fill="{StaticResource PrimaryBrush}"
+                                                                      Stretch="Uniform">
+                                                                    <Path.RenderTransform>
+                                                                        <RotateTransform Angle="90"
+                                                                                         CenterX="12"
+                                                                                         CenterY="12" />
+                                                                    </Path.RenderTransform>
+                                                                </Path>
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                    </Border>
+
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver"
+                                                                 Value="True">
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="Background"
+                                                                    Value="{StaticResource PrimaryBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Fill"
+                                                                    Value="White" />
+                                                        </Trigger>
+
+                                                        <Trigger Property="IsChecked"
+                                                                 Value="False">
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="Background"
+                                                                    Value="{StaticResource BorderStrongBrush}" />
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="BorderBrush"
+                                                                    Value="{StaticResource BorderBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Fill"
+                                                                    Value="{StaticResource TextMutedBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Opacity"
+                                                                    Value="0.45" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                    </Grid>
 
                                     <Border x:Name="MaskRightEditorCard"
                                             Grid.Column="2"
@@ -563,46 +661,68 @@
                                                         <ColumnDefinition Width="60" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
+
                                                     <Border ClipToBounds="True"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="0,0,1,0">
-                                                        <TextBlock x:Name="MaskedLineNumbersTextBlock"
-                                                                   Padding="0,12,14,12"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{StaticResource TextMutedBrush}"
-                                                                   FontFamily="Cascadia Mono, Consolas"
-                                                                   FontSize="14"
-                                                                   LineHeight="22"
-                                                                   Text="1" />
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+                                                        <Canvas ClipToBounds="True">
+                                                            <TextBlock x:Name="MaskedLineNumbersTextBlock"
+                       Canvas.Right="14"
+                       Padding="0,12,0,12"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       FontFamily="Cascadia Mono, Consolas"
+                       FontSize="14"
+                       LineHeight="19"
+                       Text="1" />
+                                                        </Canvas>
                                                     </Border>
+
+                                                    <Canvas Grid.Column="1"
+            ClipToBounds="True"
+            IsHitTestVisible="False">
+                                                        <Border x:Name="MaskedActiveLineBorder"
+                Canvas.Left="0"
+                Canvas.Right="0"
+                Width="{Binding ActualWidth,
+                                RelativeSource={RelativeSource AncestorType=Canvas}}"
+                Height="19"
+                Background="{StaticResource PrimarySoftBrush}"
+                BorderBrush="#405B8CFF"
+                BorderThickness="0,1,0,1"
+                Opacity="0"
+                IsHitTestVisible="False" />
+                                                    </Canvas>
+
                                                     <RichTextBox x:Name="MaskedSyntaxRichTextBox"
-                                                                 Grid.Column="1"
-                                                                 Padding="14,12"
-                                                                 Background="Transparent"
-                                                                 BorderThickness="0"
-                                                                 Focusable="False"
-                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                                 FontSize="14"
-                                                                 IsHitTestVisible="False"
-                                                                 IsReadOnly="True"
-                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                 Grid.Column="1"
+                 Padding="14,12"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Focusable="False"
+                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                 FontSize="14"
+                 IsHitTestVisible="False"
+                 IsReadOnly="True"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
                                                     <TextBox x:Name="MaskedCodeTextBox"
-                                                             Grid.Column="1"
-                                                             Padding="14,12"
-                                                             AcceptsReturn="True"
-                                                             AcceptsTab="True"
-                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                             FontSize="14"
-                                                             Foreground="Transparent"
-                                                             HorizontalScrollBarVisibility="Auto"
-                                                             IsReadOnly="True"
-                                                             TextBlock.LineHeight="22"
-                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-                                                             TextChanged="CodeOutputTextBox_TextChanged"
-                                                             TextWrapping="NoWrap"
-                                                             VerticalContentAlignment="Top"
-                                                             VerticalScrollBarVisibility="Auto" />
+             Grid.Column="1"
+             Padding="14,12"
+             AcceptsReturn="True"
+             AcceptsTab="True"
+             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+             FontSize="14"
+             Foreground="Transparent"
+             HorizontalScrollBarVisibility="Auto"
+             IsReadOnly="True"
+             TextBlock.LineHeight="19"
+             TextBlock.LineStackingStrategy="BlockLineHeight"
+             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+             TextChanged="CodeOutputTextBox_TextChanged"
+             TextWrapping="NoWrap"
+             VerticalContentAlignment="Top"
+             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
@@ -1096,55 +1216,78 @@
                                                         <ColumnDefinition Width="60" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
+
                                                     <Border ClipToBounds="True"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="0,0,1,0">
-                                                        <TextBlock x:Name="MaskedInputLineNumbersTextBlock"
-                                                                   Padding="0,12,14,12"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{StaticResource TextMutedBrush}"
-                                                                   FontFamily="Cascadia Mono, Consolas"
-                                                                   FontSize="14"
-                                                                   LineHeight="22"
-                                                                   Text="1" />
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+                                                        <Canvas ClipToBounds="True">
+                                                            <TextBlock x:Name="MaskedInputLineNumbersTextBlock"
+                       Canvas.Right="14"
+                       Padding="0,12,0,12"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       FontFamily="Cascadia Mono, Consolas"
+                       FontSize="14"
+                       LineHeight="19"
+                       Text="1" />
+                                                        </Canvas>
                                                     </Border>
+
+                                                    <Canvas Grid.Column="1"
+            ClipToBounds="True"
+            IsHitTestVisible="False">
+                                                        <Border x:Name="MaskedInputActiveLineBorder"
+                Canvas.Left="0"
+                Canvas.Right="0"
+                Width="{Binding ActualWidth,
+                                RelativeSource={RelativeSource AncestorType=Canvas}}"
+                Height="19"
+                Background="{StaticResource PrimarySoftBrush}"
+                BorderBrush="#405B8CFF"
+                BorderThickness="0,1,0,1"
+                Opacity="0"
+                IsHitTestVisible="False" />
+                                                    </Canvas>
+
                                                     <RichTextBox x:Name="MaskedInputSyntaxRichTextBox"
-                                                                 Grid.Column="1"
-                                                                 Padding="14,12"
-                                                                 Background="Transparent"
-                                                                 BorderThickness="0"
-                                                                 ClipToBounds="True"
-                                                                 Focusable="False"
-                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                                 FontSize="14"
-                                                                 IsHitTestVisible="False"
-                                                                 IsReadOnly="True"
-                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                 Grid.Column="1"
+                 Padding="14,12"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 ClipToBounds="True"
+                 Focusable="False"
+                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                 FontSize="14"
+                 IsHitTestVisible="False"
+                 IsReadOnly="True"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
                                                     <TextBox x:Name="MaskedInputTextBox"
-                                                             Grid.Column="1"
-                                                             Padding="14,12"
-                                                             AcceptsReturn="True"
-                                                             AcceptsTab="True"
-                                                             ClipToBounds="True"
-                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                             FontSize="14"
-                                                             Foreground="Transparent"
-                                                             HorizontalScrollBarVisibility="Auto"
-                                                             TextBlock.LineHeight="22"
-                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-                                                             TextChanged="MaskedInputTextBox_TextChanged"
-                                                             TextWrapping="NoWrap"
-                                                             VerticalContentAlignment="Top"
-                                                             VerticalScrollBarVisibility="Auto" />
+             Grid.Column="1"
+             Padding="14,12"
+             AcceptsReturn="True"
+             AcceptsTab="True"
+             ClipToBounds="True"
+             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+             FontSize="14"
+             Foreground="Transparent"
+             HorizontalScrollBarVisibility="Auto"
+             TextBlock.LineHeight="19"
+             TextBlock.LineStackingStrategy="BlockLineHeight"
+             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+             TextChanged="MaskedInputTextBox_TextChanged"
+             TextWrapping="NoWrap"
+             VerticalContentAlignment="Top"
+             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>
                                     </Border>
 
-                                    <GridSplitter x:Name="RestoreGridSplitter"
-                                                  Grid.Column="1"
-                                                  Width="14"
+                                    <Grid Grid.Column="1"
+                                          Width="14"
+                                          Panel.ZIndex="2">
+                                        <GridSplitter x:Name="RestoreGridSplitter"
                                                   HorizontalAlignment="Stretch"
                                                   VerticalAlignment="Stretch"
                                                   Background="Transparent"
@@ -1155,12 +1298,12 @@
                                                   ResizeDirection="Columns"
                                                   ShowsPreview="False"
                                                   ToolTip="Editörlerin genişliğini değiştirmek için sürükleyin. Sıfırlamak için çift tıklayın.">
-                                        <GridSplitter.Template>
-                                            <ControlTemplate TargetType="GridSplitter">
-                                                <Border x:Name="SplitterHitArea"
+                                            <GridSplitter.Template>
+                                                <ControlTemplate TargetType="GridSplitter">
+                                                    <Border x:Name="SplitterHitArea"
                                                         Width="14"
                                                         Background="Transparent">
-                                                    <Border x:Name="SplitterHandle"
+                                                        <Border x:Name="SplitterHandle"
                                                             Width="6"
                                                             Height="54"
                                                             HorizontalAlignment="Center"
@@ -1169,50 +1312,125 @@
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="1"
                                                             CornerRadius="3">
-                                                        <StackPanel HorizontalAlignment="Center"
+                                                            <StackPanel HorizontalAlignment="Center"
                                                                     VerticalAlignment="Center">
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                            <Ellipse Width="2.5"
+                                                                <Ellipse Width="2.5"
                                                                      Height="2.5"
                                                                      Margin="0,1.5"
                                                                      Fill="{StaticResource TextSecondaryBrush}" />
-                                                        </StackPanel>
+                                                            </StackPanel>
+                                                        </Border>
                                                     </Border>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="SplitterHitArea"
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="SplitterHitArea"
                                                                 Property="Background"
                                                                 Value="#101B2E" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="Background"
                                                                 Value="{StaticResource PrimarySoftBrush}" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="BorderBrush"
                                                                 Value="{StaticResource PrimaryBrush}" />
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="SplitterHitArea"
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="SplitterHitArea"
                                                                 Property="Background"
                                                                 Value="#17243A" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="Background"
                                                                 Value="{StaticResource PrimaryBrush}" />
-                                                        <Setter TargetName="SplitterHandle"
+                                                            <Setter TargetName="SplitterHandle"
                                                                 Property="BorderBrush"
                                                                 Value="{StaticResource PrimaryHoverBrush}" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </GridSplitter.Template>
-                                    </GridSplitter>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </GridSplitter.Template>
+                                        </GridSplitter>
+
+                                        <ToggleButton x:Name="RestoreScrollLinkToggleButton"
+                                                      Width="30"
+                                                      Height="42"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Panel.ZIndex="3"
+                                                      Background="{StaticResource PrimarySoftBrush}"
+                                                      BorderBrush="{StaticResource PrimaryBrush}"
+                                                      BorderThickness="1"
+                                                      Cursor="Hand"
+                                                      Focusable="False"
+                                                      IsChecked="True"
+                                                      Click="EditorScrollLinkToggleButton_Click"
+                                                      ToolTip="Dikey kaydırma bağlantısı açık">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="LinkButtonBorder"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                            CornerRadius="7">
+                                                        <Viewbox Width="17"
+                                                                 Height="17"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center">
+                                                            <Canvas Width="24"
+                                                                    Height="24">
+                                                                <Path x:Name="LinkIcon"
+                                                                      Width="24"
+                                                                      Height="24"
+                                                                      Data="M10.59,13.41 9.17,12 10.59,10.59 12,12 10.59,13.41 M7.05,17.66 5.64,16.24 8.46,13.41 9.88,14.83 7.05,17.66 M16.95,6.34 18.36,7.76 15.54,10.59 14.12,9.17 16.95,6.34 M8.46,15.54 6.34,17.66 C4.78,19.22 2.25,19.22 0.69,17.66 C-0.87,16.1 -0.87,13.57 0.69,12.01 L4.93,7.76 C6.49,6.2 9.02,6.2 10.58,7.76 L11.29,8.47 9.88,9.88 9.17,9.17 C8.39,8.39 7.12,8.39 6.34,9.17 L2.1,13.42 C1.32,14.2 1.32,15.46 2.1,16.24 C2.88,17.02 4.15,17.02 4.93,16.24 L7.05,14.12 8.46,15.54 M15.54,8.46 17.66,6.34 C19.22,4.78 21.75,4.78 23.31,6.34 C24.87,7.9 24.87,10.43 23.31,11.99 L19.07,16.24 C17.51,17.8 14.98,17.8 13.42,16.24 L12.71,15.53 14.12,14.12 14.83,14.83 C15.61,15.61 16.88,15.61 17.66,14.83 L21.9,10.58 C22.68,9.8 22.68,8.54 21.9,7.76 C21.12,6.98 19.85,6.98 19.07,7.76 L16.95,9.88 15.54,8.46"
+                                                                      Fill="{StaticResource PrimaryBrush}"
+                                                                      Stretch="Uniform">
+                                                                    <Path.RenderTransform>
+                                                                        <RotateTransform Angle="90"
+                                                                                         CenterX="12"
+                                                                                         CenterY="12" />
+                                                                    </Path.RenderTransform>
+                                                                </Path>
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                    </Border>
+
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver"
+                                                                 Value="True">
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="Background"
+                                                                    Value="{StaticResource PrimaryBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Fill"
+                                                                    Value="White" />
+                                                        </Trigger>
+
+                                                        <Trigger Property="IsChecked"
+                                                                 Value="False">
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="Background"
+                                                                    Value="{StaticResource BorderStrongBrush}" />
+                                                            <Setter TargetName="LinkButtonBorder"
+                                                                    Property="BorderBrush"
+                                                                    Value="{StaticResource BorderBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Fill"
+                                                                    Value="{StaticResource TextMutedBrush}" />
+                                                            <Setter TargetName="LinkIcon"
+                                                                    Property="Opacity"
+                                                                    Value="0.45" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                    </Grid>
 
                                     <Border x:Name="RestoreRightEditorCard"
                                             Grid.Column="2"
@@ -1291,48 +1509,70 @@
                                                         <ColumnDefinition Width="60" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
+
                                                     <Border ClipToBounds="True"
-                                                            BorderBrush="{StaticResource BorderBrush}"
-                                                            BorderThickness="0,0,1,0">
-                                                        <TextBlock x:Name="RestoredLineNumbersTextBlock"
-                                                                   Padding="0,12,14,12"
-                                                                   HorizontalAlignment="Right"
-                                                                   Foreground="{StaticResource TextMutedBrush}"
-                                                                   FontFamily="Cascadia Mono, Consolas"
-                                                                   FontSize="14"
-                                                                   LineHeight="22"
-                                                                   Text="1" />
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+                                                        <Canvas ClipToBounds="True">
+                                                            <TextBlock x:Name="RestoredLineNumbersTextBlock"
+                       Canvas.Right="14"
+                       Padding="0,12,0,12"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       FontFamily="Cascadia Mono, Consolas"
+                       FontSize="14"
+                       LineHeight="19"
+                       Text="1" />
+                                                        </Canvas>
                                                     </Border>
+
+                                                    <Canvas Grid.Column="1"
+            ClipToBounds="True"
+            IsHitTestVisible="False">
+                                                        <Border x:Name="RestoredActiveLineBorder"
+                Canvas.Left="0"
+                Canvas.Right="0"
+                Width="{Binding ActualWidth,
+                                RelativeSource={RelativeSource AncestorType=Canvas}}"
+                Height="19"
+                Background="{StaticResource PrimarySoftBrush}"
+                BorderBrush="#405B8CFF"
+                BorderThickness="0,1,0,1"
+                Opacity="0"
+                IsHitTestVisible="False" />
+                                                    </Canvas>
+
                                                     <RichTextBox x:Name="RestoredSyntaxRichTextBox"
-                                                                 Grid.Column="1"
-                                                                 Padding="14,12"
-                                                                 Background="Transparent"
-                                                                 BorderThickness="0"
-                                                                 ClipToBounds="True"
-                                                                 Focusable="False"
-                                                                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                                 FontSize="14"
-                                                                 IsHitTestVisible="False"
-                                                                 IsReadOnly="True"
-                                                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                                                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+                 Grid.Column="1"
+                 Padding="14,12"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 ClipToBounds="True"
+                 Focusable="False"
+                 FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+                 FontSize="14"
+                 IsHitTestVisible="False"
+                 IsReadOnly="True"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
                                                     <TextBox x:Name="RestoredCodeTextBox"
-                                                             Grid.Column="1"
-                                                             Padding="14,12"
-                                                             AcceptsReturn="True"
-                                                             AcceptsTab="True"
-                                                             ClipToBounds="True"
-                                                             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
-                                                             FontSize="14"
-                                                             Foreground="Transparent"
-                                                             HorizontalScrollBarVisibility="Auto"
-                                                             IsReadOnly="True"
-                                                             TextBlock.LineHeight="22"
-                                                             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-                                                             TextChanged="CodeOutputTextBox_TextChanged"
-                                                             TextWrapping="NoWrap"
-                                                             VerticalContentAlignment="Top"
-                                                             VerticalScrollBarVisibility="Auto" />
+             Grid.Column="1"
+             Padding="14,12"
+             AcceptsReturn="True"
+             AcceptsTab="True"
+             ClipToBounds="True"
+             FontFamily="Cascadia Code, Cascadia Mono, Consolas"
+             FontSize="14"
+             Foreground="Transparent"
+             HorizontalScrollBarVisibility="Auto"
+             IsReadOnly="True"
+             TextBlock.LineHeight="19"
+             TextBlock.LineStackingStrategy="BlockLineHeight"
+             ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
+             TextChanged="CodeOutputTextBox_TextChanged"
+             TextWrapping="NoWrap"
+             VerticalContentAlignment="Top"
+             VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
                                             </Border>
                                         </Grid>

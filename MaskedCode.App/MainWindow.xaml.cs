@@ -52,6 +52,9 @@ public partial class MainWindow : Window
     private bool _isUpdatingPasswordControls;
     private bool _isVaultPasswordVisible;
     private bool _isRestorePasswordVisible;
+    private bool _isMaskEditorScrollLinked = true;
+    private bool _isRestoreEditorScrollLinked =true;
+    private bool _isSynchronizingEditorScroll;
 
     private static readonly Duration HeaderAnimationTransitionDuration =
     new(TimeSpan.FromMilliseconds(160));
@@ -1987,37 +1990,198 @@ public partial class MainWindow : Window
             Enumerable.Range(1, lineCount));
     }
 
-    private void CodeEditor_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    private void CodeEditor_ScrollChanged(
+    object sender,
+    ScrollChangedEventArgs e)
     {
-        var editorParts = sender switch
-        {
-            TextBox textBox when ReferenceEquals(textBox, SourceCodeTextBox) =>
-                (SourceLineNumbersTextBlock, SourceSyntaxRichTextBox),
-
-            TextBox textBox when ReferenceEquals(textBox, MaskedCodeTextBox) =>
-                (MaskedLineNumbersTextBlock, MaskedSyntaxRichTextBox),
-
-            TextBox textBox when ReferenceEquals(textBox, MaskedInputTextBox) =>
-                (MaskedInputLineNumbersTextBlock, MaskedInputSyntaxRichTextBox),
-
-            TextBox textBox when ReferenceEquals(textBox, RestoredCodeTextBox) =>
-                (RestoredLineNumbersTextBlock, RestoredSyntaxRichTextBox),
-
-            _ => ((TextBlock?)null, (RichTextBox?)null)
-        };
-
-        if (editorParts.Item1 is null ||
-            editorParts.Item2 is null)
+        if (sender is not TextBox sourceTextBox)
         {
             return;
         }
 
-        editorParts.Item1.RenderTransform = new TranslateTransform(
-            0,
-            -e.VerticalOffset);
+        var editorParts =
+            GetEditorScrollParts(
+                sourceTextBox);
 
-        editorParts.Item2.ScrollToVerticalOffset(e.VerticalOffset);
-        editorParts.Item2.ScrollToHorizontalOffset(e.HorizontalOffset);
+        if (editorParts.LineNumbers is null ||
+            editorParts.SyntaxEditor is null)
+        {
+            return;
+        }
+
+        editorParts.LineNumbers.RenderTransform =
+            new TranslateTransform(
+                0,
+                -e.VerticalOffset);
+
+        editorParts.SyntaxEditor.ScrollToVerticalOffset(
+            e.VerticalOffset);
+
+        editorParts.SyntaxEditor.ScrollToHorizontalOffset(
+            e.HorizontalOffset);
+
+        SynchronizeLinkedEditorScroll(
+            sourceTextBox,
+            e);
+    }
+
+    private void SynchronizeLinkedEditorScroll(
+        TextBox sourceTextBox,
+        ScrollChangedEventArgs e)
+    {
+        if (_isSynchronizingEditorScroll ||
+            Math.Abs(e.VerticalChange) <
+                double.Epsilon)
+        {
+            return;
+        }
+
+        var targetTextBox =
+            GetLinkedEditor(
+                sourceTextBox);
+
+        if (targetTextBox is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _isSynchronizingEditorScroll =
+                true;
+
+            targetTextBox.ScrollToVerticalOffset(
+                e.VerticalOffset);
+        }
+        finally
+        {
+            _isSynchronizingEditorScroll =
+                false;
+        }
+    }
+
+    private TextBox? GetLinkedEditor(
+        TextBox sourceTextBox)
+    {
+        if (_isMaskEditorScrollLinked)
+        {
+            if (ReferenceEquals(
+                    sourceTextBox,
+                    SourceCodeTextBox))
+            {
+                return MaskedCodeTextBox;
+            }
+
+            if (ReferenceEquals(
+                    sourceTextBox,
+                    MaskedCodeTextBox))
+            {
+                return SourceCodeTextBox;
+            }
+        }
+
+        if (_isRestoreEditorScrollLinked)
+        {
+            if (ReferenceEquals(
+                    sourceTextBox,
+                    MaskedInputTextBox))
+            {
+                return RestoredCodeTextBox;
+            }
+
+            if (ReferenceEquals(
+                    sourceTextBox,
+                    RestoredCodeTextBox))
+            {
+                return MaskedInputTextBox;
+            }
+        }
+
+        return null;
+    }
+
+    private (
+        TextBlock? LineNumbers,
+        RichTextBox? SyntaxEditor)
+        GetEditorScrollParts(
+            TextBox textBox)
+    {
+        if (ReferenceEquals(
+                textBox,
+                SourceCodeTextBox))
+        {
+            return (
+                SourceLineNumbersTextBlock,
+                SourceSyntaxRichTextBox);
+        }
+
+        if (ReferenceEquals(
+                textBox,
+                MaskedCodeTextBox))
+        {
+            return (
+                MaskedLineNumbersTextBlock,
+                MaskedSyntaxRichTextBox);
+        }
+
+        if (ReferenceEquals(
+                textBox,
+                MaskedInputTextBox))
+        {
+            return (
+                MaskedInputLineNumbersTextBlock,
+                MaskedInputSyntaxRichTextBox);
+        }
+
+        if (ReferenceEquals(
+                textBox,
+                RestoredCodeTextBox))
+        {
+            return (
+                RestoredLineNumbersTextBlock,
+                RestoredSyntaxRichTextBox);
+        }
+
+        return (
+            null,
+            null);
+    }
+
+    private void EditorScrollLinkToggleButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (ReferenceEquals(
+                sender,
+                MaskScrollLinkToggleButton))
+        {
+            _isMaskEditorScrollLinked =
+                MaskScrollLinkToggleButton.IsChecked ==
+                true;
+
+            MaskScrollLinkToggleButton.ToolTip =
+                _isMaskEditorScrollLinked
+                    ? "Dikey kaydırma bağlantısı açık"
+                    : "Dikey kaydırma bağlantısı kapalı";
+
+            return;
+        }
+
+        if (!ReferenceEquals(
+                sender,
+                RestoreScrollLinkToggleButton))
+        {
+            return;
+        }
+
+        _isRestoreEditorScrollLinked =
+            RestoreScrollLinkToggleButton.IsChecked ==
+            true;
+
+        RestoreScrollLinkToggleButton.ToolTip =
+            _isRestoreEditorScrollLinked
+                ? "Dikey kaydırma bağlantısı açık"
+                : "Dikey kaydırma bağlantısı kapalı";
     }
 
     private void UpdateSyntaxHighlighting(string code, RichTextBox richTextBox)
