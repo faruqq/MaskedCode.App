@@ -2060,27 +2060,35 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CodeEditor_MouseLeftButtonUp(
-     object sender,
-     MouseButtonEventArgs e)
+    private void LineNumbersBorder_MouseLeftButtonDown(
+    object sender,
+    MouseButtonEventArgs e)
     {
-        if (sender is not TextBox sourceTextBox ||
-            e.ChangedButton != MouseButton.Left ||
-            e.ClickCount != 1)
+        if (sender is not Border lineNumbersBorder ||
+            e.ChangedButton != MouseButton.Left)
         {
             return;
         }
 
-        // Fare sürüklenerek manuel metin seçildiyse
-        // kullanıcının yaptığı seçime müdahale edilmez.
-        if (sourceTextBox.SelectionLength > 0)
+        var sourceTextBox =
+            GetEditorFromLineNumbersBorder(
+                lineNumbersBorder);
+
+        if (sourceTextBox is null ||
+            sourceTextBox.LineCount == 0)
         {
             return;
         }
+
+        var mousePosition =
+            e.GetPosition(
+                sourceTextBox);
 
         var characterIndex =
             sourceTextBox.GetCharacterIndexFromPoint(
-                e.GetPosition(sourceTextBox),
+                new Point(
+                    sourceTextBox.Padding.Left + 1,
+                    mousePosition.Y),
                 true);
 
         if (characterIndex < 0)
@@ -2097,27 +2105,30 @@ public partial class MainWindow : Window
             return;
         }
 
-        SelectEditorLineWithoutScrolling(
+        SelectEditorLineText(
             sourceTextBox,
-            lineIndex);
+            lineIndex,
+            focusEditor: true);
 
         var linkedTextBox =
             GetLinkedEditor(
                 sourceTextBox);
 
-        if (linkedTextBox is null)
+        if (linkedTextBox is not null)
         {
-            return;
+            SelectEditorLineText(
+                linkedTextBox,
+                lineIndex,
+                focusEditor: false);
         }
 
-        SelectEditorLineWithoutScrolling(
-            linkedTextBox,
-            lineIndex);
+        e.Handled = true;
     }
 
-    private static void SelectEditorLineWithoutScrolling(
+    private static void SelectEditorLineText(
      TextBox textBox,
-     int lineIndex)
+     int lineIndex,
+     bool focusEditor)
     {
         if (lineIndex < 0 ||
             lineIndex >= textBox.LineCount)
@@ -2134,7 +2145,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var lineLength =
+        var lineTextLength =
             textBox.GetLineLength(
                 lineIndex);
 
@@ -2144,15 +2155,54 @@ public partial class MainWindow : Window
         var horizontalOffset =
             textBox.HorizontalOffset;
 
+        if (focusEditor)
+        {
+            textBox.Focus();
+        }
+
         textBox.Select(
             lineStart,
-            lineLength);
+            lineTextLength);
 
         textBox.ScrollToVerticalOffset(
             verticalOffset);
 
         textBox.ScrollToHorizontalOffset(
             horizontalOffset);
+    }
+
+    private TextBox? GetEditorFromLineNumbersBorder(
+    Border lineNumbersBorder)
+    {
+        if (ReferenceEquals(
+                lineNumbersBorder,
+                SourceLineNumbersBorder))
+        {
+            return SourceCodeTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbersBorder,
+                MaskedLineNumbersBorder))
+        {
+            return MaskedCodeTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbersBorder,
+                MaskedInputLineNumbersBorder))
+        {
+            return MaskedInputTextBox;
+        }
+
+        if (ReferenceEquals(
+                lineNumbersBorder,
+                RestoredLineNumbersBorder))
+        {
+            return RestoredCodeTextBox;
+        }
+
+        return null;
     }
 
     private TextBox? GetLinkedEditor(

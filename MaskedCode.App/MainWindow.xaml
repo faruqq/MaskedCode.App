@@ -355,9 +355,13 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Border ClipToBounds="True"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,0,1,0">
+                                                    <Border x:Name="SourceLineNumbersBorder"
+                                                            ClipToBounds="True"
+                                                            Background="Transparent"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0"
+                                                            Cursor="Hand"
+                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="SourceLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -414,9 +418,8 @@
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
-TextChanged="SourceCodeTextBox_TextChanged"
-TextWrapping="NoWrap"
+             TextChanged="SourceCodeTextBox_TextChanged"
+             TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -664,9 +667,13 @@ TextWrapping="NoWrap"
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Border ClipToBounds="True"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,0,1,0">
+                                                    <Border x:Name="MaskedLineNumbersBorder"
+                                                            ClipToBounds="True"
+                                                            Background="Transparent"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0"
+                                                            Cursor="Hand"
+                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="MaskedLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -717,14 +724,13 @@ TextWrapping="NoWrap"
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsReadOnly="True"
              IsInactiveSelectionHighlightEnabled="True"
+             IsReadOnly="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
-TextChanged="CodeOutputTextBox_TextChanged"
-TextWrapping="NoWrap"
+             TextChanged="CodeOutputTextBox_TextChanged"
+             TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -1221,9 +1227,13 @@ TextWrapping="NoWrap"
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Border ClipToBounds="True"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,0,1,0">
+                                                    <Border x:Name="MaskedInputLineNumbersBorder"
+                                                            ClipToBounds="True"
+                                                            Background="Transparent"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0"
+                                                            Cursor="Hand"
+                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="MaskedInputLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -1276,13 +1286,12 @@ TextWrapping="NoWrap"
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsInactiveSelectionHighlightEnabled="True"                                               
+             IsInactiveSelectionHighlightEnabled="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
-TextChanged="MaskedInputTextBox_TextChanged"
-TextWrapping="NoWrap"
+             TextChanged="MaskedInputTextBox_TextChanged"
+             TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
@@ -1516,9 +1525,13 @@ TextWrapping="NoWrap"
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Border ClipToBounds="True"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="0,0,1,0">
+                                                    <Border x:Name="RestoredLineNumbersBorder"
+                                                            ClipToBounds="True"
+                                                            Background="Transparent"
+                                                            BorderBrush="{StaticResource BorderBrush}"
+                                                            BorderThickness="0,0,1,0"
+                                                            Cursor="Hand"
+                                                            MouseLeftButtonDown="LineNumbersBorder_MouseLeftButtonDown">
                                                         <Canvas ClipToBounds="True">
                                                             <TextBlock x:Name="RestoredLineNumbersTextBlock"
                        Canvas.Right="14"
@@ -1571,14 +1584,13 @@ TextWrapping="NoWrap"
              FontSize="14"
              Foreground="Transparent"
              HorizontalScrollBarVisibility="Auto"
-             IsReadOnly="True"
              IsInactiveSelectionHighlightEnabled="True"
+             IsReadOnly="True"
              TextBlock.LineHeight="19"
              TextBlock.LineStackingStrategy="BlockLineHeight"
              ScrollViewer.ScrollChanged="CodeEditor_ScrollChanged"
-MouseLeftButtonUp="CodeEditor_MouseLeftButtonUp"
-TextChanged="CodeOutputTextBox_TextChanged"
-TextWrapping="NoWrap"
+             TextChanged="CodeOutputTextBox_TextChanged"
+             TextWrapping="NoWrap"
              VerticalContentAlignment="Top"
              VerticalScrollBarVisibility="Auto" />
                                                 </Grid>
