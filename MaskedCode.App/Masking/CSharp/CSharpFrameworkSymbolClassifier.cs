@@ -34,6 +34,17 @@ internal sealed class CSharpFrameworkSymbolClassifier
     private readonly SemanticModel _semanticModel;
     private readonly IAssemblySymbol _sourceAssembly;
 
+    private const string KnownGlobalUsingsSource =
+    """
+    global using System;
+    global using System.Collections.Generic;
+    global using System.IO;
+    global using System.Linq;
+    global using System.Net.Http;
+    global using System.Threading;
+    global using System.Threading.Tasks;
+    global using Xunit;
+    """;
     private CSharpFrameworkSymbolClassifier(SemanticModel semanticModel, IAssemblySymbol sourceAssembly)
     {
         _semanticModel =
@@ -43,13 +54,24 @@ internal sealed class CSharpFrameworkSymbolClassifier
             sourceAssembly;
     }
 
-    public static CSharpFrameworkSymbolClassifier Create(SyntaxTree syntaxTree)
+    public static CSharpFrameworkSymbolClassifier Create(
+     SyntaxTree syntaxTree)
     {
         ArgumentNullException.ThrowIfNull(
             syntaxTree);
 
         var references =
             CreateRuntimeMetadataReferences();
+
+        var parseOptions =
+            syntaxTree.Options as CSharpParseOptions ??
+            CSharpParseOptions.Default;
+
+        var knownGlobalUsingsSyntaxTree =
+            CSharpSyntaxTree.ParseText(
+                KnownGlobalUsingsSource,
+                parseOptions,
+                path: "__MaskedCode.KnownGlobalUsings.g.cs");
 
         var compilation =
             CSharpCompilation.Create(
@@ -58,7 +80,8 @@ internal sealed class CSharpFrameworkSymbolClassifier
                 syntaxTrees:
                     new[]
                     {
-                        syntaxTree
+                    knownGlobalUsingsSyntaxTree,
+                    syntaxTree
                     },
                 references:
                     references,
@@ -365,7 +388,8 @@ internal sealed class CSharpFrameworkSymbolClassifier
                     namespaceCandidate));
     }
 
-    private static IReadOnlyList<MetadataReference> CreateRuntimeMetadataReferences()
+    private static IReadOnlyList<MetadataReference>
+    CreateRuntimeMetadataReferences()
     {
         var trustedPlatformAssemblies =
             AppContext.GetData(
@@ -379,16 +403,53 @@ internal sealed class CSharpFrameworkSymbolClassifier
                 "C# framework sembolleri semantik olarak çözümlenemedi.");
         }
 
-        return trustedPlatformAssemblies
-            .Split(
+        var runtimeAssemblyPaths =
+            trustedPlatformAssemblies.Split(
                 Path.PathSeparator,
                 StringSplitOptions.RemoveEmptyEntries |
-                StringSplitOptions.TrimEntries)
+                StringSplitOptions.TrimEntries);
+
+        var knownFrameworkAssemblyPaths =
+            CreateKnownFrameworkAssemblyPaths();
+
+        return runtimeAssemblyPaths
+            .Concat(
+                knownFrameworkAssemblyPaths)
+            .Where(path =>
+                !string.IsNullOrWhiteSpace(
+                    path))
             .Distinct(
                 StringComparer.OrdinalIgnoreCase)
             .Select(path =>
                 MetadataReference.CreateFromFile(
                     path))
             .ToArray();
+    }
+
+    private static IReadOnlyList<string>
+    CreateKnownFrameworkAssemblyPaths()
+    {
+        return new[]
+        {
+        typeof(Xunit.Assert)
+            .Assembly
+            .Location,
+
+        typeof(Xunit.FactAttribute)
+            .Assembly
+            .Location,
+
+        typeof(Xunit.TheoryAttribute)
+            .Assembly
+            .Location,
+
+        typeof(Xunit.InlineDataAttribute)
+            .Assembly
+            .Location,
+
+        typeof(Xunit.Abstractions.ITest)
+            .Assembly
+            .Location
+    };
     }
 }

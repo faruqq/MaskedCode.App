@@ -208,14 +208,20 @@ public partial class MainWindow : Window
 
         if (drawer == "Mask")
         {
-            MaskFocusContent.IsEnabled = false;
-            ShowDrawer(MaskDrawerLayer, MaskSettingsDrawer);
+            MaskFocusContent.IsHitTestVisible = false;
+            ShowDrawer(
+                MaskDrawerLayer,
+                MaskSettingsDrawer);
+
             MaskDrawerCloseButton.Focus();
             return;
         }
 
-        RestoreFocusContent.IsEnabled = false;
-        ShowDrawer(RestoreDrawerLayer, RestoreSettingsDrawer);
+        RestoreFocusContent.IsHitTestVisible = false;
+        ShowDrawer(
+            RestoreDrawerLayer,
+            RestoreSettingsDrawer);
+
         RestoreDrawerCloseButton.Focus();
     }
 
@@ -245,9 +251,12 @@ public partial class MainWindow : Window
         CloseSettingsDrawer();
     }
 
-    private void DrawerScrim_Click(object sender, RoutedEventArgs e)
+    private void DrawerScrim_MouseLeftButtonDown(
+     object sender,
+     MouseButtonEventArgs e)
     {
         CloseSettingsDrawer();
+        e.Handled = true;
     }
 
     private void InfoButton_Click(object sender, RoutedEventArgs e)
@@ -286,10 +295,15 @@ public partial class MainWindow : Window
 
     private void CloseSettingsDrawer()
     {
-        MaskDrawerLayer.Visibility = Visibility.Collapsed;
-        RestoreDrawerLayer.Visibility = Visibility.Collapsed;
-        MaskFocusContent.IsEnabled = true;
-        RestoreFocusContent.IsEnabled = true;
+        MaskDrawerLayer.Visibility =
+            Visibility.Collapsed;
+
+        RestoreDrawerLayer.Visibility =
+            Visibility.Collapsed;
+
+        MaskFocusContent.IsHitTestVisible = true;
+        RestoreFocusContent.IsHitTestVisible = true;
+
         _openDrawer = null;
     }
 

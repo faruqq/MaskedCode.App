@@ -3209,4 +3209,323 @@ public sealed class CSharpCodeMaskerTests
         AssertValidCSharp(
             result.MaskedCode);
     }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithXunitSymbols_ShouldPreserveXunitSymbolsAndMaskSourceIdentifiers(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using System;
+        using System.Threading.Tasks;
+        using Xunit;
+
+        namespace Company.Customer.Tests;
+
+        public sealed class CustomerServiceTests
+        {
+            [Fact]
+            public void Calculate_ShouldReturnExpectedResult()
+            {
+                var service =
+                    new CustomerService();
+
+                var expected =
+                    10;
+
+                var result =
+                    service.Calculate();
+
+                Assert.Equal(
+                    expected,
+                    result);
+            }
+
+            [Theory]
+            [InlineData(10)]
+            [InlineData(20)]
+            public async Task ExecuteAsync_WithInvalidValue_ShouldThrow(
+                int customerValue)
+            {
+                var service =
+                    new CustomerService();
+
+                await Assert.ThrowsAsync<InvalidOperationException>(
+                    () =>
+                        service.ExecuteAsync(
+                            customerValue));
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var frameworkIdentifiers =
+            new[]
+            {
+            "Xunit",
+            "Fact",
+            "Theory",
+            "InlineData",
+            "Assert",
+            "Equal",
+            "ThrowsAsync"
+            };
+
+        foreach (var identifier in frameworkIdentifiers)
+        {
+            Assert.DoesNotContain(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.Contains(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        var sourceIdentifiers =
+            new[]
+            {
+            "Company",
+            "Customer",
+            "Tests",
+            "CustomerServiceTests",
+            "Calculate_ShouldReturnExpectedResult",
+            "service",
+            "expected",
+            "result",
+            "CustomerService",
+            "Calculate",
+            "ExecuteAsync_WithInvalidValue_ShouldThrow",
+            "customerValue",
+            "ExecuteAsync"
+            };
+
+        foreach (var identifier in sourceIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.DoesNotContain(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithSourceSymbolsNamedLikeXunitSymbols_ShouldMaskSourceSymbols(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        using System;
+
+        namespace Company.CustomTesting;
+
+        public sealed class FactAttribute : Attribute
+        {
+        }
+
+        public static class Assert
+        {
+            public static void Equal(
+                int expected,
+                int actual)
+            {
+            }
+
+            public static void ThrowsAsync(
+                Action operation)
+            {
+                operation();
+            }
+        }
+
+        public sealed class CustomerServiceTests
+        {
+            [Fact]
+            public void Execute()
+            {
+                Assert.Equal(
+                    10,
+                    20);
+
+                Assert.ThrowsAsync(
+                    () =>
+                    {
+                    });
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var sourceIdentifiers =
+            new[]
+            {
+            "FactAttribute",
+            "Fact",
+            "Assert",
+            "Equal",
+            "ThrowsAsync"
+            };
+
+        foreach (var identifier in sourceIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.DoesNotContain(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
+
+    [Theory]
+    [InlineData(MaskingMode.MaximumPrivacy)]
+    [InlineData(MaskingMode.FormatPreserving)]
+    public void Mask_WithImplicitAndProjectGlobalUsings_ShouldPreserveFrameworkSymbols(
+    MaskingMode mode)
+    {
+        const string sourceCode =
+            """
+        namespace Company.Customer.Tests
+        {
+            public sealed class CustomerServiceTests
+            {
+                [Fact]
+                public void Generate_ShouldReturnExpectedResult()
+                {
+                    var expected =
+                        "expected" + Environment.NewLine;
+
+                    var result =
+                        "result" + Environment.NewLine;
+
+                    Assert.Equal(
+                        expected,
+                        result);
+                }
+
+                [Theory]
+                [InlineData(10)]
+                public async Task ExecuteAsync_ShouldThrow(
+                    int customerValue)
+                {
+                    await Assert.ThrowsAsync<InvalidOperationException>(
+                        () =>
+                            Task.FromException(
+                                new InvalidOperationException()));
+                }
+            }
+        }
+        """;
+
+        var masker =
+            new CSharpCodeMasker();
+
+        var result =
+            masker.Mask(
+                sourceCode,
+                mode);
+
+        var frameworkIdentifiers =
+            new[]
+            {
+            "Fact",
+            "Theory",
+            "InlineData",
+            "Assert",
+            "Equal",
+            "ThrowsAsync",
+            "Environment",
+            "NewLine",
+            "Task",
+            "FromException",
+            "InvalidOperationException"
+            };
+
+        foreach (var identifier in frameworkIdentifiers)
+        {
+            Assert.DoesNotContain(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+
+            Assert.Contains(
+                identifier,
+                result.MaskedCode,
+                StringComparison.Ordinal);
+        }
+
+        var sourceIdentifiers =
+            new[]
+            {
+            "Company",
+            "Customer",
+            "Tests",
+            "CustomerServiceTests",
+            "Generate_ShouldReturnExpectedResult",
+            "expected",
+            "result",
+            "ExecuteAsync_ShouldThrow",
+            "customerValue"
+            };
+
+        foreach (var identifier in sourceIdentifiers)
+        {
+            Assert.Contains(
+                result.Mappings,
+                mapping =>
+                    mapping.Kind ==
+                        MaskingValueKind.Identifier &&
+                    mapping.OriginalValue ==
+                        identifier);
+        }
+
+        AssertValidCSharp(
+            result.MaskedCode);
+    }
 }

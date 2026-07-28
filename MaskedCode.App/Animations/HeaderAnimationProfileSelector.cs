@@ -24,14 +24,14 @@ public static class HeaderAnimationProfileSelector
 
     private static IHeaderAnimationProfile SelectRandom()
     {
-        IHeaderAnimationProfile[] profiles =
-        [
-            new ClassicVideoHeaderAnimationProfile(),
-            new MaskStateHeaderAnimationProfile()
-        ];
+        const int maskStateProbabilityPercent = 10;
 
-        var selectedIndex = Random.Shared.Next(profiles.Length);
+        var shouldUseMaskState =
+            Random.Shared.Next(100) <
+            maskStateProbabilityPercent;
 
-        return profiles[selectedIndex];
+        return shouldUseMaskState
+            ? new MaskStateHeaderAnimationProfile()
+            : new ClassicVideoHeaderAnimationProfile();
     }
 }

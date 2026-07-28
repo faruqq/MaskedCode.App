@@ -724,16 +724,8 @@
                             <Grid x:Name="MaskDrawerLayer"
                                   Panel.ZIndex="20"
                                   Visibility="Collapsed">
-                                <Button Background="{StaticResource ScrimBrush}"
-                                        BorderThickness="0"
-                                        Click="DrawerScrim_Click"
-                                        Focusable="False">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" />
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <Border Background="{StaticResource ScrimBrush}"
+        MouseLeftButtonDown="DrawerScrim_MouseLeftButtonDown" />
                                 <Border x:Name="MaskSettingsDrawer"
                                         Width="500"
                                         HorizontalAlignment="Right"
@@ -1522,16 +1514,8 @@
                             <Grid x:Name="RestoreDrawerLayer"
                                   Panel.ZIndex="20"
                                   Visibility="Collapsed">
-                                <Button Background="{StaticResource ScrimBrush}"
-                                        BorderThickness="0"
-                                        Click="DrawerScrim_Click"
-                                        Focusable="False">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" />
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <Border Background="{StaticResource ScrimBrush}"
+        MouseLeftButtonDown="DrawerScrim_MouseLeftButtonDown" />
                                 <Border x:Name="RestoreSettingsDrawer"
                                         Width="450"
                                         HorizontalAlignment="Right"
