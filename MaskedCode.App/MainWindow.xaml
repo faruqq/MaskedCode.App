@@ -50,7 +50,7 @@
                            IsHitTestVisible="False"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
-                           Source="/MaskedCode.App;component/Assets/Brand/maskod-logo.png"
+                           Source="pack://application:,,,/Assets/Brand/maskod-logo.png"
                            Stretch="Uniform" />
 
                     <StackPanel Grid.Column="1"
@@ -167,7 +167,7 @@
                                IsHitTestVisible="False"
                                RenderOptions.BitmapScalingMode="HighQuality"
                                SnapsToDevicePixels="True"
-                               Source="/MaskedCode.App;component/Assets/Brand/maskod-logo.png"
+                               Source="pack://application:,,,/Assets/Brand/maskod-logo.png"
                                Stretch="Uniform" />
 
                         <TextBlock Margin="0,4,0,0"
@@ -295,9 +295,11 @@
             VerticalAlignment="Center"
             Orientation="Horizontal">
 
-                                            <Button x:Name="MaskUserGuideButton"
+            <Button x:Name="MaskUserGuideButton"
             Margin="0,0,12,0"
             Click="OpenUserGuideButton_Click"
+            Focusable="False"
+            FocusVisualStyle="{x:Null}"
             Content="Kılavuz"
             Style="{StaticResource UserGuideButtonStyle}"
             ToolTip="Kullanım Kılavuzu" />
@@ -1112,6 +1114,8 @@
                                             <Button x:Name="RestoreUserGuideButton"
             Margin="0,0,12,0"
             Click="OpenUserGuideButton_Click"
+            Focusable="False"
+            FocusVisualStyle="{x:Null}"
             Content="Kılavuz"
             Style="{StaticResource UserGuideButtonStyle}"
             ToolTip="Kullanım Kılavuzu" />
@@ -1827,7 +1831,7 @@
                                     <Image Width="36"
                                Height="36"
                                RenderOptions.BitmapScalingMode="HighQuality"
-                               Source="/MaskedCode.App;component/Assets/Icons/user-guide-document-info.png"
+                               Source="pack://application:,,,/Assets/Icons/user-guide-document-info.png"
                                Stretch="Uniform" />
                                 </Border>
 

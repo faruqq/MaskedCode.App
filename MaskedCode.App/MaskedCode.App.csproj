@@ -11,23 +11,28 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp"
+                          Version="5.6.0" />
+
 		<PackageReference Include="xunit" Version="2.5.3" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove="Assets\Animations\ClassicVideo\**\*.*" />
 		<None Remove="Assets\Animations\MaskState\**\*.*" />
-		<None Remove="Assets\Brand\maskod-logo.png" />
-		<None Remove="Assets\Icons\user-guide-book-info.png" />
-		<None Remove="Assets\Icons\user-guide-document-info.png" />
 		<None Remove="Assets\Animations\OperationLoader\**\*.*" />
 
-		<Resource Include="Assets\Brand\maskod-logo.png" />
+		<None Remove="Assets\Brand\maskod-logo.png" />
+		
+		<None Remove="Assets\Icons\user-guide-document-info.png" />
 
-		<Resource Include="Assets\Icons\user-guide-book-info.png" />
+		<Resource Include="Assets\Brand\maskod-logo.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
 
-		<Resource Include="Assets\Icons\user-guide-document-info.png" />
+		<Resource Include="Assets\Icons\user-guide-document-info.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
 
 		<Content Include="Assets\Animations\ClassicVideo\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
