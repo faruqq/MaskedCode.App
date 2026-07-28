@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/docs/">
+    <File Path="KullanimKilavuzu.md" />
     <File Path="MaskedCode.md" />
     <File Path="ProjectState.md" />
     <File Path="README.md" />

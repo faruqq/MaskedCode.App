@@ -1,40 +1,50 @@
 # MaskedCode
 
-MaskedCode, şirket kaynak kodunun harici yapay zekâ araçlarıyla
-paylaşılmadan önce hassas içeriklerden arındırılmasına yardımcı olan
-Windows masaüstü uygulamasıdır.
+MaskedCode; PL/I, EGL ve C# kaynak kodlarındaki hassas içeriklerin,
+kod harici bir ortamda incelenmeden önce maskelenmesine yardımcı
+olan Windows masaüstü uygulamasıdır.
 
-Uygulama kaynak kodu anonimleştirirken incelenebilir yapıyı mümkün
-olduğunca korur ve gerektiğinde özgün kodun şifreli eşleme kasasıyla
-geri açılmasını sağlar.
+Uygulama kaynak kodu yerel olarak işler, maskelenmiş çıktıyı üretir
+ve gerektiğinde kodun şifreli eşleme kasası kullanılarak özgün hâline
+döndürülmesini sağlar.
 
-> Maskelenmiş bir kodun şirket dışına çıkarılabilmesi kurumun
-> güvenlik politikalarına ve açık izinlerine bağlıdır. Bu uygulama
-> tek başına paylaşım izni oluşturmaz.
+> Maskelenmiş kodun şirket dışındaki bir ortamda kullanılabilmesi
+> kurumun güvenlik politikalarına ve açık izinlerine bağlıdır.
+> MaskedCode tek başına paylaşım izni oluşturmaz.
 
-## Mevcut Dil Desteği
-
-Üretim desteğine sahip diller:
+## Desteklenen Diller
 
 - PL/I
 - EGL
+- C# / .NET
 
-C# / .NET desteği geliştirme aşamasındadır ve henüz
-kullanılamaz.
+## Temel Özellikler
 
-## Maskelenebilen İçerikler
+- Kaynak kodu doğrudan editöre yapıştırma
+- Kaynak kodu dosyadan yükleme
+- PL/I, EGL ve C# için dile duyarlı maskeleme
+- Maksimum Gizlilik ve Biçim Korumalı maskeleme yöntemleri
+- Maskelenmiş kodu panoya kopyalama
+- Maskelenmiş kodu dosyaya kaydetme
+- Parolayla şifrelenmiş `.mcvault` kasası oluşturma
+- Parolayı elle girme veya güvenli bir dosyadan kullanma
+- Maskelenmiş kodu doğru kasa ve parolayla geri açma
+- Geri açılan kodu kopyalama veya dosyaya kaydetme
+- Satır numaraları ve bağlantılı editör kaydırma
+- Editör genişliklerini değiştirme ve tek editörü büyütme
+- İşlem, başarı ve hata durumlarını gösteren kullanıcı arayüzü
 
-PL/I ve EGL için temel olarak:
+## Maskelenen İçerikler
 
-- Identifier’lar
+Dile ve kullanıldığı bağlama göre aşağıdaki içerikler maskelenir:
+
+- Kullanıcı tanımlı identifier’lar
 - String değerleri
 - Çalışma zamanı sayısal değerleri
-- Yorumlar
+- Yorum içerikleri
 
-maskelenir.
-
-Dil anahtar kelimeleri, veri tipi tanımları, yapısal sayılar,
-noktalama işaretleri ve satır yapısı korunur.
+Dil anahtar kelimeleri, yerleşik tipler, yapısal sayılar, noktalama
+işaretleri ve kaynak kodun temel sözdizimi korunur.
 
 PL/I gömülü SQL yapıları desteklenir.
 
@@ -47,27 +57,98 @@ EGL tarafında ayrıca:
 
 desteklenir.
 
-## Maskeleme Modları
+C# tarafında Roslyn tabanlı sözdizimsel ve semantik analiz
+kullanılır. Framework, BCL ve desteklenen xUnit sembolleri korunurken
+kaynak koda ait kullanıcı tanımlı semboller maskelenir.
+
+C# desteği aşağıdaki yapıları kapsar:
+
+- Normal, verbatim, raw ve interpolated stringler
+- Character literal değerleri
+- Sayısal literal değerleri
+- Satır ve blok yorumları
+- XML dokümantasyon yorumları
+- Preprocessor directive içerikleri
+- Namespace, tip, üye, parametre ve yerel değişken isimleri
+- Kullanıcı tanımlı attribute ve metot isimleri
+
+## Maskeleme Yöntemleri
 
 ### Maksimum Gizlilik
 
-Varsayılan ve önerilen seçenektir.
+Varsayılan ve önerilen yöntemdir.
 
-Identifier ve değerlerin özgün uzunlukları ile biçimleri mümkün
-olduğunca gizlenir.
+Identifier ve değerlerin özgün uzunluğunu ve yapısını mümkün
+olduğunca gizler.
 
 ### Biçim Korumalı
 
 Aşağıdaki biçim özelliklerini korur:
 
 - Değer uzunluğu
-- Büyük-küçük harf düzeni
+- Büyük ve küçük harf düzeni
 - Harf ve rakam konumları
 - Ayırıcı karakterler
 
-Bu mod kaynak hakkında sınırlı biçim bilgisi gösterebildiği için
-yalnızca biçimin korunması gerçekten gerekli olduğunda
-kullanılmalıdır.
+Bu yöntem kaynak hakkında sınırlı biçim bilgisi gösterebildiği için
+yalnızca biçimin korunması gerektiğinde kullanılmalıdır.
+
+## Şifreli Eşleme Kasası
+
+Özgün ve maskelenmiş değerlerin eşlemeleri düz metin olarak
+saklanmaz. Eşlemeler parola ile şifrelenmiş `.mcvault` dosyasına
+yazılır.
+
+Kasa:
+
+- Maskeleme yöntemini
+- Kaynak dilini
+- Maskelenmiş kodun SHA-256 özetini
+- Maskeleme eşlemelerini
+
+şifreli biçimde içerir.
+
+Maskelenmiş kodu daha sonra geri açmak istiyorsan aynı maskeleme
+işleminde oluşturulan kasa dosyasını kaydetmelisin.
+
+Kasa kaydedilmezse kaynak kod yeniden maskelenebilir ancak daha önce
+üretilmiş maskelenmiş kod özgün hâline döndürülemez.
+
+## Kısa Kullanım
+
+### Kod Maskeleme
+
+1. **Kod Maskeleme** bölümünü aç.
+2. Kaynak kodu yapıştır veya dosyadan yükle.
+3. Kaynak dili ve maskeleme yöntemini seç.
+4. En az 12 karakterlik kasa parolası gir veya parola dosyası seç.
+5. **Ayarları Uygula ve Maskele** düğmesine bas.
+6. Maskelenmiş çıktıyı kontrol et.
+7. Çıktıyı kopyala veya dosyaya kaydet.
+8. Kod daha sonra geri açılacaksa `.mcvault` dosyasını kaydet.
+
+### Kodu Geri Açma
+
+1. **Kodu Geri Aç** bölümünü aç.
+2. Maskelenmiş kodu yapıştır veya dosyadan yükle.
+3. Aynı işleme ait `.mcvault` dosyasını seç.
+4. Doğru parolayı gir veya parola dosyasını seç.
+5. **Ayarları Uygula ve Kodu Geri Aç** düğmesine bas.
+6. Sonucu kontrol ederek kopyala veya dosyaya kaydet.
+
+Ayrıntılı kullanım için `KullanimKilavuzu.md` dosyasına bak.
+
+## Güvenlik Kuralları
+
+- Maskelenmiş çıktıyı paylaşmadan önce manuel olarak incele.
+- Mümkün olduğunda **Maksimum Gizlilik** yöntemini kullan.
+- `.mcvault` dosyasını maskelenmiş kodla birlikte paylaşma.
+- Kasa parolasını kasa dosyasının yanında saklama.
+- Parola dosyasını kasa ve maskelenmiş koddan ayrı tut.
+- Kasa veya parola kaybolursa kod geri açılamayabilir.
+- MaskedCode’un dosya adı, klasör adı veya uygulama dışındaki
+  metadata’yı maskelemediğini unutma.
+- Uygulamayı kurumun güvenlik politikalarına uygun kullan.
 
 ## Gereksinimler
 
@@ -83,75 +164,8 @@ kullanılmalıdır.
 3. **Build > Rebuild Solution** işlemini çalıştır.
 4. Uygulamayı başlat.
 
-## Kod Maskeleme
+## Dokümantasyon
 
-1. **Kod Maskeleme** sekmesini aç.
-2. Kaynak dili olarak **PL/I** veya **EGL** seç.
-3. Kaynak kodu metin alanına yapıştır veya desteklenen bir dosya seç:
-   - PL/I için `.pli` veya `.pl1`
-   - EGL için `.egl`
-4. **Maksimum Gizlilik** veya **Biçim Korumalı** yöntemini seç.
-5. **Maskele** düğmesine bas.
-6. Maskelenmiş kodu manuel olarak kontrol et.
-7. En az 12 karakterlik güçlü bir kasa parolası gir.
-8. Parolayı tekrar gir.
-9. **Şifreli Kasayı Kaydet** düğmesiyle `.mcvault` dosyasını kaydet.
-10. Maskelenmiş kodu kopyala veya ayrı bir dosyaya kaydet.
-
-Şifreli kasa başarıyla kaydedilmeden maskelenmiş çıktı
-paylaşılmamalıdır. Aksi durumda kodu geri açmak için gereken
-eşlemeler kaybolabilir.
-
-Aynı kaynak kod yeniden maskelendiğinde yeni rastgele eşlemeler
-üretilebilir. Maskelenmiş kod ile kasanın aynı maskeleme işlemine
-ait olması gerekir.
-
-## Kodu Geri Açma
-
-1. **Kodu Geri Aç** sekmesini aç.
-2. Maskelenmiş dosyayı seç veya maskelenmiş kodu metin alanına
-   yapıştır.
-3. Aynı maskeleme işlemine ait `.mcvault` dosyasını seç.
-4. Kasa parolasını gir.
-5. **Kodu Geri Aç** düğmesine bas.
-6. Geri açılan kodu kontrol et.
-7. Sonucu kopyala veya dosya olarak kaydet.
-
-Geri açma sırasında kaynak dili dosya uzantısından değil, kasadaki
-dil bilgisinden belirlenir.
-
-Sonuç dosyası için:
-
-- PL/I kasasında `.pli`
-- EGL kasasında `.egl`
-
-uzantısı önerilir.
-
-Kasa başka bir maskelenmiş koda aitse veya maskelenmiş kod
-değiştirilmişse işlem reddedilir.
-
-## Güvenlik Kuralları
-
-- `.mcvault` dosyasını maskelenmiş kodla birlikte paylaşma.
-- Kasa dosyasını güvenli ve ayrı bir konumda sakla.
-- Kasa parolasını dosyanın yanında saklama.
-- Güçlü ve benzersiz bir parola kullan.
-- Kasa dosyası veya parola kaybolursa kodun geri açılması mümkün
-  olmayabilir.
-- Maskelenmiş çıktıyı paylaşmadan önce manuel olarak incele.
-- Mümkün olan durumlarda **Maksimum Gizlilik** modunu kullan.
-- Uygulamayı kullanmak kurum güvenlik politikasının yerine geçmez.
-
-## Şifreli Kasa
-
-Maskeleme eşlemeleri düz metin olarak saklanmaz. Eşlemeler, kaynak
-dili ve maskelenmiş kodun özeti parola ile şifrelenmiş `.mcvault`
-dosyasına yazılır.
-
-Kasanın teknik ve kriptografik tasarımı `MaskedCode.md` dosyasında
-açıklanmaktadır.
-
-## Teknik Dokümantasyon
-
+- Kullanım kılavuzu: `KullanimKilavuzu.md`
+- Teknik ve güvenlik tasarımı: `MaskedCode.md`
 - Güncel geliştirme durumu: `ProjectState.md`
-- Maskeleme ve güvenlik tasarımı: `MaskedCode.md`
