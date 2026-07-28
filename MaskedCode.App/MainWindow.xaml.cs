@@ -65,6 +65,7 @@ public partial class MainWindow : Window
     private readonly OperationLoaderPlayer _operationLoaderPlayer = new();
     private CancellationTokenSource? _operationLoaderCancellationTokenSource;
     private bool _isOperationRunning;
+    private bool _isUserGuideOpen;
 
     public MainWindow()
     {
@@ -114,6 +115,13 @@ public partial class MainWindow : Window
     {
         if (e.Key != Key.Escape)
         {
+            return;
+        }
+
+        if (_isUserGuideOpen)
+        {
+            CloseUserGuide();
+            e.Handled = true;
             return;
         }
 
@@ -305,6 +313,52 @@ public partial class MainWindow : Window
         RestoreFocusContent.IsHitTestVisible = true;
 
         _openDrawer = null;
+    }
+
+    private void OpenUserGuideButton_Click(object sender, RoutedEventArgs e)
+    {
+        CloseSettingsDrawer();
+
+        _isUserGuideOpen = true;
+        MainTabControl.IsHitTestVisible = false;
+        UserGuideLayer.Visibility = Visibility.Visible;
+        UserGuideCloseButton.Focus();
+    }
+
+    private void CloseUserGuideButton_Click(object sender, RoutedEventArgs e)
+    {
+        CloseUserGuide();
+    }
+
+    private void UserGuideScrim_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        CloseUserGuide();
+        e.Handled = true;
+    }
+
+    private void UserGuideDialog_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private void CloseUserGuide()
+    {
+        if (!_isUserGuideOpen)
+        {
+            return;
+        }
+
+        UserGuideLayer.Visibility = Visibility.Collapsed;
+        MainTabControl.IsHitTestVisible = true;
+        _isUserGuideOpen = false;
+
+        if (MainTabControl.SelectedIndex == 1)
+        {
+            RestoreUserGuideButton.Focus();
+            return;
+        }
+
+        MaskUserGuideButton.Focus();
     }
 
     private void ExpandEditorButton_Click(object sender, RoutedEventArgs e)

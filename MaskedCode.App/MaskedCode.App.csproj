@@ -17,9 +17,15 @@
 		<None Remove="Assets\Animations\ClassicVideo\**\*.*" />
 		<None Remove="Assets\Animations\MaskState\**\*.*" />
 		<None Remove="Assets\Brand\maskod-logo.png" />
+		<None Remove="Assets\Icons\user-guide-book-info.png" />
+		<None Remove="Assets\Icons\user-guide-document-info.png" />
 		<None Remove="Assets\Animations\OperationLoader\**\*.*" />
 
 		<Resource Include="Assets\Brand\maskod-logo.png" />
+
+		<Resource Include="Assets\Icons\user-guide-book-info.png" />
+
+		<Resource Include="Assets\Icons\user-guide-document-info.png" />
 
 		<Content Include="Assets\Animations\ClassicVideo\**\*.*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

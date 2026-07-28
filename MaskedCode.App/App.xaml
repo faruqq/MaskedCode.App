@@ -263,6 +263,131 @@
             </Setter>
         </Style>
 
+        <Style x:Key="UserGuideButtonStyle"
+       BasedOn="{StaticResource SettingsButtonStyle}"
+       TargetType="Button">
+            <Setter Property="ToolTipService.InitialShowDelay"
+            Value="150" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <Image Width="28"
+                       Height="28"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       SnapsToDevicePixels="True"
+                       Source="/MaskedCode.App;component/Assets/Icons/user-guide-document-info.png"
+                       Stretch="Uniform" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="UserGuideExpanderStyle"
+       TargetType="Expander">
+            <Setter Property="Margin"
+            Value="0,0,0,10" />
+            <Setter Property="Foreground"
+            Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Background"
+            Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush"
+            Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness"
+            Value="1" />
+            <Setter Property="HorizontalContentAlignment"
+            Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="10">
+                            <DockPanel>
+                                <ToggleButton x:Name="HeaderToggleButton"
+                                      DockPanel.Dock="Top"
+                                      Padding="16,13"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Cursor="Hand"
+                                      FocusVisualStyle="{x:Null}"
+                                      Foreground="{StaticResource TextPrimaryBrush}"
+                                      FontSize="15"
+                                      FontWeight="SemiBold"
+                                      IsChecked="{Binding IsExpanded,
+                                                          Mode=TwoWay,
+                                                          RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="HeaderBorder"
+                                            Padding="{TemplateBinding Padding}"
+                                            Background="Transparent"
+                                            CornerRadius="10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <ContentPresenter VerticalAlignment="Center"
+                                                              Content="{TemplateBinding Content}" />
+
+                                                    <TextBlock x:Name="ChevronTextBlock"
+                                                       Grid.Column="1"
+                                                       Margin="16,0,0,0"
+                                                       VerticalAlignment="Center"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="13"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Text="&#xE70D;" />
+                                                </Grid>
+                                            </Border>
+
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver"
+                                                 Value="True">
+                                                    <Setter TargetName="HeaderBorder"
+                                                    Property="Background"
+                                                    Value="#17243A" />
+                                                </Trigger>
+
+                                                <Trigger Property="IsChecked"
+                                                 Value="True">
+                                                    <Setter TargetName="ChevronTextBlock"
+                                                    Property="Text"
+                                                    Value="&#xE70E;" />
+                                                    <Setter TargetName="HeaderBorder"
+                                                    Property="Background"
+                                                    Value="#162A4E" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+
+                                <Border x:Name="ContentBorder"
+                                Padding="16,4,16,16"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="0,1,0,0"
+                                Visibility="Collapsed">
+                                    <ContentPresenter />
+                                </Border>
+                            </DockPanel>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded"
+                             Value="True">
+                                <Setter TargetName="ContentBorder"
+                                Property="Visibility"
+                                Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
         <Style x:Key="TitleBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="48" />
             <Setter Property="Height" Value="43" />

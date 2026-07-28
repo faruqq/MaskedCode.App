@@ -289,15 +289,25 @@
                                             <TextBlock x:Name="MaskModeSummaryTextBlock" Text="Maksimum Gizlilik" />
                                         </StackPanel>
 
-                                        <Button x:Name="MaskSettingsButton"
-                                                Grid.Column="4"
-                                                Margin="16,0,0,0"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                Click="MaskSettingsToggleButton_Click"
-                                                Content="&#xE713;"
-                                                Style="{StaticResource SettingsButtonStyle}"
-                                                ToolTip="Maskeleme ayarlarını aç" />
+                                        <StackPanel Grid.Column="4"
+            Margin="16,0,0,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+
+                                            <Button x:Name="MaskUserGuideButton"
+            Margin="0,0,12,0"
+            Click="OpenUserGuideButton_Click"
+            Content="Kılavuz"
+            Style="{StaticResource UserGuideButtonStyle}"
+            ToolTip="Kullanım Kılavuzu" />
+
+                                            <Button x:Name="MaskSettingsButton"
+            Click="MaskSettingsToggleButton_Click"
+            Content="&#xE713;"
+            Style="{StaticResource SettingsButtonStyle}"
+            ToolTip="Maskeleme ayarlarını aç" />
+                                        </StackPanel>
 
                                     </Grid>
                                 </Border>
@@ -1093,15 +1103,25 @@
                                                        Text="Parola bekleniyor" />
                                         </StackPanel>
 
-                                        <Button x:Name="RestoreSettingsButton"
-                                                Grid.Column="3"
-                                                Margin="24,0,0,0"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                Click="RestoreSettingsToggleButton_Click"
-                                                Content="&#xE713;"
-                                                Style="{StaticResource SettingsButtonStyle}"
-                                                ToolTip="Geri açma ayarlarını aç" />
+                                        <StackPanel Grid.Column="3"
+            Margin="24,0,0,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Orientation="Horizontal">
+
+                                            <Button x:Name="RestoreUserGuideButton"
+            Margin="0,0,12,0"
+            Click="OpenUserGuideButton_Click"
+            Content="Kılavuz"
+            Style="{StaticResource UserGuideButtonStyle}"
+            ToolTip="Kullanım Kılavuzu" />
+
+                                            <Button x:Name="RestoreSettingsButton"
+            Click="RestoreSettingsToggleButton_Click"
+            Content="&#xE713;"
+            Style="{StaticResource SettingsButtonStyle}"
+            ToolTip="Geri açma ayarlarını aç" />
+                                        </StackPanel>
 
                                     </Grid>
                                 </Border>
@@ -1761,6 +1781,336 @@
                        Opacity="0"
                        IsHitTestVisible="False"
                        Text="Kod yapıştırabilir veya bir kaynak dosya seçebilirsiniz." />
+
+            <Grid x:Name="UserGuideLayer"
+      Grid.RowSpan="3"
+      Panel.ZIndex="200"
+      Background="{StaticResource ScrimBrush}"
+      IsHitTestVisible="True"
+      MouseLeftButtonDown="UserGuideScrim_MouseLeftButtonDown"
+      Visibility="Collapsed">
+
+                <Border Width="920"
+            MaxHeight="760"
+            Margin="30"
+            Padding="1"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="{StaticResource BorderStrongBrush}"
+            CornerRadius="16"
+            MouseLeftButtonDown="UserGuideDialog_MouseLeftButtonDown">
+
+                    <Border Background="{StaticResource HeaderBrush}"
+                CornerRadius="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Modal başlığı -->
+                            <Grid Grid.Row="0"
+                      Margin="24,20,18,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="54"
+                            Height="54"
+                            Margin="0,0,16,0"
+                            Background="{StaticResource PrimarySoftBrush}"
+                            CornerRadius="12">
+                                    <Image Width="36"
+                               Height="36"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Source="/MaskedCode.App;component/Assets/Icons/user-guide-document-info.png"
+                               Stretch="Uniform" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+                                    <TextBlock FontSize="22"
+                                   FontWeight="SemiBold"
+                                   Text="Kullanım Kılavuzu" />
+
+                                    <TextBlock Margin="0,4,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Text="MaskedCode’u güvenli ve doğru kullanmak için temel bilgiler" />
+                                </StackPanel>
+
+                                <Button x:Name="UserGuideCloseButton"
+                            Grid.Column="2"
+                            Width="40"
+                            Height="40"
+                            Click="CloseUserGuideButton_Click"
+                            Content="&#xE8BB;"
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTip="Kullanım kılavuzunu kapat" />
+                            </Grid>
+
+                            <!-- Sabit güvenlik hatırlatması -->
+                            <Border Grid.Row="1"
+                        Margin="24,0,24,16"
+                        Padding="16,13"
+                        Background="#2D2414"
+                        BorderBrush="#6E5122"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Margin="0,1,12,0"
+                                   Foreground="{StaticResource WarningBrush}"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="18"
+                                   Text="&#xE7BA;" />
+
+                                    <TextBlock Grid.Column="1"
+                                   Foreground="#F5D9A6"
+                                   LineHeight="21"
+                                   TextWrapping="Wrap">
+                            Maskelenmiş çıktıyı kurum dışı bir ortamda kullanmadan önce mutlaka inceleyin.
+                            Otomatik maskeleme, manuel güvenlik kontrolünün yerine geçmez.
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+
+                            <!-- Kaydırılabilir kılavuz içeriği -->
+                            <ScrollViewer Grid.Row="2"
+                              Margin="24,0,18,0"
+                              Padding="0,0,6,0"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+
+                                    <Expander Header="1. MaskedCode Nedir?"
+                                  IsExpanded="True"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="22"
+                                           TextWrapping="Wrap"
+                                           Text="MaskedCode; PL/I, EGL ve C# kaynak kodlarındaki hassas içerikleri maskeleyerek kodun daha güvenli biçimde incelenmesine yardımcı olan Windows masaüstü uygulamasıdır." />
+
+                                            <TextBlock Margin="0,12,0,6"
+                                           FontWeight="SemiBold"
+                                           Text="Uygulamanın maskelediği temel içerikler:" />
+
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="22"
+                                           TextWrapping="Wrap"
+                                           Text="• Kullanıcı tanımlı isimler&#x0a;• Metin değerleri&#x0a;• Çalışma zamanı sayısal değerleri&#x0a;• Yorum içerikleri" />
+
+                                            <TextBlock Margin="0,12,0,6"
+                                           FontWeight="SemiBold"
+                                           Text="Desteklenen diller" />
+
+                                            <WrapPanel>
+                                                <Border Margin="0,0,8,0"
+                                            Padding="10,5"
+                                            Background="{StaticResource PrimarySoftBrush}"
+                                            CornerRadius="12">
+                                                    <TextBlock Text="PL/I" />
+                                                </Border>
+
+                                                <Border Margin="0,0,8,0"
+                                            Padding="10,5"
+                                            Background="{StaticResource PrimarySoftBrush}"
+                                            CornerRadius="12">
+                                                    <TextBlock Text="EGL" />
+                                                </Border>
+
+                                                <Border Padding="10,5"
+                                            Background="{StaticResource PrimarySoftBrush}"
+                                            CornerRadius="12">
+                                                    <TextBlock Text="C# / .NET" />
+                                                </Border>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="2. Maskeleme Yöntemleri"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <StackPanel>
+                                            <TextBlock FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource SuccessBrush}"
+                                           Text="Maksimum Gizlilik — Önerilen" />
+
+                                            <TextBlock Margin="0,5,0,14"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="22"
+                                           TextWrapping="Wrap"
+                                           Text="Varsayılan yöntemdir. Maskelenen değerlerin özgün uzunluğunu ve yapısını mümkün olduğunca gizler." />
+
+                                            <TextBlock FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Text="Biçim Korumalı" />
+
+                                            <TextBlock Margin="0,5,0,0"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="22"
+                                           TextWrapping="Wrap"
+                                           Text="Uzunluğu, büyük-küçük harf düzenini, harf ve rakam konumlarını ve ayırıcı karakterleri korur. Kaynak kod hakkında sınırlı biçim bilgisi gösterebileceği için yalnızca biçimin korunması gerektiğinde kullanılmalıdır." />
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="3. Kod Nasıl Maskelenir?"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="23"
+                                           TextWrapping="Wrap"
+                                           Text="1. Kod Maskeleme sekmesini açın.&#x0a;2. Kaynak kodu sol editöre yapıştırın veya Dosya Seç düğmesiyle yükleyin.&#x0a;3. Maskeleme Ayarları bölümünü açın.&#x0a;4. PL/I, EGL veya C# / .NET kaynak dilini seçin.&#x0a;5. Maksimum Gizlilik veya Biçim Korumalı yöntemini seçin.&#x0a;6. Parolayı elle girme veya parola dosyası yöntemini seçin.&#x0a;7. En az 12 karakterlik parolayı girin.&#x0a;8. Ayarları Uygula ve Maskele düğmesine basın.&#x0a;9. Sağ editörde oluşan çıktıyı dikkatle kontrol edin.&#x0a;10. Çıktıyı kopyalayın veya dosyaya kaydedin.&#x0a;11. Kodu ileride geri açacaksanız Kasa Dosyasını Kaydet düğmesiyle .mcvault dosyasını kaydedin." />
+
+                                            <Border Margin="0,14,0,0"
+                                        Padding="14"
+                                        Background="#102B2A"
+                                        BorderBrush="#245A52"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                                <TextBlock Foreground="#BCE9DF"
+                                               LineHeight="22"
+                                               TextWrapping="Wrap"
+                                               Text="Şifreli kasa, özgün ve maskelenmiş değerler arasındaki eşlemeleri içerir. Maskelenmiş kod ile kasa aynı maskeleme işlemine ait olmalıdır. Kasa kaydedilmezse daha önce üretilen maskelenmiş kod geri açılamaz." />
+                                            </Border>
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="4. Kod Nasıl Geri Açılır?"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="23"
+                                           TextWrapping="Wrap"
+                                           Text="1. Kodu Geri Aç sekmesini açın.&#x0a;2. Maskelenmiş kodu sol editöre yapıştırın veya dosyadan yükleyin.&#x0a;3. Aynı işlemde oluşturulan .mcvault dosyasını seçin.&#x0a;4. Kasayı oluştururken kullanılan parolayı girin veya parola dosyasını seçin.&#x0a;5. Ayarları Uygula ve Kodu Geri Aç düğmesine basın.&#x0a;6. Sağ editörde geri açılan kodu kontrol edin.&#x0a;7. Sonucu kopyalayın veya dosyaya kaydedin." />
+
+                                            <TextBlock Margin="0,14,0,6"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource ErrorBrush}"
+                                           Text="Kod şu durumlarda geri açılmaz:" />
+
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="22"
+                                           TextWrapping="Wrap"
+                                           Text="• Parola yanlışsa&#x0a;• Kasa değiştirilmiş veya geçersizse&#x0a;• Kasa başka bir maskelenmiş koda aitse&#x0a;• Maskelenmiş kod oluşturulduktan sonra değiştirilmişse" />
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="5. Parola Dosyası Kullanımı"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                       LineHeight="23"
+                                       TextWrapping="Wrap"
+                                       Text="Parola güvenli bir metin dosyasından okunabilir. Dosya yalnızca parolayı içermeli ve parola en az 12 karakter olmalıdır. Parola dosyasını kasa ve maskelenmiş kodla aynı konumda saklamayın ve güvenilir olmayan ortamlara yüklemeyin." />
+                                    </Expander>
+
+                                    <Expander Header="6. Editör Kullanımı"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                       LineHeight="23"
+                                       TextWrapping="Wrap"
+                                       Text="Giriş ve sonuç editörleri yan yana bulunur. Bağlantılı kaydırma açıkken iki editör birlikte kaydırılır. Satır numaraları kaynak ve sonuç kodlarının karşılaştırılmasını kolaylaştırır. Editörlerin genişliği orta ayırıcı sürüklenerek değiştirilebilir." />
+                                    </Expander>
+
+                                    <Expander Header="7. Güvenli Kullanım Kuralları"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <StackPanel>
+                                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="23"
+                                           TextWrapping="Wrap"
+                                           Text="• Maskelenmiş çıktıyı paylaşmadan önce mutlaka kontrol edin.&#x0a;• Mümkün olduğunda Maksimum Gizlilik yöntemini kullanın.&#x0a;• .mcvault dosyasını maskelenmiş kodla birlikte paylaşmayın.&#x0a;• Kasa parolasını kasa dosyasının yanında saklamayın.&#x0a;• Dosya adının ve klasör yolunun maskelenmediğini unutmayın.&#x0a;• Kurumun veri paylaşımı ve yapay zekâ kullanım politikalarına uyun." />
+
+                                            <Border Margin="0,16,0,0"
+                                        Padding="16"
+                                        Background="#321B27"
+                                        BorderBrush="#744054"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                                <StackPanel>
+                                                    <TextBlock Margin="0,0,0,8"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource ErrorBrush}"
+                                                   Text="Önemli Güvenlik Bildirimi" />
+
+                                                    <TextBlock Foreground="#E8C8D2"
+                                                   LineHeight="22"
+                                                   TextWrapping="Wrap"
+                                                   Text="MaskedCode, kaynak kod içerisindeki hassas bilgilerin maskelenmesine yardımcı olmak amacıyla geliştirilmiştir. Bununla birlikte uygulama, kapsamlı bir genel kullanıcı kabul testinden veya bağımsız bir güvenlik denetiminden geçirilmemiştir. Desteklenen programlama dillerindeki farklı sözdizimleri, kullanım biçimleri ve öngörülemeyen senaryolar nedeniyle bazı hassas içeriklerin tamamen maskelenememesi mümkündür.&#x0a;&#x0a;Bu nedenle maskelenmiş çıktı, kurum dışındaki bir ortamda kullanılmadan veya üçüncü kişilerle paylaşılmadan önce kullanıcı tarafından dikkatle incelenmelidir. Uygulamanın kullanılması, oluşturulan çıktının tamamen anonimleştirildiğini veya yüzde yüz güvenli olduğunu garanti etmez.&#x0a;&#x0a;MaskedCode kişisel inisiyatifle geliştirilmiş yardımcı bir araçtır; kurumun bilgi güvenliği, kaynak kod paylaşımı ve yapay zekâ kullanım politikalarının yerine geçmez. Çıktının kullanılacağı ortamın uygunluğunun değerlendirilmesi ve paylaşım kararının verilmesi kullanıcının sorumluluğundadır." />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="8. Uygulama Hakkında"
+                                  Style="{StaticResource UserGuideExpanderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Margin="0,0,0,8"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Uygulama" />
+
+                                            <TextBlock Grid.Column="1"
+                                           Margin="0,0,0,8"
+                                           Text="MaskedCode" />
+
+                                            <TextBlock Grid.Row="1"
+                                           Margin="0,0,0,8"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Geliştirici" />
+
+                                            <!-- Ad-soyad bilgisini bu alanda değiştirebilirsin. -->
+                                            <TextBlock Grid.Row="1"
+                                           Grid.Column="1"
+                                           Margin="0,0,0,8"
+                                           Text="Ad Soyad" />
+
+                                            <TextBlock Grid.Row="2"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Kullanım amacı" />
+
+                                            <TextBlock Grid.Row="2"
+                                           Grid.Column="1"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="Kaynak kod içerisindeki hassas içeriklerin güvenli biçimde maskelenmesine yardımcı olmak" />
+                                        </Grid>
+                                    </Expander>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <Border Grid.Row="3"
+                        Margin="24,12,24,20"
+                        Padding="0,14,0,0"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0">
+                                <Button Width="120"
+                            HorizontalAlignment="Right"
+                            Click="CloseUserGuideButton_Click"
+                            Content="Kapat" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Border>
+            </Grid>
 
             <Grid x:Name="OperationLoaderLayer"
       Grid.RowSpan="3"
