@@ -315,14 +315,48 @@ public partial class MainWindow : Window
         _openDrawer = null;
     }
 
-    private void OpenUserGuideButton_Click(object sender, RoutedEventArgs e)
+    private void OpenUserGuideButton_Click(
+    object sender,
+    RoutedEventArgs e)
     {
         CloseSettingsDrawer();
+        CollapseAllUserGuideSections();
 
         _isUserGuideOpen = true;
         MainTabControl.IsHitTestVisible = false;
         UserGuideLayer.Visibility = Visibility.Visible;
+
         UserGuideCloseButton.Focus();
+    }
+
+    private void UserGuideExpander_Expanded(
+    object sender,
+    RoutedEventArgs e)
+    {
+        if (sender is not Expander expandedSection)
+        {
+            return;
+        }
+
+        foreach (var child in UserGuideSectionsPanel.Children)
+        {
+            if (child is Expander section &&
+                !ReferenceEquals(section, expandedSection))
+            {
+                section.IsExpanded = false;
+            }
+        }
+    }
+
+    private void CollapseAllUserGuideSections()
+    {
+        foreach (var child in UserGuideSectionsPanel.Children)
+        {
+            if (child is Expander section)
+            {
+                section.IsExpanded = false;
+            }
+        }
     }
 
     private void CloseUserGuideButton_Click(object sender, RoutedEventArgs e)

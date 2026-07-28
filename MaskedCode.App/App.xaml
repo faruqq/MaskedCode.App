@@ -294,8 +294,11 @@
             Value="{StaticResource BorderBrush}" />
             <Setter Property="BorderThickness"
             Value="1" />
+            <Setter Property="FontSize"
+            Value="16" />
             <Setter Property="HorizontalContentAlignment"
             Value="Stretch" />
+
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
@@ -306,13 +309,15 @@
                             <DockPanel>
                                 <ToggleButton x:Name="HeaderToggleButton"
                                       DockPanel.Dock="Top"
-                                      Padding="16,13"
+                                      Padding="16,14"
                                       Background="Transparent"
                                       BorderThickness="0"
+                                      Content="{TemplateBinding Header}"
+                                      ContentTemplate="{TemplateBinding HeaderTemplate}"
                                       Cursor="Hand"
                                       FocusVisualStyle="{x:Null}"
                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                      FontSize="15"
+                                      FontSize="16"
                                       FontWeight="SemiBold"
                                       IsChecked="{Binding IsExpanded,
                                                           Mode=TwoWay,
@@ -330,14 +335,15 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <ContentPresenter VerticalAlignment="Center"
-                                                              Content="{TemplateBinding Content}" />
+                                                              Content="{TemplateBinding Content}"
+                                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
 
                                                     <TextBlock x:Name="ChevronTextBlock"
                                                        Grid.Column="1"
                                                        Margin="16,0,0,0"
                                                        VerticalAlignment="Center"
                                                        FontFamily="Segoe MDL2 Assets"
-                                                       FontSize="13"
+                                                       FontSize="14"
                                                        Foreground="{StaticResource TextSecondaryBrush}"
                                                        Text="&#xE70D;" />
                                                 </Grid>
@@ -356,6 +362,7 @@
                                                     <Setter TargetName="ChevronTextBlock"
                                                     Property="Text"
                                                     Value="&#xE70E;" />
+
                                                     <Setter TargetName="HeaderBorder"
                                                     Property="Background"
                                                     Value="#162A4E" />
@@ -366,7 +373,7 @@
                                 </ToggleButton>
 
                                 <Border x:Name="ContentBorder"
-                                Padding="16,4,16,16"
+                                Padding="16,18,16,18"
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="0,1,0,0"
                                 Visibility="Collapsed">
@@ -387,7 +394,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+
         <Style x:Key="TitleBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="48" />
             <Setter Property="Height" Value="43" />
