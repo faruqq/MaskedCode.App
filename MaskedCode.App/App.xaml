@@ -266,8 +266,16 @@
         <Style x:Key="UserGuideButtonStyle"
        BasedOn="{StaticResource SettingsButtonStyle}"
        TargetType="Button">
+
+            <Setter Property="Focusable"
+            Value="False" />
+
+            <Setter Property="FocusVisualStyle"
+            Value="{x:Null}" />
+
             <Setter Property="ToolTipService.InitialShowDelay"
             Value="150" />
+
             <Setter Property="ContentTemplate">
                 <Setter.Value>
                     <DataTemplate>
@@ -275,11 +283,12 @@
                        Height="28"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        SnapsToDevicePixels="True"
-                       Source="/MaskedCode.App;component/Assets/Icons/user-guide-document-info.png"
+                       Source="pack://application:,,,/Assets/Icons/user-guide-document-info.png"
                        Stretch="Uniform" />
                     </DataTemplate>
                 </Setter.Value>
             </Setter>
+
         </Style>
 
         <Style x:Key="UserGuideExpanderStyle"
